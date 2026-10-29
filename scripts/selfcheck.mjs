@@ -58,7 +58,18 @@ for (const key of ['name', 'version', 'description', 'license']) {
   if (!pkg[key]) note(`package.json 缺少 ${key}`)
 }
 if (!pkg.engines?.node) note('package.json 缺少 engines.node')
-if (pkg.repository || pkg.homepage) note('package.json 不应带 repository/homepage（避免占位 URL）')
+// A publishable package points at a real, public repository — and never at a
+// local path. These checks also keep placeholder URLs out of the tarball.
+const repoUrl = pkg.repository?.url ?? ''
+if (!repoUrl) note('package.json 缺少 repository.url')
+else if (!/^git\+https:\/\/github\.com\/[\w.-]+\/[\w.-]+\.git$/.test(repoUrl)) {
+  note(`repository.url 必须是 git+https://github.com/<owner>/<repo>.git（当前：${repoUrl}）`)
+}
+if (!pkg.homepage) note('package.json 缺少 homepage')
+else if (!/^https:\/\/github\.com\//.test(pkg.homepage)) note(`homepage 必须是 https://github.com/ 地址（当前：${pkg.homepage}）`)
+if (!pkg.bugs?.url) note('package.json 缺少 bugs.url')
+else if (!/^https:\/\/github\.com\//.test(pkg.bugs.url)) note(`bugs.url 必须是 https://github.com/ 地址（当前：${pkg.bugs.url}）`)
+if (!pkg.author) note('package.json 缺少 author')
 if (!Array.isArray(pkg.files) || pkg.files.length === 0) note('package.json 缺少 files[]')
 
 const shipped = await collect(pkg.files ?? [])

@@ -235,6 +235,7 @@ curation_progress({ clear: true })
   contract.json          契约人读镜像（派生）
   contract.sha256        契约封印（手改会被发现）
   pending.json           待裁定清单（人读镜像）
+  lock                   项目锁（写操作期间存在；status 可见持有者）
   exports/               导出派生物
   packs/                 curation_pack 归档包
   backups/<ts>__project.sqlite  落表前的 VACUUM INTO 快照
@@ -243,6 +244,17 @@ curation_progress({ clear: true })
 `.curation/` 是项目状态，**不要提交进版本库**（发布包里也没有它）。
 `pending.json`、`exports/` 与 `contract.json` 都是可重建的派生物；工作区库与
 `backups/` 才是审计依据。
+
+**列级布局见 [docs/DATABASE.md](docs/DATABASE.md)**：每张表的 DDL、约束与索引，
+"追加型 + 取 MAX(id) 为最新"的裁定/留痕语义，curated 表怎么建/怎么加列/怎么 upsert，
+每个操作分别读写了什么，以及 `PRAGMA user_version = 2` 的版本门（旧工作区拒绝打开而不是崩在
+`no such column`）与备份/快照的位置。排障时最常用的三条：
+
+```bash
+sqlite3 .curation/project.sqlite "PRAGMA user_version;"                    # 应为 2
+sqlite3 .curation/project.sqlite "SELECT kind, COUNT(*) FROM run GROUP BY kind;"
+sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM decision ORDER BY id DESC LIMIT 10;"
+```
 
 ## 隐私与安全
 
@@ -262,13 +274,20 @@ curation_progress({ clear: true })
 - "两个通道一致"是**证据规则**，不是正确性证明；两个通道同源时它会失效——
   所以通道必须真正独立，插件只负责拒绝单通道结果，无法替你保证独立性。
 - 通道同源检测、目标锚定（target_id）、字段间交叉一致性检查尚未内建。
+- 一次写操作期间持有 `.curation/lock`：同一项目不能并发跑两个写流程（这是刻意的）。
 
 ## 开发
 
 ```bash
-node --test          # 66 个测试（含 13 个端到端用例、导出器/打包用例、进度条与客户端 bundle）
+node --test          # 85 个测试（端到端 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
 npm run selfcheck    # 发布前泄漏扫描 + 语法检查 + 包清单核对
 npm pack --dry-run   # 查看发布内容
 ```
+
+## 仓库与发布
+
+- 源码与 issue：<https://github.com/Antigen-1/dsh-data-curation>
+- 变更记录：[CHANGELOG.md](CHANGELOG.md)；安全问题请走私密渠道：[SECURITY.md](SECURITY.md)
+- 版本：`0.3.0`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
 
 许可证：MIT。

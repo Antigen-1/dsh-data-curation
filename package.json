@@ -1,6 +1,6 @@
 {
   "name": "dsh-data-curation",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Contract-driven data curation mode for DeepSeek Harness: immutable-source gates, independent multi-channel extraction, two-channel adjudication, a single SQLite workspace (contract, exporters, decisions, ledger, curated table) with cell-level provenance, packable project archives, and a generic session progress dock. 契约驱动的数据核对/清洗模式。",
   "keywords": [
     "deepseek-harness",
@@ -33,8 +33,11 @@
     "templates",
     "scripts/selfcheck.mjs",
     "cordis.patch.yml",
+    "docs",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md"
   ],
   "dsh": {
     "bundle": {
@@ -75,5 +78,14 @@
     "@deepseek-ai/dsh-tools": {
       "optional": true
     }
+  },
+  "author": "Antigen-1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Antigen-1/dsh-data-curation.git"
+  },
+  "homepage": "https://github.com/Antigen-1/dsh-data-curation#readme",
+  "bugs": {
+    "url": "https://github.com/Antigen-1/dsh-data-curation/issues"
   }
 }

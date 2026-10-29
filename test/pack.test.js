@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { doApply, doCompare, doContract, doExporter, doInit, doPack, doSubmit } from '../lib/core.js'
@@ -97,6 +97,24 @@ test('pack：被引用的脚本不存在时只警告，不影响打包', async (
   assert.equal(pack.ok, true)
   assert.ok(pack.warnings.some((w) => /引用文件不可读/.test(w)))
   assert.ok(!pack.files.some((f) => f.name.includes('missing.mjs')))
+})
+
+test('pack：被引用的脚本是符号链接时跳过（不把外部内容打进包）', async () => {
+  const root = await makeProject()
+  await seed(root)
+  const outside = await mkdtemp(join(tmpdir(), 'dsh-curation-outside-'))
+  const secret = join(outside, 'secret.sh')
+  await writeFile(secret, 'echo top-secret\n', 'utf8')
+  await symlink(secret, join(root, 'tools', 'linked.mjs'))
+  const add = await doExporter({ cwd: root, action: 'add', name: 'linked', command: 'node tools/linked.mjs' })
+  assert.equal(add.ok, true, add.error)
+
+  const pack = await doPack({ cwd: root })
+  assert.equal(pack.ok, true, pack.error)
+  assert.equal(pack.files.some((f) => f.name.includes('linked.mjs')), false)
+  assert.match(pack.warnings.join('；'), /符号链接/)
+  const buf = await readFile(pack.path)
+  assert.equal(buf.includes(Buffer.from('top-secret')), false)
 })
 
 test('tokenizeCommand 处理引号与空白', () => {

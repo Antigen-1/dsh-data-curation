@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "fields": [
     {
       "name": "location",
@@ -50,6 +50,14 @@
   },
   "evidence": {
     "required": true
+  },
+  "adjudication": {
+    "compare": { "builtin": "exact" },
+    "select": { "builtin": "first-valid" },
+    "fields": {
+      "measured_value": { "compare": { "builtin": "numeric", "tolerance": 0 } },
+      "note": { "select": { "builtin": "longest" } }
+    }
   },
   "gates": {
     "minAcceptedRatio": 0.9,

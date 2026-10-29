@@ -30,7 +30,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| `PRAGMA user_version` | `2`（`lib/db.js` 的 `STATE_SCHEMA_VERSION`） |
+| `PRAGMA user_version` | `3`（`lib/db.js` 的 `STATE_SCHEMA_VERSION`）；v2 工作区打开时自动补 `decision.synthesized` 列后升到 3 |
 | 打开时检查 | 版本更低 → 拒绝打开并提示迁移；版本更高 → 拒绝打开并提示升级插件 |
 | 迁移 | **目前不自动迁移**：0.1.x（v1）的工作区需要重新 `curation_init`，或按迁移说明手工处理 |
 | 建库时机 | 第一次 `curation_init`（或任何需要写库的操作） |
@@ -144,12 +144,16 @@ CREATE TABLE decision (
   votes      TEXT,               -- JSON 数组：每票的通道/状态/值
   reason     TEXT,               -- pending 原因：no_valid_channel / no_two_channel_agreement / ...
   evidence   TEXT,               -- JSON：采纳通道的页码与原文
+  synthesized INTEGER NOT NULL DEFAULT 0,  -- 1 = 写法由 select 策略合成（v3 新增）
   decided_at TEXT NOT NULL
 );
 CREATE INDEX decision_cell ON decision (record, field, id);
 ```
 
 **当前有效裁定 = 每个 `(record, field)` 上 `id` 最大的那一行。** 历史行保留，用于追溯。
+
+`synthesized = 1` 表示写入值由 `select` 策略给出（例如 `ordered-groups` 把 `B、A` 写成
+`A、B`），此时 `votes` 里仍保留每个通道的原值；验收与状态会显示合成值格数。
 `run_id` 必须能在 `run` 表里找到（`curation_verify` 的 `decision_runs_recorded` 检查）。
 
 ### 4.6 `ledger`（追加型）
@@ -258,7 +262,7 @@ CREATE TABLE "<table>" (
 
 ```bash
 # 用 sqlite3 CLI（或任意客户端）打开快照或主库
-sqlite3 .curation/project.sqlite "PRAGMA user_version;"           # 应为 2
+sqlite3 .curation/project.sqlite "PRAGMA user_version;"           # 应为 3
 sqlite3 .curation/project.sqlite ".tables"
 sqlite3 .curation/project.sqlite "SELECT kind, COUNT(*) FROM run GROUP BY kind;"
 sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM decision ORDER BY id DESC LIMIT 10;"

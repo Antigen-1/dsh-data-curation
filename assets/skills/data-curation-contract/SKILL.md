@@ -1,13 +1,13 @@
 # 契约与字段口径（data-curation-contract）
 
-契约是项目的"什么叫正确"：字段清单、证据要求、归一化白名单、通道、交付表、验收门槛。
+契约是项目的"什么叫正确"：字段清单、证据要求、归一化白名单、通道、判定策略、交付表、验收门槛。
 **领域无关**：插件不认识任何具体行业；换项目只换契约。契约由人审后冻结，之后按哈希保护。
 
 ## 最小契约
 
 ```json
 {
-  "version": 3,
+  "version": 4,
   "fields": [
     { "name": "field_a", "type": "text", "allowEmpty": true, "requireEvidence": true },
     { "name": "field_b", "type": "enum", "allowEmpty": false },
@@ -71,6 +71,33 @@
 `safe`（默认）允许：Unicode 全半角、空白、常见标点、`cm↔mm`（写清数字）、中文数字（计数语境）、契约声明的同义词。
 `strict` 只做全半角与空白。
 **禁止**把可能抹掉真实差异的项写进同义词，例如："完全/部分"、"术前/术中"、"部位A/部位B"、"长径/短径"。
+
+## 判定策略（adjudication）
+
+默认规则是"两个通道归一化后一致就接受"。真实项目常常需要更细的口径，而这些口径属于契约，
+不属于代码：
+
+```json
+"adjudication": {
+  "compare": { "builtin": "exact" },
+  "select": { "builtin": "first-valid" },
+  "fields": {
+    "size": { "compare": { "builtin": "numeric", "tolerance": 0 } },
+    "note": { "select": { "builtin": "longest" } }
+  }
+}
+```
+
+- `compare`（哪些票算同一个事实）：`exact`、`numeric`（`tolerance`）、`ordered-groups`（`separator`），
+  或 `{ "command": "node policy/compare.mjs" }`。
+- `select`（写哪个通道的原文）：`first-valid`、`longest`、`channel-order`（`order`）、`lowest`、`highest`，
+  或 `{ "command": "node policy/select.mjs" }`。
+- 外部命令在项目根执行，stdin 收 `{ kind, record, field, values }`；`compare` 回 `{ "groups": [[0,1]] }`，
+  `select` 回 `{ "index": 0 }` 或 `{ "value": "…" }`。
+- **策略失败不是"回到默认"**：命令非零退出、超时、输出不合法、下标越界，该格一律进待裁定
+  （`adjudicator_error` / `adjudicator_invalid`）。宁可留白，不可猜。
+- 换了策略必须重新签署契约：否则历史结论会按另一套规则被解释。
+- 策略不改变底线：仍然需要两个有效通道、仍然需要证据。
 
 ## 验收门槛
 

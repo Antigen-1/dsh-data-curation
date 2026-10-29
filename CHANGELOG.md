@@ -6,6 +6,35 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-29
+
+判定逻辑成为契约的一部分：哪些票算「同一个事实」、写哪个通道的原文，都可以由项目声明，
+也可以换成项目自己的命令。
+
+### Added
+
+- 契约 v4 新增可选 `adjudication` 块：`compare`（哪些票算一致）与 `select`（写哪个写法），
+  支持在 `adjudication.fields.<name>` 按字段覆盖。
+- 内置 `compare`：`exact`、`numeric`（`tolerance`）、`ordered-groups`（`separator`）；
+  内置 `select`：`first-valid`、`longest`、`channel-order`（`order`）、`lowest`、`highest`。
+- 两个钩子都可改成项目命令：stdin 收 `{ kind, record, field, values }`，`compare` 回
+  `{ groups: [[…]] }`，`select` 回 `{ index }` 或 `{ value }`。
+- `decision.synthesized` 留痕：由 `select` 合成出的写法可被审计；
+  `curation_compare` 与 `curation_status` 显示合成值格数。
+- 工作区 schema v3：v2 工作区打开时自动补 `decision.synthesized` 列（旧行按 0 处理）。
+
+### Changed
+
+- 契约版本 3 → 4，旧契约需重新签署；`templates/contract.example.json` 增加策略示例。
+- `curation_compare` 的描述与输出说明「一致」由契约策略判定。
+
+### Fixed
+
+- 契约 `version` 字段此前会被静默改写为当前版本；现在旧版与未来版本都明确报错，
+  避免用错误的规则解释历史结论。
+- 策略命令失败、超时、输出格式不对、下标越界时，该格一律进待裁定
+  （`adjudicator_error` / `adjudicator_invalid`），绝不回退到默认策略。
+
 ## [0.3.1] — 2026-10-29
 
 ### Fixed
@@ -94,7 +123,8 @@ versions follow [SemVer](https://semver.org/).
   斜杠命令 `/curation` `/curation-status` `/curation-verify`、契约模板。
 - 零第三方运行时依赖；Node ≥ 24（内置 `node:sqlite`）。
 
-[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.1.0...v0.2.0

@@ -132,11 +132,12 @@ dsh plugin --profile <profile> add ./dsh-data-curation
 
 | 键 | 说明 |
 | --- | --- |
-| `version` | 当前为 3；旧版契约会被要求重新签署 |
+| `version` | 当前为 4；旧版契约会被要求重新签署 |
 | `fields[]` | `name`、`type`（text/enum/number/date）、`allowEmpty`、`requireEvidence`、`synonyms` |
 | `records` | `{kind:"list", values}` 或 `{kind:"file", path, key}` 或 `{kind:"db", db, table, key}` |
 | `delivery` | `{table, key}` —— curated 表固定建在工作区里，`key` 是主键列 |
 | `channels[]` | ≥2 个，按声明顺序决定"原文写法优先权" |
+| `adjudication` | 判定策略：`compare`/`select` 的 `builtin` 或外部 `command`，可按字段覆盖（见下节） |
 | `normalization` | `mode:"safe"`（默认）/`"strict"`、`caseInsensitive`、`synonyms` |
 | `evidence` | `required`（默认 true） |
 | `gates` | `minAcceptedRatio`（默认 0，即不设接受率下限）、`verifyCmd` |
@@ -150,6 +151,49 @@ dsh plugin --profile <profile> add ./dsh-data-curation
 - curated 表不存在时由 `curation_apply` 新建；契约字段缺列时自动
   `ALTER TABLE ADD COLUMN`，结果里会提示 `created` / `addedColumns`。
 - **归一化只用于比较，不替换入表值**：接受时写入的是被采纳通道的原始写法。
+
+## 判定策略（adjudication）
+
+"两个通道一致就接受"只是**默认**规则。真实项目常常需要更细的口径：
+"1.2cm 与 12mm 算一致"、"常规型与标准型算一致"、"顺序不同但集合相同算一致"、
+"一致时写更短/更长的那个写法"。这些都是契约决定，不是代码决定。
+
+契约可选的 `adjudication` 块拆成两个钩子：
+
+| 钩子 | 回答的问题 | 内置 |
+| --- | --- | --- |
+| `compare` | 哪些票算"同一个事实"？ | `exact`（默认）、`numeric`（`tolerance`）、`ordered-groups`（`separator`） |
+| `select` | 写哪个通道的原文？ | `first-valid`（默认）、`longest`、`channel-order`（`order`）、`lowest`、`highest` |
+
+```json
+"adjudication": {
+  "compare": { "builtin": "exact" },
+  "select": { "builtin": "first-valid" },
+  "fields": {
+    "measured_value": { "compare": { "builtin": "numeric", "tolerance": 0 } },
+    "note": { "select": { "builtin": "longest" } }
+  }
+}
+```
+
+要换成项目自己的规则，把任一钩子写成命令即可（在项目根目录执行）：
+
+```json
+"adjudication": { "compare": { "command": "node policy/compare.mjs", "timeoutMs": 60000 } }
+```
+
+- stdin 收到 `{ kind, record, field, values: [{ channel, raw, normalized }] }` 的 JSON；
+- `compare` 回 `{ "groups": [[0,1],[2]] }`（值是 votes 的下标，分组即"一致"）；
+- `select` 回 `{ "index": 1 }`（采用第 2 票原文）或 `{ "value": "…" }`（自定义写法）。
+
+规则：
+
+- 策略是**契约的一部分**：换了策略必须重新签署（哈希变），不会悄悄改变历史结论。
+- 命令失败、超时、输出格式不对、下标越界 —— 该格一律进"待裁定"
+  （原因 `adjudicator_error` / `adjudicator_invalid`），**绝不回退到默认策略**。
+- 由 `select` 合成出的写法（如把 `A、B` 写成 `A、B` 而另一通道是 `B、A`）在决策与
+  `decision.synthesized` 里留痕，`curation_status` 会显示合成值格数。
+- `compare` 通过后仍需证据（`evidence.required`）与两票，策略不改变"至少两通道"这条底线。
 
 ## 导出与打包
 
@@ -247,11 +291,11 @@ curation_progress({ clear: true })
 
 **列级布局见 [docs/DATABASE.md](docs/DATABASE.md)**：每张表的 DDL、约束与索引，
 "追加型 + 取 MAX(id) 为最新"的裁定/留痕语义，curated 表怎么建/怎么加列/怎么 upsert，
-每个操作分别读写了什么，以及 `PRAGMA user_version = 2` 的版本门（旧工作区拒绝打开而不是崩在
-`no such column`）与备份/快照的位置。排障时最常用的三条：
+每个操作分别读写了什么，以及 `PRAGMA user_version = 3` 的版本门（v2 工作区自动补
+`decision.synthesized` 列后升级；更旧的工作区拒绝打开而不是崩在 `no such column`）与备份/快照的位置。排障时最常用的三条：
 
 ```bash
-sqlite3 .curation/project.sqlite "PRAGMA user_version;"                    # 应为 2
+sqlite3 .curation/project.sqlite "PRAGMA user_version;"                    # 应为 3
 sqlite3 .curation/project.sqlite "SELECT kind, COUNT(*) FROM run GROUP BY kind;"
 sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM decision ORDER BY id DESC LIMIT 10;"
 ```
@@ -263,8 +307,8 @@ sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM deci
   检查，拒绝 `..` 与绝对路径；表名/列名经标识符转义后插值。
 - 仓库内所有示例与测试夹具均为**合成数据**（`CASE-0001` 等），不含真实
   姓名、住院号、身份证号或本机绝对路径；`npm run selfcheck` 会扫描发布文件。
-- 契约里的 `verifyCmd` 与项目导出器都等同于以当前身份执行项目脚本——
-  只对可信项目注册。
+- 契约里的 `verifyCmd`、项目导出器与 `adjudication` 里的策略命令都等同于以当前身份
+  执行项目脚本——只对可信项目注册。
 - 插件不内置任何 OCR / 视觉能力：通道只是标签，具体怎么抽由你调用的模型/工具做。
 
 ## 限制
@@ -273,13 +317,16 @@ sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM deci
 - 一次落表只处理一个交付表（契约里一个 `delivery`）。
 - "两个通道一致"是**证据规则**，不是正确性证明；两个通道同源时它会失效——
   所以通道必须真正独立，插件只负责拒绝单通道结果，无法替你保证独立性。
+- 判定策略只决定"哪些票算一致、写哪个写法"；它不能把单通道结果变成接受，
+  也不会绕过证据要求。策略命令的错误一律以 `adjudicator_error` /
+  `adjudicator_invalid` 进入待裁定。
 - 通道同源检测、目标锚定（target_id）、字段间交叉一致性检查尚未内建。
 - 一次写操作期间持有 `.curation/lock`：同一项目不能并发跑两个写流程（这是刻意的）。
 
 ## 开发
 
 ```bash
-node --test          # 85 个测试（端到端 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
+node --test          # 104 个测试（端到端 / 判定策略 / 迁移 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
 npm run selfcheck    # 发布前泄漏扫描 + 语法检查 + 包清单核对
 npm pack --dry-run   # 查看发布内容
 ```
@@ -288,6 +335,6 @@ npm pack --dry-run   # 查看发布内容
 
 - 源码与 issue：<https://github.com/Antigen-1/dsh-data-curation>
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)；安全问题请走私密渠道：[SECURITY.md](SECURITY.md)
-- 版本：`0.3.1`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
+- 版本：`0.4.0`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
 
 许可证：MIT。

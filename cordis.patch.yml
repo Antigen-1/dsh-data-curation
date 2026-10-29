@@ -1,0 +1,10 @@
+# dsh-data-curation bundle patch.
+# Inserts one plugin row into the host composition of a dsh profile. The plugin
+# registers the `data-curation` skill family, the /curation* commands, the
+# curation_* tools and a short system-prompt section. No external process is
+# spawned; all state lives inside the curated project's state directory.
+- insert:
+    - id: dsh-data-curation
+      name: dsh-data-curation
+      config:
+        stateDir: .curation

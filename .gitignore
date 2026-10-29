@@ -1,0 +1,6 @@
+node_modules/
+.curation/
+*.tgz
+.DS_Store
+.npm-cache/
+*.tgz

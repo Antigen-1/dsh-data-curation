@@ -1,0 +1,68 @@
+{
+  "name": "dsh-data-curation",
+  "version": "0.1.0",
+  "description": "Contract-driven data curation mode for DeepSeek Harness: immutable-source gates, independent multi-channel extraction, two-channel adjudication, a single SQLite workspace (contract, exporters, decisions, ledger, curated table) and cell-level provenance, plus packable project archives. 契约驱动的数据核对/清洗模式。",
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "data-curation",
+    "data-cleaning",
+    "data-quality",
+    "provenance",
+    "adjudication",
+    "sqlite",
+    "audit"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "lib",
+    "assets",
+    "templates",
+    "scripts/selfcheck.mjs",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "selfcheck": "node scripts/selfcheck.mjs",
+    "prepack": "npm run selfcheck && npm test"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-commands": ">=0.1.2-rc.1 <0.3.0",
+    "@deepseek-ai/dsh-skill": ">=0.1.2-rc.1 <0.3.0",
+    "@deepseek-ai/dsh-system-prompt": ">=0.1.2-rc.1 <0.3.0",
+    "@deepseek-ai/dsh-tools": ">=0.1.2-rc.1 <0.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-commands": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-skill": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-system-prompt": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
+  }
+}

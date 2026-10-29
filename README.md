@@ -288,6 +288,6 @@ npm pack --dry-run   # 查看发布内容
 
 - 源码与 issue：<https://github.com/Antigen-1/dsh-data-curation>
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)；安全问题请走私密渠道：[SECURITY.md](SECURITY.md)
-- 版本：`0.3.0`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
+- 版本：`0.3.1`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
 
 许可证：MIT。

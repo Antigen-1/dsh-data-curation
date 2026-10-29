@@ -6,6 +6,18 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-10-29
+
+### Fixed
+
+- **peer 范围静默排除预发布版 harness**：`>=0.1.2-rc.1 <0.3.0` 这类范围在 node-semver 下
+  匹配不到 `0.2.1-rc.2`（范围内没有任何比较符落在 `0.2.1` 元组且自身带预发布标签），
+  安装时 peer 校验会被静默跳过（实测 `semver.satisfies('0.2.1-rc.2', '>=0.1.2-rc.1 <0.3.0') === false`）。
+  五个 `@deepseek-ai/*` peer 改为
+  `>=0.1.2-rc.1 <0.2.0 || >=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-rc.1 <0.3.0-0`
+  —— 对 `0.2.1-rc.2` / `0.2.0-rc.3` / `0.1.3` / `0.2.5` 均成立；未来 harness 发布
+  `0.2.2-*` 时需要再加一条对应分支。
+
 ## [0.3.0] — 2026-10-29
 
 发布前加固：不新增功能，只修正确性、并发与发布工程问题。
@@ -82,7 +94,8 @@ versions follow [SemVer](https://semver.org/).
   斜杠命令 `/curation` `/curation-status` `/curation-verify`、契约模板。
 - 零第三方运行时依赖；Node ≥ 24（内置 `node:sqlite`）。
 
-[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Antigen-1/dsh-data-curation/releases/tag/v0.1.0

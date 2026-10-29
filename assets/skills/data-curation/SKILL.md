@@ -117,6 +117,19 @@ curation_pack { "cwd": "<项目根>", "label": "批次存档" }
 ### 阶段 8 · 报告
 `curation_status` 取数，报告固定包含：记录数/字段数/总格数、接受数、待裁定数及原因分布、落表批次数与备份路径、验收状态。异议（`dissent`）不得隐藏：报告要写出"哪些格是按多数采纳、少数通道给了什么"。
 
+## 进度条（可选，长任务）
+
+批次很多、跑得久时，可以把进度挂到会话输入框上方：
+
+```json
+curation_progress { "upsert": [{ "id": "batch-7", "label": "第 7 批", "value": 12, "total": 25, "unit": "例" }] }
+curation_progress { "upsert": [{ "id": "batch-7", "value": 18 }] }
+curation_progress { "remove": ["batch-7"] }
+curation_progress { "clear": true }
+```
+
+它只是一份会话级文档 `{bars:[...]}`，写进会话日志的 plugin record，由客户端 dock 渲染；不落工作区、不参与验收。什么时候挂、挂几条、什么时候撤由你按任务决定——**不要把进度条当验收证据**，完成与否仍只看 `curation_verify`。
+
 ## 常见失败模式
 
 | 错误做法 | 后果 | 正确做法 |

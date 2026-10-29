@@ -56,6 +56,8 @@ flag，因此本包要求 **Node >= 24**（`engines` 已声明）。
 6 导出    curation_export      内置 csv/jsonl/markdown/sqlite，或项目注册的导出器
 7 打包    curation_pack        工作区快照 + 契约 + 导出器 + 基线 + 被引用脚本 → zip
 8 汇报    curation_status      只读汇总（未决清单见 pending.json）
+
+可选项：长任务用 curation_progress 在输入框上方挂进度条（纯数据，见下文）。
 ```
 
 ## 安装
@@ -105,6 +107,7 @@ dsh plugin --profile <profile> add ./dsh-data-curation
 | `curation_export` | 导出派生物 | `cwd`、`format`、`out` |
 | `curation_exporter` | 注册/删除项目导出器 | `cwd`、`action`、`name`、`command`、`args` |
 | `curation_pack` | 打包整个项目 | `cwd`、`out`、`label` |
+| `curation_progress` | 在输入框上方挂进度条（会话级，纯数据） | `upsert[]`、`remove[]`、`clear` |
 | `curation_status` | 只读汇总 | `cwd` |
 
 所有工具都接受可选 `stateDir`；`cwd` 是项目根目录的绝对路径。
@@ -176,6 +179,26 @@ referenced/…            verifyCmd 与导出器命令引用到的项目内脚�
 原始材料本身不复制（它们只读且通常很大），但基线与 `pack.json` 一起带走，
 迁移后仍能发现源漂移。
 
+## 进度条（可选）
+
+长任务可以随时把进度挂到会话输入框上方：
+
+```js
+curation_progress({ upsert: [{ id: 'batch-7', label: '第 7 批', value: 12, total: 25, unit: '例' }] })
+curation_progress({ upsert: [{ id: 'batch-7', value: 18 }] })   // 同 id 原位合并
+curation_progress({ remove: ['batch-7'] })
+curation_progress({ clear: true })
+```
+
+它只是一份会话级文档 `{ bars: [...] }`，以 plugin record
+（`plugin:data-curation/progress`）写进会话日志，由客户端 dock 读同一份投影渲染。
+插件**不规定**什么时候创建、更新或销毁进度条——什么时候挂、挂几条、什么时候撤，
+全部由调用方按任务需要决定。
+
+- 与项目工作区无关：不落库、不参与验收，删掉不影响任何门禁。
+- 一次补丁最多 8 条；客户端最多显示 6 条，其余折成"另有 N 条进度"。
+- 宿主没有 `sessionProjections` 服务时只告警，其余工具照常工作。
+
 ## 门禁与不变量
 
 `curation_verify` 的检查项：
@@ -243,7 +266,7 @@ referenced/…            verifyCmd 与导出器命令引用到的项目内脚�
 ## 开发
 
 ```bash
-node --test          # 53 个测试（含 13 个端到端用例 + 导出器/打包用例）
+node --test          # 66 个测试（含 13 个端到端用例、导出器/打包用例、进度条与客户端 bundle）
 npm run selfcheck    # 发布前泄漏扫描 + 语法检查 + 包清单核对
 npm pack --dry-run   # 查看发布内容
 ```

@@ -1,6 +1,6 @@
 {
   "name": "dsh-data-curation",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Contract-driven data curation mode for DeepSeek Harness: immutable-source gates, independent multi-channel extraction, contract-declared adjudication strategies (built-in or project commands, per-field overrides), a single SQLite workspace (contract, exporters, decisions, ledger, curated table) with cell-level provenance, packable project archives, and a generic session progress dock. 契约驱动的数据核对/清洗模式。",
   "keywords": [
     "deepseek-harness",

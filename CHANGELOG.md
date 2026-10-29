@@ -6,6 +6,19 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-10-30
+
+### Fixed
+
+- **所有工具在真实宿主里报 `content.some is not a function`**：`output.render` 返回了单个
+  content block，而宿主要求的是数组，于是工具调用在**操作已经成功之后**被判定失败（例如
+  `curation_init` 已建好工作区但界面报错）。现在 `render` 统一返回 `[{ type: 'text' }]`。
+- `@deepseek-ai/dsh-tools` 不可解析时（测试、桩加载）退化为恒等 `defineTool`，不再直接崩。
+
+### Added
+
+- `test/tools.test.js`：逐个工具断言失败结果与成功结果的渲染形状；覆盖不到宿主包时也能跑。
+
 ## [0.4.0] — 2026-10-29
 
 判定逻辑成为契约的一部分：哪些票算「同一个事实」、写哪个通道的原文，都可以由项目声明，
@@ -123,7 +136,8 @@ versions follow [SemVer](https://semver.org/).
   斜杠命令 `/curation` `/curation-status` `/curation-verify`、契约模板。
 - 零第三方运行时依赖；Node ≥ 24（内置 `node:sqlite`）。
 
-[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.2.0...v0.3.0

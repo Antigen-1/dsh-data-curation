@@ -326,7 +326,7 @@ sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM deci
 ## 开发
 
 ```bash
-node --test          # 104 个测试（端到端 / 判定策略 / 迁移 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
+node --test          # 107 个测试（端到端 / 判定策略 / 迁移 / 工具渲染 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
 npm run selfcheck    # 发布前泄漏扫描 + 语法检查 + 包清单核对
 npm pack --dry-run   # 查看发布内容
 ```
@@ -335,6 +335,6 @@ npm pack --dry-run   # 查看发布内容
 
 - 源码与 issue：<https://github.com/Antigen-1/dsh-data-curation>
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)；安全问题请走私密渠道：[SECURITY.md](SECURITY.md)
-- 版本：`0.4.0`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
+- 版本：`0.4.1`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
 
 许可证：MIT。

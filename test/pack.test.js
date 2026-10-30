@@ -3,7 +3,8 @@ import test from 'node:test'
 import { mkdir, mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { doApply, doCompare, doContract, doExporter, doInit, doPack, doSubmit } from '../lib/core.js'
+import { doApply, doCompare, doExporter, doInit, doPack, doSubmit } from '../lib/core.js'
+import { doPinCompat as doContract } from './_pin.js'
 import { tokenizeCommand } from '../lib/pack.js'
 
 async function makeProject() {
@@ -69,9 +70,9 @@ test('pack：工作区快照 + 契约 + 导出器 + 被引用的外部脚本', a
 
   const names = pack.files.map((f) => f.name).sort()
   assert.deepEqual(names, [
-    'contract.json',
     'exporters.json',
     'manifest.json',
+    'pin.json',
     'project.sqlite',
     'referenced/tools/check.mjs',
     'referenced/tools/export-x.mjs',
@@ -82,10 +83,10 @@ test('pack：工作区快照 + 契约 + 导出器 + 被引用的外部脚本', a
   assert.equal(buf.subarray(0, 4).toString('latin1'), 'PK\u0003\u0004')
   assert.equal(zipEntryCount(buf), pack.files.length + 1) // + pack.json
   const raw = buf.toString('latin1')
-  for (const name of ['pack.json', 'project.sqlite', 'contract.json', 'exporters.json']) {
+  for (const name of ['pack.json', 'project.sqlite', 'pin.json', 'exporters.json']) {
     assert.ok(raw.includes(name), `zip 中缺少 ${name}`)
   }
-  assert.equal(pack.contractHash.length, 64)
+  assert.equal(pack.pinHash.length, 64)
   assert.equal(pack.sourceManifestSha.length, 64)
 })
 

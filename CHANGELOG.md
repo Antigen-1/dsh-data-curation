@@ -6,6 +6,48 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-31
+
+把"一个项目一份单表契约"升级为"一个项目一层 pin、多张表"：口径按表隔离，
+但默认值共享；工作区 schema 升到 v4，旧契约自动转成 revision 1 的 `table_pin`。
+
+### Added
+
+- **两层 pin（v5）**：`project` + `defaults`（channels / normalization / evidence / gates /
+  adjudication）+ `tables[]`（每表 `table` / `key` / `purpose` / `status` / `records` / `fields`
+  + 任意覆盖块）。表可逐块覆盖默认；effective 配置一次物化进 `table_pin`（revision 递增）。
+- **多表**：同一记录键可以同时出现在多张表里，提交、结论、留痕、增量比对、验收都按
+  `(table_id, …)` 隔离；retired 表只读、默认不导出；pin 不得省略已登记的表。
+- **`curation_note`**：项目级 / 表级自由文本备注，落 `project_event` / `table_event`（只追加）。
+- **`curation_query` 扩展**：`table` 过滤 + `meta`（项目、pin、表登记、导出器）/ `events` 查询。
+- **多表导出**：`format: "sqlite"` 一次导出全部 active 表（逐表建表写快照）；
+  `includeRetired` 可把退役表带上。
+- **项目级验收**：`curation_verify` 不传 `table` 时逐表验收，项目结论是项目级检查与各表状态的
+  合取（FAIL > CONDITIONAL > PASS）；`verifyCmd` 逐表执行，带 `CURATION_TABLE`。
+
+### Changed
+
+- 术语：`contract` → `pin`；`curation_contract` → `curation_pin`；
+  `contract.json` / `contract.sha256` → `pin.json` / `pin.sha256`；`contractHash` → `pinHash`。
+- schema：`STATE_SCHEMA_VERSION` 3 → 4（v3 打开时先备份再迁移）；`decision` 增加
+  `table_id` / `pin_id` / `table_pin_id`，`ledger` 增加 `table_id` / `decision_id` / `apply_run_id`，
+  `submission` 唯一键改为 `(table_id, channel, batch, record)`。
+- `curation_submit / compare / apply / verify / export` 增加 `table` 参数；`curation_init`
+  可 `tables` 预告；`curation_export` 增加 `includeRetired`。
+- `curation_pack` 打 `pin.json`，并收集每表 `verifyCmd` 与 `adjudication.*.command` 引用的脚本。
+
+### Fixed
+
+- v3 → v4 迁移先建索引再补列导致的 `no such column: table_id`：拆出 `SCHEMA_V4_BASE`，
+  顺序改为 建前置表 → 重建 submission → ALTER → 回填 → 建完整 schema。
+- `evidence.required = false` 时验收仍判 `evidence_present` 失败。
+- `curation_export` 失败时返回裸字符串，工具渲染崩溃。
+
+### Breaking
+
+- v4 契约格式不再接受签署；按 [`docs/MIGRATION.md`](docs/MIGRATION.md) 转成 v5 pin。
+- v3 工作区首次打开需要先有备份（插件会自动做 `.curation/backups/<stamp>__pre-v4.sqlite`）。
+
 ## [0.5.0] — 2026-10-30
 
 来自一次真实会话（999 条 × 5 字段，6 小时核对）的取证：curation API 只覆盖了前 3 小时的 40 次调用，
@@ -163,7 +205,9 @@ versions follow [SemVer](https://semver.org/).
   斜杠命令 `/curation` `/curation-status` `/curation-verify`、契约模板。
 - 零第三方运行时依赖；Node ≥ 24（内置 `node:sqlite`）。
 
-[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.3.0...v0.3.1

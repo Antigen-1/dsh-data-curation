@@ -27,7 +27,7 @@ function blocksOf(def, value) {
 
 test('每个工具的失败结果都被渲染成 content block 数组', async () => {
   const defs = await collectTools()
-  assert.equal(defs.length, 12)
+  assert.equal(defs.length, 13)
   for (const def of defs) {
     const text = blocksOf(def, { ok: false, error: 'boom' }).map((b) => b.text).join('\n')
     assert.match(text, /boom/, `${def.name}: 失败原因要显示出来`)

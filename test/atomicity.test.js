@@ -4,7 +4,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
-import { doApply, doCompare, doContract, doInit, doSubmit } from '../lib/core.js'
+import { doApply, doCompare, doInit, doSubmit } from '../lib/core.js'
+import { doPinCompat as doContract } from './_pin.js'
 
 const WORKSPACE = '.curation/project.sqlite'
 

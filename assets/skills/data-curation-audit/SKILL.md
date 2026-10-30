@@ -5,7 +5,7 @@
 
 ## 一、审结果（按顺序，不跳）
 
-1. `curation_status`：基线文件数、契约字段/通道、各通道提交量、接受/待裁定、最近落表。
+1. `curation_status`：基线文件数、pin 的各表字段/通道、各通道提交量、接受/待裁定、最近落表。多表项目逐表看，`curation_verify` 不传 `table` 时项目结论是各表的合取。
 2. `curation_verify`：逐检查项看 `pass / conditional / fail`，不要只看总结论。
 3. 抽样复核（人做）：从接受格里按字段抽 5–10 格，回原材料核对页码/引用是否真的支持该值。抽到错 → 停止后续写入，查原因（目标锚定错？证据指向错？归一化过宽？）。
 4. 看异议：状态库 `decision` 表（或 `curation_status` 输出）里 `dissent` 非空的格子，确认"多数"不是靠两个同源通道堆出来的。
@@ -17,13 +17,13 @@
 
 | 情形 | 处置 |
 | --- | --- |
-| 两个通道结果其实等价，只是没登记同义词 | 人确认后**改契约**（加同义词）→ 重签 → 重新比对 |
+| 两个通道结果其实等价，只是没登记同义词 | 人确认后**改 pin**（加同义词）→ 重签 → 重新比对 |
 | 缺证据但值可信 | 补该格的页码/原文重新提交该通道，再裁定 |
 | 通道覆盖不足 | 增加独立通道（如 OCR）后重新比对 |
 | 材料本身模糊/矛盾 | 保持待裁定，报告里列明；需要时请人给出书面裁定 |
-| 特例（业务上允许偏离口径） | 由人写明理由+证据+批准范围，记入例外清单；不得由工具自动生成 |
+| 特例（业务上允许偏离口径） | 由人写明理由+证据+批准范围，用 `curation_note` 记入项目或表的事件流；不得由工具自动生成 |
 
-**不要**做的事：手工改工作区数据库（`.curation/project.sqlite` 的 `decision` / `ledger` 表）或 `pending.json`；调低 `minAcceptedRatio` 让验收变绿；把待裁定格在交付表里"顺手填上"；删掉 pending 文件当已处理。验收会按 run 存根与 ledger 对账，手改只会把 `decision_runs_recorded` / `ledger_complete` 打红。
+**不要**做的事：手工改工作区数据库（`.curation/project.sqlite` 的 `decision` / `ledger` 表）或 `pending.json`；也不要用 SQL 直接改 `pin` / `table_pin`（封印会对不上）；调低 `minAcceptedRatio` 让验收变绿；把待裁定格在交付表里"顺手填上"；删掉 pending 文件当已处理。验收会按 run 存根与 ledger 对账，手改只会把 `decision_runs_recorded` / `ledger_complete` 打红。
 
 ## 三、回归与故障注入夹具
 

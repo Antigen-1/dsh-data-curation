@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
-import { doApply, doCompare, doContract, doInit, doStatus, doSubmit, doVerify } from '../lib/core.js'
+import { doApply, doCompare, doInit, doStatus, doSubmit, doVerify } from '../lib/core.js'
+import { doPinCompat as doContract } from './_pin.js'
 
 async function makeProject() {
   const root = await mkdtemp(join(tmpdir(), 'curation-adj-'))
@@ -79,7 +80,7 @@ test('契约策略生效：顺序不同视为一致，数值按容差与 highest
 
   const status = await doStatus({ cwd: root })
   assert.equal(status.decisions.synthesized, 1)
-  assert.equal(status.contract.adjudication.fields.order.compare.builtin, 'ordered-groups')
+  assert.equal(status.pin.defaults.adjudication.fields.order.compare.builtin, 'ordered-groups')
 })
 
 test('策略把两通道判为不一致时，落表不动，验收停在 CONDITIONAL', async () => {

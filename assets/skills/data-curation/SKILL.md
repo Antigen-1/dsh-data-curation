@@ -7,7 +7,7 @@
 - **只读的原始材料**（报告、台账、扫描件、截图……），第一次写入前记录基线；
 - **一个可写的工作区 SQLite**（`.curation/project.sqlite`，内置 `node:sqlite`，要求 **Node >= 24**，零依赖）。
 
-契约、导出器、通道提交、比对结果、逐格留痕与 curated 交付表全在这个工作区里；CSV/JSONL/markdown/sqlite 导出与备份都是可重建的派生物。
+pin、导出器、通道提交、结论、逐格留痕与 curated 交付表全在这个工作区里；CSV/JSONL/markdown/sqlite 导出与备份都是可重建的派生物。
 
 适用：需要逐条从报告/台账/扫描件/截图中取字段，并与汇总表逐格对账的数据工作（医疗记录、审计底稿、尽调清单、资产台账等）。
 不适用：只做表内去重、格式统一、字段补全这类纯表格清洗——那不需要多通道裁定，用普通脚本更快。
@@ -34,26 +34,34 @@ curation_init { "cwd": "<项目根>", "sources": ["raw/reports", "raw/roster.csv
 产出 `.curation/manifest.json`（逐个源文件的 `sha256/size/路径`）与工作区 `.curation/project.sqlite`。此后每个写操作前都会重核基线。
 
 先确认三件事再往下走：
-- 交付表叫什么、主键列是什么（契约里的 `delivery: {table, key}`，表在工作区里，缺表/缺列自动创建）；
+- 交付表叫什么、主键列是什么（pin 里每张表的 `{table, key}`，表在工作区里，缺表/缺列自动创建）；
 - 哪些材料是"源"（只读），哪些是"派生导出"（可随时重建）；
 - 记录总数 × 字段总数 = 待核对格数，写进任务说明。
 
-### 阶段 1 · 口径契约（人审后冻结）
-用 `curation_contract` 冻结字段、证据要求、归一化白名单、通道、交付表与验收门槛；`dryRun: true` 只校验不落盘，适合配置期反复试错。示例见 `templates/contract.example.json`。
+### 多表项目
 
-契约必须回答：
+一个项目可以有多张交付表（pin 的 `tables[]`）：每张表各自声明 `table` / `key` / `records` / `fields`，
+`defaults` 只提供默认值。同一个记录键可以同时出现在不同表里，提交、结论、留痕、验收都按
+`(table_id, …)` 隔离。多表时 `curation_submit` / `curation_compare` / `curation_apply` /
+`curation_verify` / `curation_export` 都要带 `table`；不再交付的表设 `status: "retired"`（只读）。
+多表一次导出用 `curation_export({ format: "sqlite" })`，csv/jsonl/markdown 逐表导出。
+
+### 阶段 1 · 口径 pin（人审后签署）
+用 `curation_pin` 签署两层 pin：项目默认（通道 / 归一化 / 证据 / 门槛 / 判定策略）+ 每张表的字段、记录来源与交付键；`dryRun: true` 只校验不落盘，适合配置期反复试错。示例见 `templates/pin.example.json`。
+
+pin 必须回答：
 - 每个字段"取什么、从哪里取、拿不到时怎么办"；
 - 空白三态：`""`（源材料明确未提供）/ 缺键（该通道弃权）/ `status: "uncertain"`（看不清）；
 - 哪些值是合法同义词、哪些是必须保留的差异；
 - 验收是否要跑项目自带命令（`gates.verifyCmd`，如 pytest/脚本）。
 
-契约一旦冻结即以哈希封印（`.curation/contract.sha256`）保护，权威内容存在工作区数据库里；需要改契约就重新签署（`force: true`）并**重新比对全部结果**，不得局部打补丁。
+pin 一旦签署即以哈希封印（`.curation/pin.sha256`）保护，权威内容存在工作区数据库里；需要改口径就重新签署（`force: true`）并**重新比对全部结果**，不得局部打补丁。
 
 ### 阶段 2 · 通道独立采集
 每个通道、每一批单独提交：
 ```json
 curation_submit {
-  "cwd": "<项目根>", "channel": "text", "batch": "B001",
+  "cwd": "<项目根>", "table": "summary", "channel": "text", "batch": "B001",
   "records": [{
     "record_id": "CASE-0001",
     "status": "valid",
@@ -71,34 +79,34 @@ curation_submit {
 
 ### 阶段 3 · 比对
 ```json
-curation_compare { "cwd": "<项目根>" }
+curation_compare { "cwd": "<项目根>" }   // 多表项目加 "table": "summary"
 ```
 规则：
 
 | 情形 | 结果 |
 | --- | --- |
-| 两个有效通道按契约 `compare` 策略判定一致 | 接受（写法见 `select` 策略） |
+| 两个有效通道按 pin 的 `compare` 策略判定一致 | 接受（写法见 `select` 策略） |
 | 三通道里两组各两票 | 待裁定 `competing_majorities` |
 | 只有一个有效通道 | 待裁定 `no_two_channel_agreement` |
-| 一致值缺页码/引用（且契约要求证据） | 待裁定 `missing_evidence` |
-| 空白但契约不允许为空 | 待裁定 `empty_not_allowed` |
+| 一致值缺页码/引用（且 pin 要求证据） | 待裁定 `missing_evidence` |
+| 空白但 pin 不允许为空 | 待裁定 `empty_not_allowed` |
 | 两个有效通道都说"未提供" | 接受空白 |
 | 分不清目标对象/字段归属 | 待裁定，先补目标锚定 |
 
 想看清"为什么这格没被接受"，用 `curation_query`（`what: "votes"` 看逐票原值，`what: "pending"` 看待裁定明细，`what: "counts"` 看总量），**不要**直接开工作区库写 SQL。
 
-不一致时补第三通道：再 `curation_submit` 一个独立通道，然后重新 `curation_compare`。策略命令报错（`adjudicator_error` / `adjudicator_invalid`）同样只是待裁定，不要为了让它通过而放宽策略。**不要**手工改工作区数据库（`decision` / `ledger` 表）或 `pending.json`——验收会按 run 存根与 ledger 对账，手改只会让 `decision_runs_recorded` / `ledger_complete` 失败。
+不一致时补第三通道：再 `curation_submit` 一个独立通道，然后重新 `curation_compare`。多表项目记得带 `table`；只想重判改过的格子时 `scope: "auto"`（默认），需要全量时 `scope: "all"`。策略命令报错（`adjudicator_error` / `adjudicator_invalid`）同样只是待裁定，不要为了让它通过而放宽策略。**不要**手工改工作区数据库（`decision` / `ledger` 表）或 `pending.json`——验收会按 run 存根与 ledger 对账，手改只会让 `decision_runs_recorded` / `ledger_complete` 失败。
 
 ### 阶段 4 · 落表
 ```json
-curation_apply { "cwd": "<项目根>", "dryRun": true }
+curation_apply { "cwd": "<项目根>", "dryRun": true }   // 多表加 "table"
 curation_apply { "cwd": "<项目根>" }
 ```
 勾选 dryRun 看样例；正式写入自动执行：`VACUUM INTO` 备份 → 单事务内按键建行（`INSERT ... ON CONFLICT DO NOTHING`）→ 逐格 UPDATE → 回读比对 → 逐格 ledger。任一格对不上即整体回滚，不得分步重试掩盖；缺表/缺列会自动创建（结果里会提示 `created` / `addedColumns`）。重复落表是幂等的。
 
 ### 阶段 5 · 验收
 ```json
-curation_verify { "cwd": "<项目根>" }
+curation_verify { "cwd": "<项目根>" }   // 多表加 "table"；不传则验全部 active 表
 ```
 - `FAIL`：逐项修（覆盖缺口、证据缺口、curated 表不一致、留痕缺失、验收命令失败）。
 - `CONDITIONAL`：只剩待裁定格——不得自行降级门槛，交人决定（补通道 / 走批准例外 / 接受为未决）。
@@ -106,15 +114,15 @@ curation_verify { "cwd": "<项目根>" }
 
 ### 阶段 6 · 导出
 ```json
-curation_export { "cwd": "<项目根>", "format": "csv" }
+curation_export { "cwd": "<项目根>", "format": "csv", "table": "summary" }   // 多表一次导出用 format: "sqlite"
 ```
-内置 `csv` / `jsonl` / `markdown` / `sqlite`；更多格式用 `curation_exporter` 注册（存在工作区里，不需要重签契约）。外部导出器在项目根目录经 shell 执行：stdin 收到 `{table,key,columns,rows}` 的 JSON，必须写到 `$CURATION_EXPORT_OUT`。导出落在 `.curation/exports/`（或契约外的项目相对路径），可随时重建。
+内置 `csv` / `jsonl` / `markdown` / `sqlite`；更多格式用 `curation_exporter` 注册（存在工作区里，不需要重签 pin）。外部导出器在项目根目录经 shell 执行：stdin 收到 `{table,key,columns,rows}` 的 JSON，必须写到 `$CURATION_EXPORT_OUT`。导出落在 `.curation/exports/`（或项目相对路径），可随时重建。
 
 ### 阶段 7 · 打包（迁移 / 归档）
 ```json
 curation_pack { "cwd": "<项目根>", "label": "批次存档" }
 ```
-一个 zip 包含：工作区一致性快照 `project.sqlite`、契约 `contract.json`、导出器 `exporters.json`、源基线 `manifest.json`、待裁定 `pending.json`（有时才有），以及导出器/`verifyCmd` 引用到的外部脚本（`referenced/…`）。原始材料本身不复制，但基线与 `pack.json` 一起带走，迁移后仍能发现漂移。
+一个 zip 包含：工作区一致性快照 `project.sqlite`、pin `pin.json`、导出器 `exporters.json`、源基线 `manifest.json`、待裁定 `pending.json`（有时才有），以及导出器 / `verifyCmd` / 判定策略命令引用到的外部脚本（`referenced/…`）。原始材料本身不复制，但基线与 `pack.json` 一起带走，迁移后仍能发现漂移。
 
 ### 阶段 8 · 报告
 `curation_status` 取数，报告固定包含：记录数/字段数/总格数、接受数、待裁定数及原因分布、落表批次数与备份路径、验收状态。异议（`dissent`）不得隐藏：报告要写出"哪些格是按多数采纳、少数通道给了什么"。
@@ -138,7 +146,7 @@ curation_progress { "clear": true }
 | --- | --- | --- |
 | 全文搜关键词命中就填 | 把别处的值写到本条 | 先锚定目标标识，再取字段 |
 | 用摘要/结论段当证据 | 值对但无出处，复核不可追踪 | 只引用目标段落的页码/原句 |
-| 把"看起来一样"当一致 | 单位、全半角、同义但语义不同的值被合并 | 交给 `curation_compare` 按契约策略比较；口径写进 `adjudication` |
+| 把"看起来一样"当一致 | 单位、全半角、同义但语义不同的值被合并 | 交给 `curation_compare` 按 pin 策略比较；口径写进 `adjudication` |
 | 单通道补洞 | 无第二来源，错误不可发现 | 补独立通道或留待裁定 |
 | 按行号批量改表 | 源表行序一变就全错，且不可回溯 | 一律按键定位（`curation_apply` 内建） |
 | 顺手"修正"原始材料 | 不可逆污染证据 | 原始只读；修正写 curated 表+备注 |

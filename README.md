@@ -4,15 +4,16 @@
 
 > **English TL;DR** — A contract-driven curation mode for DeepSeek Harness.
 > A project is **read-only source material + one workspace SQLite**
-> (`.curation/project.sqlite`, built-in `node:sqlite`, no third-party dependency):
-> contract, exporters, channel submissions, decisions, ledger and the curated
-> delivery table all live in that single file. Each extraction channel reports
-> independently; a cell is accepted only when **two valid channels agree** after
-> safe normalization; writes are keyed by record id + field, backed up with
-> `VACUUM INTO`, executed in one transaction and re-read; a project can be packed
-> into a single zip for archival. `curation_verify` is the single gate that says
-> PASS / CONDITIONAL / FAIL. Local files only, no network, no telemetry.
-> Requires Node >= 24.
+> (`.curation/project.sqlite`, built-in `node:sqlite`, no third-party dependency).
+> A project-level **pin** declares defaults plus one entry per delivery table;
+> the pin, channel submissions, decisions, ledger, curated tables and registered
+> exporters all live in that single file. Each extraction channel reports
+> independently; a cell is accepted only when the pin's comparison strategy finds
+> **two valid channels agree**; writes are keyed by record id + field, backed up
+> with `VACUUM INTO`, executed in one transaction and re-read. `curation_verify`
+> is the single gate that says PASS / CONDITIONAL / FAIL, per table and overall.
+> A project can be packed into one zip for archival. Local files only, no
+> network, no telemetry. Requires Node >= 24.
 
 它把"从原始材料里抽字段、核对、写交付表"这件事拆成八个阶段，并用工具把
 **原始数据不可变、多通道独立、逐格留痕、未决不自动改表**这四条纪律固定下来，
@@ -32,366 +33,222 @@
 
 ## 为什么用单一 SQLite 工作区
 
-一个项目就是**只读源 + 一个工作区数据库**：契约、导出器、通道提交、比对结果、
+一个项目就是**只读源 + 一个工作区数据库**：pin、导出器、通道提交、比对结果、
 逐格留痕、curated 交付表全在 `.curation/project.sqlite` 里，导出文件只是派生物。
 
 - 单事务写入 + 回读比对，崩溃只会留下旧表或新表，不会有半张表；
 - 验收用 SQL 复算（覆盖、双通道、留痕、一致性、留痕与裁定 run 对账）；
-- 交付表是库里一张普通表，按主键逐格更新，不重写整张表；
-- 迁移/归档用 `curation_pack` 打成一个 zip：工作区快照 + 契约 + 导出器 + 源基线 +
+- 交付表是库里普通表，按主键逐格更新，不重写整张表；多张表互不串数据；
+- 迁移/归档用 `curation_pack` 打成一个 zip：工作区快照 + pin + 导出器 + 源基线 +
   被引用的外部脚本，换个地方解开就能继续核对漂移。
 
 用的是 Node 内置 `node:sqlite`：**不引第三方依赖**。该模块自 Node 23.4 起无需
 flag，因此本包要求 **Node >= 24**（`engines` 已声明）。
 
+## 两层 pin（v5）
+
+pin 是项目的口径快照，分两层：
+
+```jsonc
+{
+  "version": 5,
+  "project": { "name": "esd-review", "description": "…" },   // 只允许 name / description
+  "defaults": {                                               // 只允许这五项
+    "channels": [{ "name": "text" }, { "name": "vision" }],
+    "normalization": { "mode": "safe" },
+    "evidence": { "required": true },
+    "gates": { "minAcceptedRatio": 0 },
+    "adjudication": { "compare": { "strategy": "exact" }, "select": { "strategy": "channel-order" } }
+  },
+  "tables": [{
+    "table": "esd_main",                                      // 交付表名 = 库里 curated 表名
+    "key": "admission_id",                                    // 主键列
+    "purpose": "主结果表",
+    "status": "active",                                       // active | retired
+    "records": { "kind": "db", "db": "raw/source.sqlite", "table": "patients", "key": "admission_id" },
+    "fields": [ { "name": "location", "type": "text" } ],
+    "gates": { "minAcceptedRatio": 1 }                        // 表级覆盖，逐键合并
+  }]
+}
+```
+
+- `defaults` 是默认值，表可以按块覆盖；`mergeTable` 的规则：channels 整组替换、
+  synonyms 同名合并、evidence/gates 叶子合并、adjudication.compare/select 整对象
+  替换 + fields 按字段合并。effective 配置只物化一次，落在 `table_pin` 里。
+- pin 一次冻结整个项目：`pin_hash = sha256(canonical-json)`，同时写
+  `.curation/pin.sha256` 封印与 `pin.json` 人读镜像；库里的 `pin` 行是权威。
+- 改口径 = 重新签署（`force: true`），所有表 revision+1，旧 `table_pin` 保留为历史；
+  旧结论与新 pin 不再混用（decision 绑 `pin_id` / `table_pin_id`）。
+- 表登记：`curation_init({ tables })` 可预告；签署 pin 时自动登记；已登记的表
+  不得从 pin 里省略；不再交付的表改 `status: "retired"`（只读、导出默认跳过、
+  pack 仍含）。
+
 ## 八阶段
 
 ```
 0 立项    curation_init        源文件逐个 sha256 → .curation/manifest.json + project.sqlite
-1 契约    curation_contract    字段/证据/通道/交付表/门槛 → 存进工作区并哈希封印
-2 采集    curation_submit      每个通道独立提交（禁止先合并再提交）
-3 比对    curation_compare     逐格比对，≥2 有效一致 → 接受；否则待裁定
+                               （可用 tables 预告表名）
+1 签署    curation_pin         项目默认 + 每表口径 → 哈希封印（dryRun 只校验）
+2 采集    curation_submit      每张表、每个通道独立提交（禁止先合并再提交）
+3 比对    curation_compare     逐格比对（策略由 pin 决定）→ 接受 / 待裁定
 4 落表    curation_apply       VACUUM INTO 备份 → 单事务 upsert + 逐格回读
-5 验收    curation_verify      基线/契约/覆盖/双通道/证据/交付一致/留痕/比例/验收命令
-6 导出    curation_export      内置 csv/jsonl/markdown/sqlite，或项目注册的导出器
-7 打包    curation_pack        工作区快照 + 契约 + 导出器 + 基线 + 被引用脚本 → zip
-8 汇报    curation_status      只读汇总（未决清单见 pending.json）
-
-可选项：长任务用 curation_progress 在输入框上方挂进度条（纯数据，见下文）。
+5 验收    curation_verify      项目级 + 每表 13 项门禁，FAIL > CONDITIONAL > PASS
+6 导出    curation_export      内置 csv/jsonl/markdown/sqlite，或多表 sqlite 快照
+7 打包    curation_pack        工作区快照 + pin + 导出器 + 基线 + 被引用脚本 → zip
+8 汇报    curation_status      只读汇总；细查用 curation_query，备注用 curation_note
 ```
 
-## 安装
+可选项：长任务用 `curation_progress` 在输入框上方挂进度条（纯数据，见下文）。
 
-```bash
-# npm（发布后）
-dsh plugin --profile <profile> add dsh-data-curation
+## 工具（13 个）
 
-# 本地目录
-dsh plugin --profile <profile> add ./dsh-data-curation
-```
-
-安装后插件的 `cordis.patch.yml` 会插入一个 bundle 条目，默认状态目录
-`.curation`（可用 `stateDir` 配置改成项目内其他相对目录）。
-
-## 快速开始
-
-在项目根目录：
-
-1. `/curation` —— 看阶段说明与当前状态。
-2. 建立基线：`curation_init({ cwd, sources: ["raw"] })`。
-   `sources` 必须是**项目内相对路径**；绝对路径会被拒绝。
-3. 冻结契约：`curation_contract({ cwd, contract })`，模板见
-   [`templates/contract.example.json`](templates/contract.example.json)。
-   配置期可先 `dryRun: true` 只校验。
-4. 每个通道单独提交：`curation_submit({ cwd, channel: "text", batch: "B001", records })`。
-5. `curation_compare({ cwd })` → `curation_apply({ cwd, dryRun: true })` →
-   `curation_apply({ cwd })` → `curation_verify({ cwd })`。
-6. 需要给表格软件时：`curation_export({ cwd, format: "csv" })`；
-   要别的格式先 `curation_exporter({ cwd, action: "add", name, command })`。
-7. 归档/迁移：`curation_pack({ cwd, label })`。
-
-完整合成示例见
-[`assets/skills/data-curation/references/walkthrough.md`](assets/skills/data-curation/references/walkthrough.md)
-（全部使用 `CASE-0001` 之类的虚构记录）。
-
-## 工具
-
-| 工具 | 作用 | 关键参数 |
+| 工具 | 作用 | 主要参数 |
 | --- | --- | --- |
-| `curation_init` | 建立源基线（只读材料） | `cwd`、`sources[]`、`force` |
-| `curation_contract` | 冻结口径契约（`dryRun` 只校验） | `cwd`、`contract`、`force`、`dryRun` |
-| `curation_submit` | 提交某通道某批结果 | `cwd`、`channel`、`batch`、`records[]` |
-| `curation_compare` | 逐格比对与裁定（默认增量） | `cwd`、`records[]?`、`fields[]?`、`scope`（`auto`/`all`） |
-| `curation_apply` | 按键落表（upsert） | `cwd`、`dryRun` |
-| `curation_verify` | 门禁验收 | `cwd` |
-| `curation_export` | 导出派生物 | `cwd`、`format`、`out` |
-| `curation_exporter` | 注册/删除项目导出器 | `cwd`、`action`、`name`、`command`、`args` |
-| `curation_pack` | 打包整个项目 | `cwd`、`out`、`label` |
-| `curation_progress` | 在输入框上方挂进度条（会话级，纯数据） | `upsert[]`、`remove[]`、`clear` |
-| `curation_status` | 只读汇总 | `cwd` |
-| `curation_query` | 只读查询：计数、待裁定、逐格、逐票、提交、运行、库结构 | `cwd`、`what`、`record`、`field`、`status`、`channel`、`reason`、`limit`、`format` |
+| `curation_init` | 建立项目、记录源基线、预告表 | `sources`、`tables`、`force` |
+| `curation_pin` | 签署/校验项目 pin | `pin`、`dryRun`、`force` |
+| `curation_submit` | 提交一个通道对一批记录的抽取 | `table`、`channel`、`batch`、`records` |
+| `curation_compare` | 逐格比对，写入结论 | `table`、`records`、`fields`、`scope` |
+| `curation_apply` | 把接受值写进 curated 表 | `table`、`dryRun` |
+| `curation_verify` | 项目级 + 表级验收门禁 | `table`、`includeRetired` |
+| `curation_status` | 只读汇总（项目 / pin / 表 / 最近落表 / 锁） | — |
+| `curation_query` | 只读查询：counts / pending / cells / votes / submissions / runs / meta / events / schema | `what`、`table`、`record`、`field`、`status`、`channel`、`reason`、`limit`、`format` |
+| `curation_note` | 追加项目级 / 表级备注（只追加事件） | `text`、`table` |
+| `curation_export` | 导出 curated 表 | `format`、`out`、`table`、`includeRetired` |
+| `curation_exporter` | 注册 / 移除项目导出器 | `action`、`name`、`command`、`args` |
+| `curation_pack` | 打包整个项目（含被引用脚本） | `out`、`label` |
+| `curation_progress` | 输入框上方进度条（纯数据） | `upsert`、`remove`、`clear` |
 
-所有工具都接受可选 `stateDir`；`cwd` 是项目根目录的绝对路径。
+流程里所有 `cwd` 都是项目根绝对路径；`stateDir` 默认 `.curation`。
 
-### 提交格式
+## 多表
 
-```json
-{
-  "record_id": "CASE-0001",
-  "status": "valid",
-  "values": { "location": "A 区", "measured_value": "1.5cm", "note": "" },
-  "evidence": { "location": { "page": 1, "quote": "位于 A 区" } }
-}
-```
-
-- `status`：`valid` / `uncertain` / `invalid`。**不确定必须标 uncertain**，不得猜。
-- `values` 缺键 = 该通道对该字段弃权；`""` = 源材料明确未提供（仍是一票）。
-- `evidence` 为接受所必需（除非字段声明 `requireEvidence: false`）。
-- 同一通道同一批次的重提会**替换**该批记录，不会累加出第二份投票。
-
-## 契约要点
-
-| 键 | 说明 |
-| --- | --- |
-| `version` | 当前为 4；旧版契约会被要求重新签署 |
-| `fields[]` | `name`、`type`（text/enum/number/date）、`allowEmpty`、`requireEvidence`、`synonyms` |
-| `records` | `{kind:"list", values}` 或 `{kind:"file", path, key}` 或 `{kind:"db", db, table, key}` |
-| `delivery` | `{table, key}` —— curated 表固定建在工作区里，`key` 是主键列 |
-| `channels[]` | ≥2 个，按声明顺序决定"原文写法优先权" |
-| `adjudication` | 判定策略：`compare`/`select` 的 `builtin` 或外部 `command`，可按字段覆盖（见下节） |
-| `normalization` | `mode:"safe"`（默认）/`"strict"`、`caseInsensitive`、`synonyms` |
-| `evidence` | `required`（默认 true） |
-| `gates` | `minAcceptedRatio`（默认 0，即不设接受率下限）、`verifyCmd` |
-| `identity` | 记录键冲突时的取值优先级，由项目写明 |
-
-- `delivery.table` 必须是合法 SQLite 标识符，且不能占用插件状态表
-  （`meta/submission/submission_value/decision/ledger/run/applied/contract/exporter`）。
-- `records.db` 不能指向工作区本身（只读源与可写工作区必须分开）。
-- 导出器不是契约的一部分：用 `curation_exporter` 注册（存进工作区），契约里出现
-  `exporters` 会报错。
-- curated 表不存在时由 `curation_apply` 新建；契约字段缺列时自动
-  `ALTER TABLE ADD COLUMN`，结果里会提示 `created` / `addedColumns`。
-- **归一化只用于比较，不替换入表值**：接受时写入的是被采纳通道的原始写法。
+- 一张表一个 `tables[]` 条目；`table` 同时是交付表名，必须是合法 SQL 标识符且不能
+  占用状态表名（`meta`、`submission`、`pin`、`ledger`…）。
+- 记录键只在表内唯一：同一个 `record_id` 可以同时出现在两张表里，提交、结论、
+  留痕、验收都按 `(table_id, …)` 隔离，互不串数据。
+- 多表项目调用 `curation_submit/compare/apply/verify/export` 必须给 `table`；
+  单表项目可省略。
+- `curation_verify` 不传 `table` 时验全部 active 表，项目状态是"项目级检查 +
+  每张表状态"的合取：任何一张表 FAIL 就是 FAIL；只有待裁定才是 CONDITIONAL。
+- 导出：`format: "sqlite"` 可一次导出全部 active 表（快照是一个新库，逐表建表）；
+  csv/jsonl/markdown 是单表格式，多表必须指定 `table`。
 
 ## 判定策略（adjudication）
 
-"两个通道一致就接受"只是**默认**规则。真实项目常常需要更细的口径：
-"1.2cm 与 12mm 算一致"、"常规型与标准型算一致"、"顺序不同但集合相同算一致"、
-"一致时写更短/更长的那个写法"。这些都是契约决定，不是代码决定。
+"一致"由 pin 的 `adjudication` 决定，不是写死的：
 
-契约可选的 `adjudication` 块拆成两个钩子：
+- `compare` 决定"哪些票算同一个事实"：`exact`（默认）/ `numeric`（容差）/ `ordered-groups`；
+- `select` 决定"写哪个通道的原始写法"：`channel-order`（默认）/ `longest` / `lowest` / `highest` / `first`；
+- 单字段可覆盖：`{ "strategy": "numeric", "fields": { "size_mm": { "tolerance": 0.5 } } }`；
+- 外部命令：`{ "command": "node", "args": ["tools/policy.mjs"] }`，stdin 收
+  `{kind:"compare"|"select", table, field, record, values, options}`，stdout 返回
+  `{groups}` 或 `{index}` / `{value}`；非零退出或输出不合法 → 该格进待裁定
+  （`adjudicator_error`），**不回落默认策略**；
+- 批量：compare 策略加 `"batch": true` 时，一次命令判一批格（stdin
+  `{kind:"compare-batch", cells:[…]}`，stdout `{results:[{record,field,groups}]}`），
+  用于避免逐格 spawn；
+- 合成值（如 `ordered-groups`）会标 `synthesized`，验收会单独计数。
 
-| 钩子 | 回答的问题 | 内置 |
-| --- | --- | --- |
-| `compare` | 哪些票算"同一个事实"？ | `exact`（默认）、`numeric`（`tolerance`）、`ordered-groups`（`separator`） |
-| `select` | 写哪个通道的原文？ | `first-valid`（默认）、`longest`、`channel-order`（`order`）、`lowest`、`highest` |
+## 真实项目里的用法
 
-```json
-"adjudication": {
-  "compare": { "builtin": "exact" },
-  "select": { "builtin": "first-valid" },
-  "fields": {
-    "measured_value": { "compare": { "builtin": "numeric", "tolerance": 0 } },
-    "note": { "select": { "builtin": "longest" } }
-  }
-}
-```
+1. 建项目：`curation_init({ cwd, sources: ["raw/"], tables: ["esd_main"] })`；
+2. 写 pin（先 `dryRun: true` 看 hash / 字段 / 记录数），确认后正式签；
+3. 每个通道跑自己的抽取（**不要**把文本通道的结果喂给视觉通道），
+   `curation_submit({ table: "esd_main", channel: "text", batch: "B001", records: [...] })`；
+4. `curation_compare({ table: "esd_main" })`；`curation_query({ what: "pending" })`
+   看未决原因，逐条补证或由人裁定；
+5. `curation_apply({ table: "esd_main" })`（先 `dryRun` 看会写哪几格）；
+6. `curation_verify()` 看项目级 + 各表状态；PASS 前不要宣称"核对完成"；
+7. `curation_export({ format: "sqlite" })` 或指定表导出 csv；
+8. `curation_pack()` 归档；换机器后先 `curation_init` 的记录仍在 manifest 里，
+   可复算漂移。
 
-要换成项目自己的规则，把任一钩子写成命令即可（在项目根目录执行）：
+## 验收门禁
 
-```json
-"adjudication": { "compare": { "command": "node policy/compare.mjs", "timeoutMs": 60000 } }
-```
+项目级：
 
-- stdin 收到 `{ kind, record, field, values: [{ channel, raw, normalized }] }` 的 JSON；
-- `compare` 回 `{ "groups": [[0,1],[2]] }`（值是 votes 的下标，分组即"一致"）；
-- `select` 回 `{ "index": 1 }`（采用第 2 票原文）或 `{ "value": "…" }`（自定义写法）。
-
-规则：
-
-- 策略是**契约的一部分**：换了策略必须重新签署（哈希变），不会悄悄改变历史结论。
-- 命令失败、超时、输出格式不对、下标越界 —— 该格一律进"待裁定"
-  （原因 `adjudicator_error` / `adjudicator_invalid`），**绝不回退到默认策略**。
-- 由 `select` 合成出的写法（如把 `A、B` 写成 `A、B` 而另一通道是 `B、A`）在决策与
-  `decision.synthesized` 里留痕，`curation_status` 会显示合成值格数。
-- `compare` 通过后仍需证据（`evidence.required`）与两票，策略不改变"至少两通道"这条底线。
-
-### 一次判一批（`batch`）
-
-逐格起子进程在真实项目里是灾难：999 条 × 5 字段 ≈ 5,000 次 `spawn`，单次 compare 能跑到
-10 分钟。`compare` 的命令策略可以显式声明批量：
-
-```json
-"adjudication": { "compare": { "command": "python3 tools/adjudicate.py", "batch": true } }
-```
-
-- stdin 一次收到 `{ kind: "compare-batch", cells: [{ record, field, values }] }`；
-- stdout 回 `{ results: [{ record, field, groups: [[0,1]] }] }`（每个 cell 一条）；
-- 缺结果、重复格、下标越界都按格进待裁定或整批报错，**不会**悄悄回落到逐格；
-- 只有显式写 `batch: true` 才走批量；`batch` 只允许出现在命令策略的 `compare` 上。
-
-### 增量比对
-
-`curation_compare` 默认 `scope: "auto"`：只重判"有新提交或从未判过"的格，其余保持上次结论，
-并在 run 摘要里记下重判/跳过的格数。改了契约（哈希变化）或显式 `scope: "all"` 时回到全量。
-
-## 查询（curation_query）
-
-核对到一半时，最常做的不是改表，而是**问清情况**：哪些格还没定、为什么没定、
-某个通道当时写的是什么。以前只能自己开库写 SQL，0.5.0 把这层查询做成只读工具：
-
-```text
-curation_query({ cwd, what: "counts" })
-curation_query({ cwd, what: "pending", reason: "competing_majorities", limit: 20 })
-curation_query({ cwd, what: "cells", record: "CASE-0001" })
-curation_query({ cwd, what: "votes", record: "CASE-0001", field: "size" })
-curation_query({ cwd, what: "submissions", channel: "vision", limit: 10 })
-curation_query({ cwd, what: "runs", limit: 5 })
-curation_query({ cwd, what: "schema" })
-```
-
-- `what`：`counts` / `pending` / `cells` / `votes` / `submissions` / `runs` / `schema`。
-- `limit` 默认 **50**，不设硬上限（大结果自行带 `limit`）。
-- `format: "json"` 给脚本消费；默认 `table` 是人读的等宽表格（按 CJK 宽度对齐）。
-- **只读**：以 `readOnly` 打开工作区，不加锁、不跑门禁、不写任何东西。
-- `cells` 返回每格**最新**结论（含归一化值、采纳通道、异议、证据）。
-- `votes` 返回该格最新一次比对里每个通道的原值与页码——这是回答"为什么接受/为什么没接受"的入口。
-
-## 真实使用里暴露的缺口
-
-2026-10-30 的一份真实会话日志里，curation API 只在前 3 小时被调用 40 次；之后 16 小时，
-操作者改用 `run_code` 直接开工作区库 135 次。0.5.0 针对的就是这 135 次：
-
-| 当时只能开库做的事 | 现在的入口 |
+| 检查 | 含义 |
 | --- | --- |
-| `SELECT status, reason, COUNT(*) … GROUP BY` | `curation_query what="counts"` |
-| 翻 3,124 条待裁定明细 | `curation_query what="pending"` |
-| 看某格几个通道分别写了什么 | `curation_query what="votes"` |
-| 看每次 compare 跑了多久、跳过了多少格 | `curation_query what="runs"` |
-| 确认库里有哪些表、curated 表有哪些列 | `curation_query what="schema"` |
-| 每次只改一格却要全量重判 23,120 格 | `curation_compare` 默认增量（`scope: "auto"`） |
-| 自定义策略按"格"起子进程（~5,000 次） | 契约 `batch: true`，一次命令判一批 |
+| `state_present` | 工作区存在、版本可读 |
+| `pin_intact` | pin 内容与封印、库内哈希一致 |
+| `manifest_intact` | 源基线未漂移（路径集合与 sha256） |
 
-## 导出与打包
+表级（每张 active 表各跑一遍）：
 
-内置导出器：`csv`、`jsonl`、`markdown`、`sqlite`（输出路径默认
-`.curation/exports/<table>-<时间戳>.<扩展名>`）。
-
-项目导出器存进工作区（`exporter` 表），在项目根目录经 shell 执行：
-
-- stdin 收到 `{ table, key, columns, rows }` 的 JSON；
-- 环境变量 `CURATION_EXPORT_FORMAT / TABLE / KEY / OUT` 可用；
-- 必须写出 `$CURATION_EXPORT_OUT`，退出码必须为 0。
-
-插件作者也可以在进程内 `registerExporter({ name, run })` 注册格式。
-
-`curation_pack` 产出 `.curation/packs/<时间戳>.zip`，内含：
-
-```
-project.sqlite          工作区一致性快照（VACUUM INTO）
-contract.json           契约镜像（权威在校验过的 project.sqlite）
-exporters.json          项目导出器清单
-manifest.json           源基线
-pending.json            待裁定清单（有时才有）
-pack.json               格式版本 / 契约哈希 / 源基线哈希 / 文件摘要 / warnings
-referenced/…            verifyCmd 与导出器命令引用到的项目内脚本
-```
-
-原始材料本身不复制（它们只读且通常很大），但基线与 `pack.json` 一起带走，
-迁移后仍能发现源漂移。
-
-## 进度条（可选）
-
-长任务可以随时把进度挂到会话输入框上方：
-
-```js
-curation_progress({ upsert: [{ id: 'batch-7', label: '第 7 批', value: 12, total: 25, unit: '例' }] })
-curation_progress({ upsert: [{ id: 'batch-7', value: 18 }] })   // 同 id 原位合并
-curation_progress({ remove: ['batch-7'] })
-curation_progress({ clear: true })
-```
-
-它只是一份会话级文档 `{ bars: [...] }`，以 plugin record
-（`plugin:data-curation/progress`）写进会话日志，由客户端 dock 读同一份投影渲染。
-插件**不规定**什么时候创建、更新或销毁进度条——什么时候挂、挂几条、什么时候撤，
-全部由调用方按任务需要决定。
-
-- 与项目工作区无关：不落库、不参与验收，删掉不影响任何门禁。
-- 一次补丁最多 8 条；客户端最多显示 6 条，其余折成"另有 N 条进度"。
-- 宿主没有 `sessionProjections` 服务时只告警，其余工具照常工作。
-
-## 门禁与不变量
-
-`curation_verify` 的检查项：
-
-`state_present`、`contract_intact`、`manifest_intact`、`records_resolvable`、
-`coverage`、`accepted_two_channels`、`evidence_present`、`delivery_matches`、
+`records_resolvable`、`coverage`（每格都有结论）、`accepted_two_channels`、
+`evidence_present`、`delivery_matches`（curated 表与结论一致）、
 `decision_runs_recorded`、`ledger_complete`、`accept_ratio`、`pending_cells`、
 `verify_cmd`。
 
-- 任一硬性检查失败 → `FAIL`；只剩待裁定 → `CONDITIONAL`；全绿 → `PASS`。
-- 待裁定格不写入、不计为已核实；已存在的行保持原值。
-- 源基线漂移、契约被手改、curated 表被手改、裁定 run 缺失，都会阻断后续写入/验收。
-- 每次比对的摘要写入工作区 `run` 表；裁定行引用的 run 必须存在，防止手改
-  decision 表伪造接受。
-- `minAcceptedRatio` 默认 0：允许"有未决格但其余全部接受"的项目走到
-  `CONDITIONAL`；要求"每格都必须被接受"的项目把它设为 1。
+结论：`FAIL > CONDITIONAL > PASS`；`pending_cells` 只把结果降为 CONDITIONAL。
 
-## 状态目录
+## 查询与备注
+
+- `curation_query` 是只读面（不加锁、不要求封印）：`counts` 看总览、
+  `pending` 看待裁定原因与通道原值、`votes` 看某格逐票、`cells` 看最新结论、
+  `submissions` / `runs` / `schema` 看过程，`meta` 看项目与 pin、`events` 看事件流。
+  `limit` 默认 50、不设上限；`format: "json"` 便于脚本消费。
+- `curation_note` 往项目或表追加备注（append-only），不改任何数据与 pin。
+
+## 进度条（可选）
+
+`curation_progress` 只维护一份纯数据：`{ bars: [...] }`，补丁语义
+`{ upsert, remove, clear }`，插件不规定何时创建 / 更新 / 删除。渲染在 Web UI
+输入框上方（`conversation.input.dock`）。它不是验收证据，不参与任何门禁。
+
+## 工作区布局
 
 ```
 .curation/
-  manifest.json          源基线（路径/大小/mtime/sha256 + 总哈希）
-  project.sqlite         工作区（WAL）：状态 + curated 交付表
-    contract             冻结的契约（版本/哈希/JSON/签署时间）
-    exporter             项目导出器（名称/命令/参数）
-    submission           每通道每批提交（同 channel+batch+record 唯一）
-    submission_value     逐格取值 + 证据 JSON
-    decision             逐格比对结论（追加，取每格最新）
-    ledger               落表留痕（旧值/新值/采纳通道/异议/证据/run）
-    run                  每次比对的摘要
-    applied              最近一次落表
-    meta                 契约哈希等元信息
-    <delivery.table>     curated 交付表（由 curation_apply 维护）
-  contract.json          契约人读镜像（派生）
-  contract.sha256        契约封印（手改会被发现）
-  pending.json           待裁定清单（人读镜像）
-  lock                   项目锁（写操作期间存在；status 可见持有者）
-  exports/               导出派生物
-  packs/                 curation_pack 归档包
-  backups/<ts>__project.sqlite  落表前的 VACUUM INTO 快照
+├── project.sqlite        权威：project / table_registry / pin / table_pin / submission /
+│                         decision / ledger / run / applied / exporter / events /
+│                         curated 交付表（每张表一张）
+├── project.sqlite-wal    运行期 WAL（-shm 同理）
+├── manifest.json         源基线（只读材料的 sha256 清单）
+├── pin.json              pin 人读镜像（权威在库里）
+├── pin.sha256            封印（手改会被验收发现）
+├── pending.json          待裁定清单（人读镜像，可重建）
+├── lock                  写操作期间的项目锁（协作锁，不是安全边界）
+├── backups/              VACUUM INTO 备份（每次落表 / 迁移前）
+├── packs/                curation_pack 产物
+└── exports/              curation_export 产物
 ```
 
-`.curation/` 是项目状态，**不要提交进版本库**（发布包里也没有它）。
-`pending.json`、`exports/` 与 `contract.json` 都是可重建的派生物；工作区库与
-`backups/` 才是审计依据。
+## 迁移
 
-**列级布局见 [docs/DATABASE.md](docs/DATABASE.md)**：每张表的 DDL、约束与索引，
-"追加型 + 取 MAX(id) 为最新"的裁定/留痕语义，curated 表怎么建/怎么加列/怎么 upsert，
-每个操作分别读写了什么，以及 `PRAGMA user_version = 3` 的版本门（v2 工作区自动补
-`decision.synthesized` 列后升级；更旧的工作区拒绝打开而不是崩在 `no such column`）与备份/快照的位置。排障时最常用的三条：
+- **schema**：`user_version` 现在是 `4`；从 v3 打开时会先要求备份，再自动迁移
+  （旧 `contract` 转为 revision 1 的 `table_pin`，`legacy_contract_hash` 保留原哈希）。
+- **pin 格式**：v4 契约已停用；按 [`docs/MIGRATION.md`](docs/MIGRATION.md) 转成
+  v5 的 `{ project, defaults, tables[] }`。错误消息会指向这份文档。
+- 数据库结构细节见 [`docs/DATABASE.md`](docs/DATABASE.md)。
 
-```bash
-sqlite3 .curation/project.sqlite "PRAGMA user_version;"                    # 应为 3
-sqlite3 .curation/project.sqlite "SELECT kind, COUNT(*) FROM run GROUP BY kind;"
-sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM decision ORDER BY id DESC LIMIT 10;"
-```
+## 安全与隐私
 
-## 隐私与安全
-
-- 不联网、无遥测、无第三方运行时依赖；只读写 `cwd` 与 `stateDir` 下的文件。
-- `stateDir`、`sources`、`records.path`、`records.db`、`out`、打包输出都做越界
-  检查，拒绝 `..` 与绝对路径；表名/列名经标识符转义后插值。
-- 仓库内所有示例与测试夹具均为**合成数据**（`CASE-0001` 等），不含真实
-  姓名、住院号、身份证号或本机绝对路径；`npm run selfcheck` 会扫描发布文件。
-- 契约里的 `verifyCmd`、项目导出器与 `adjudication` 里的策略命令都等同于以当前身份
-  执行项目脚本——只对可信项目注册。
-- 插件不内置任何 OCR / 视觉能力：通道只是标签，具体怎么抽由你调用的模型/工具做。
+- 只读写本地文件；无网络、无遥测。
+- pin 里的 `gates.verifyCmd`、`adjudication.*.command`、项目导出器都会以当前用户
+  身份执行项目里的脚本 —— 只放你信任的项目。
+- `curation_pack` 只收项目内的相对路径；符号链接跳过；单文件超过 10 MB 会警告。
+- 工作区是否加密由你自己决定；本插件不做加密。
 
 ## 限制
 
-- 交付表必须是工作区里的 SQLite 表；需要给表格软件时用 `curation_export`。
-- 一次落表只处理一个交付表（契约里一个 `delivery`）。
-- "两个通道一致"是**证据规则**，不是正确性证明；两个通道同源时它会失效——
-  所以通道必须真正独立，插件只负责拒绝单通道结果，无法替你保证独立性。
-- 判定策略只决定"哪些票算一致、写哪个写法"；它不能把单通道结果变成接受，
-  也不会绕过证据要求。策略命令的错误一律以 `adjudicator_error` /
-  `adjudicator_invalid` 进入待裁定。
-- 通道同源检测、目标锚定（target_id）、字段间交叉一致性检查尚未内建。
-- 一次写操作期间持有 `.curation/lock`：同一项目不能并发跑两个写流程（这是刻意的）。
+- 一次写操作期间持有 `.curation/lock`（同一项目建议单写者）。
+- 交付表必须是 SQLite 表；需要表格软件请用 `curation_export`。
+- 一次 pin 覆盖整个项目；不存在"只改一张表而不重签"的路径。
+- 多表导出成 csv 需要逐表调用，或直接用 `format: "sqlite"`。
+- 通道同源检测、OCR 自动触发、target 级锚定、字段间交叉一致性仍未内建。
 
 ## 开发
 
 ```bash
-node --test          # 131 个测试（端到端 / 判定策略 / 批量策略 / 迁移 / 查询 / 工具渲染 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
-npm run selfcheck    # 发布前泄漏扫描 + 语法检查 + 包清单核对
-npm pack --dry-run   # 查看发布内容
+node --test          # 139 个测试
+npm run selfcheck    # 发布前泄漏 / 结构检查
+npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
+
+版本与变更见 [`CHANGELOG.md`](CHANGELOG.md)；安全报告见 [`SECURITY.md`](SECURITY.md)。
 
 ## 仓库与发布
 
-- 源码与 issue：<https://github.com/Antigen-1/dsh-data-curation>
-- 变更记录：[CHANGELOG.md](CHANGELOG.md)；安全问题请走私密渠道：[SECURITY.md](SECURITY.md)
-- 版本：`0.5.0`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
-
-许可证：MIT。
+- 源码：<https://github.com/Antigen-1/dsh-data-curation>
+- 当前版本 0.6.0（GitHub tag `v0.6.0`）；尚未发布到 npm。

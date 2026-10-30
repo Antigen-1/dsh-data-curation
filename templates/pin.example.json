@@ -1,0 +1,40 @@
+{
+  "version": 5,
+  "project": {
+    "name": "示例数据核对项目",
+    "description": "用一两个记录演示如何声明项目级默认与每张表的有效口径。"
+  },
+  "defaults": {
+    "channels": [
+      { "name": "text", "method": "PDF 文本层提取" },
+      { "name": "vision", "method": "逐页读图" }
+    ],
+    "normalization": {
+      "mode": "safe",
+      "synonyms": {
+        "区域甲": ["A区", "甲区"]
+      }
+    },
+    "evidence": { "required": true },
+    "gates": { "minAcceptedRatio": 0.9, "verifyCmd": null },
+    "adjudication": {
+      "compare": { "builtin": "exact" },
+      "select": { "builtin": "first-valid" }
+    }
+  },
+  "tables": [
+    {
+      "table": "summary",
+      "key": "record_id",
+      "purpose": "每个记录一行的汇总交付表",
+      "status": "active",
+      "records": { "kind": "list", "values": ["CASE-0001", "CASE-0002"] },
+      "fields": [
+        { "name": "location", "type": "text", "allowEmpty": false },
+        { "name": "measured_value", "type": "number", "allowEmpty": true },
+        { "name": "note", "type": "text", "allowEmpty": true, "requireEvidence": false }
+      ],
+      "gates": { "minAcceptedRatio": 1 }
+    }
+  ]
+}

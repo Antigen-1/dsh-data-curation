@@ -15,9 +15,9 @@ CREATE TABLE summary (
 );
 ```
 
-（缺表或契约字段缺列时，`curation_apply` 会自动建表/加列，并在结果里提示 `created` / `addedColumns`。）
+（缺表或 pin 字段缺列时，`curation_apply` 会自动建表/加列，并在结果里提示 `created` / `addedColumns`。）
 
-契约要点：`size_mm` 允许空白、必须带证据；`site` 不允许空白；通道 `text` 与 `vision`。
+pin 要点：`size_mm` 允许空白、必须带证据；`site` 不允许空白；通道 `text` 与 `vision`；交付表 `summary`，主键 `record_id`。
 
 ### 0 基线
 
@@ -25,25 +25,35 @@ CREATE TABLE summary (
 curation_init { "cwd": "/data/demo", "sources": ["raw"] }
 ```
 
-### 1 契约
+### 1 签署 pin
 
 ```json
-curation_contract {
+curation_pin {
   "cwd": "/data/demo",
-  "contract": {
-    "fields": [
-      { "name": "size_mm", "type": "number", "allowEmpty": true },
-      { "name": "site", "type": "text", "allowEmpty": false }
-    ],
-    "records": { "kind": "list", "values": ["CASE-0001", "CASE-0002"] },
-    "delivery": { "table": "summary", "key": "record_id" },
-    "channels": [{ "name": "text" }, { "name": "vision" }],
-    "gates": { "minAcceptedRatio": 1 }
+  "pin": {
+    "version": 5,
+    "project": { "name": "demo" },
+    "defaults": {
+      "channels": [{ "name": "text" }, { "name": "vision" }],
+      "evidence": { "required": true },
+      "gates": { "minAcceptedRatio": 1 }
+    },
+    "tables": [{
+      "table": "summary",
+      "key": "record_id",
+      "records": { "kind": "list", "values": ["CASE-0001", "CASE-0002"] },
+      "fields": [
+        { "name": "size_mm", "type": "number", "allowEmpty": true },
+        { "name": "site", "type": "text", "allowEmpty": false }
+      ]
+    }]
   }
 }
 ```
 
-配置期可以先用 `"dryRun": true` 反复校验，确认后再正式签署。
+配置期可以先用 `"dryRun": true` 反复校验，确认后再正式签署。多表项目在这里加第二条
+`tables[]`；同一记录键在两张表里互不影响，之后的 submit / compare / apply / verify
+都要带 `table`。
 
 ### 2 采集（两个通道分开提交）
 
@@ -131,7 +141,7 @@ curation_exporter {
 curation_pack { "cwd": "/data/demo", "label": "示例批次" }
 ```
 
-产出 `.curation/packs/<时间戳>.zip`：`project.sqlite` 一致性快照、`contract.json`、`exporters.json`、
+产出 `.curation/packs/<时间戳>.zip`：`project.sqlite` 一致性快照、`pin.json`、`exporters.json`、
 `manifest.json`、`pending.json`（有时才有）、`referenced/tools/export-xlsx.mjs`（被导出器引用的脚本），
 以及记录文件摘要的 `pack.json`。原始材料不复制，基线一起带走以便迁移后继续核对漂移。
 

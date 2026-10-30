@@ -3,7 +3,8 @@ import test from 'node:test'
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { doApply, doCompare, doContract, doInit, doQuery, doStatus, doSubmit, storeFor } from '../lib/core.js'
+import { doApply, doCompare, doInit, doNote, doQuery, doStatus, doSubmit, storeFor } from '../lib/core.js'
+import { doPinCompat as doContract } from './_pin.js'
 
 async function makeProject() {
   const root = await mkdtemp(join(tmpdir(), 'dsh-curation-query-'))
@@ -56,6 +57,7 @@ test('counts 与 decision 聚合一致', async () => {
   assert.equal(res.data.decisions.byReason.no_two_channel_agreement, 2)
   assert.equal(res.data.submissions.length, 2)
   assert.equal(res.data.submissions.find((s) => s.channel === 'text').batches, 1)
+  assert.equal(res.data.tables[0].table, 'summary')
   assert.equal(res.data.runs.total, 1)
   assert.equal(res.data.applied, null)
 })
@@ -97,9 +99,11 @@ test('submissions 与 runs 可查', async () => {
   const subs = await doQuery({ cwd: root, what: 'submissions', channel: 'vision' })
   assert.equal(subs.data.length, 1)
   assert.equal(subs.data[0].fields, 2)
+  assert.equal(subs.data[0].table, 'summary')
   const runs = await doQuery({ cwd: root, what: 'runs' })
   assert.equal(runs.data.length, 1)
   assert.equal(runs.data[0].kind, 'compare')
+  assert.equal(runs.data[0].table, 'summary')
 })
 
 test('schema 列出插件表与 curated 表', async () => {
@@ -135,4 +139,37 @@ test('查询不写库、不加锁', async () => {
   const after = await doStatus({ cwd: root })
   assert.equal(after.decisions.total, before.decisions.total)
   assert.equal(after.lock, null)
+})
+
+test('meta 返回项目、pin、表登记与导出器', async () => {
+  const root = await prepared()
+  const res = await doQuery({ cwd: root, what: 'meta' })
+  assert.equal(res.ok, true, res.error)
+  assert.ok(res.data.project)
+  assert.ok(res.data.pin.hash)
+  assert.equal(res.data.tables[0].table, 'summary')
+  assert.deepEqual(res.data.exporters, [])
+  assert.ok(res.data.meta.pin_hash)
+})
+
+test('note 追加到项目与表，events 可查', async () => {
+  const root = await prepared()
+  assert.equal((await doNote({ cwd: root, text: '口径：大小取长径' })).ok, true)
+  const t = await doNote({ cwd: root, text: 'summary 表来自审计清单', table: 'summary' })
+  assert.equal(t.ok, true, t.error)
+  const all = await doQuery({ cwd: root, what: 'events', kind: 'note' })
+  assert.ok(all.data.some((e) => e.scope === 'table' && e.table === 'summary' && e.text === 'summary 表来自审计清单'))
+  assert.ok(all.data.some((e) => e.scope === 'project' && e.text === '口径：大小取长径'))
+  const onlyTable = await doQuery({ cwd: root, what: 'events', table: 'summary', kind: 'note' })
+  assert.equal(onlyTable.data.length, 1)
+})
+
+test('note 拒绝空内容与未登记的表', async () => {
+  const root = await prepared()
+  const empty = await doNote({ cwd: root, text: '   ' })
+  assert.equal(empty.ok, false)
+  assert.match(empty.error, /不能为空/)
+  const unknown = await doNote({ cwd: root, text: 'x', table: 'nope' })
+  assert.equal(unknown.ok, false)
+  assert.match(unknown.error, /表未登记/)
 })

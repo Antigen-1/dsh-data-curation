@@ -3,7 +3,8 @@ import test from 'node:test'
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { doCompare, doContract, doInit, doSubmit, doVerify } from '../lib/core.js'
+import { doCompare, doInit, doSubmit, doVerify } from '../lib/core.js'
+import { doPinCompat as doContract } from './_pin.js'
 
 async function makeProject(records = ['CASE-0001', 'CASE-0002']) {
   const root = await mkdtemp(join(tmpdir(), 'dsh-curation-inc-'))

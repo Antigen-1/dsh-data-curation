@@ -5,8 +5,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import {
-  doApply, doCompare, doContract, doExport, doInit, doStatus, doSubmit, doVerify,
+  doApply, doCompare, doExport, doInit, doStatus, doSubmit, doVerify,
 } from '../lib/core.js'
+import { doPinCompat as doContract } from './_pin.js'
 
 const WORKSPACE = '.curation/project.sqlite'
 
@@ -110,11 +111,11 @@ test('契约 dryRun 只校验，不冻结；未冻结时比对被阻断', async 
   const dry = await doContract({ cwd: root, contract: contractOf(), dryRun: true })
   assert.equal(dry.ok, true)
   assert.equal(dry.dryRun, true)
-  assert.equal(dry.delivery.table, 'summary')
+  assert.equal(dry.tables[0].table, 'summary')
 
   const blocked = await doCompare({ cwd: root })
   assert.equal(blocked.ok, false)
-  assert.match(blocked.error, /尚未冻结口径契约/)
+  assert.match(blocked.error, /尚未冻结项目 pin/)
 })
 
 test('导出：未落表报错，落表后 CSV/JSONL 是可重建派生物', async () => {
@@ -176,14 +177,14 @@ test('curated 表被手工改过：验收判 delivery_matches 失败', async () 
   assert.equal(verified.checks.find((c) => c.name === 'delivery_matches').status, 'fail')
 })
 
-test('契约封印缺失：验收判 contract_intact 失败', async () => {
+test('pin 封印缺失：验收判 pin_intact 失败', async () => {
   const root = await makeProject()
   await doInit({ cwd: root, sources: ['raw'] })
   await twoChannelRun(root)
-  await rm(join(root, '.curation', 'contract.sha256'))
+  await rm(join(root, '.curation', 'pin.sha256'))
   const verified = await doVerify({ cwd: root })
   assert.equal(verified.status, 'FAIL')
-  assert.equal(verified.checks.find((c) => c.name === 'contract_intact').status, 'fail')
+  assert.equal(verified.checks.find((c) => c.name === 'pin_intact').status, 'fail')
 })
 
 test('只有一个通道有提交时拒绝比对', async () => {

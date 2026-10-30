@@ -6,6 +6,33 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-30
+
+来自一次真实会话（999 条 × 5 字段，6 小时核对）的取证：curation API 只覆盖了前 3 小时的 40 次调用，
+之后 16 小时里操作者直接开工作区库 135 次。这一版补的就是那 135 次背后的缺口。
+
+### Added
+
+- **`curation_query` 只读查询**：`counts` / `pending` / `cells` / `votes` / `submissions` / `runs` / `schema`；
+  `limit` 默认 50 且不设硬上限；`format: "table" | "json"`（table 按 CJK 宽度对齐）。
+  以 readOnly 打开工作区，不加锁、不跑门禁、不写任何东西。
+- **批量裁定协议**：`compare` 命令策略可显式声明 `batch: true`，一次调用判一批
+  （stdin `{kind:"compare-batch", cells:[…]}`，stdout `{results:[…]}`）。真实项目里
+  逐格 spawn 曾产生约 5,000 次子进程，是单次 compare 574s 与两次 abort 的主因。
+- **增量比对**：`curation_compare` 新增 `scope: "auto" | "all"`，默认只重判有新提交或从未判过的格；
+  契约哈希变化时自动回到全量。run 摘要记录 `scope/recomputed/skippedCells/contractHash`。
+
+### Fixed
+
+- **验收失败被渲染成「操作失败」**：`doVerify` 对 `FAIL` / `CONDITIONAL` 返回 `ok:false` 但没有 `error`，
+  `verifyLines` 里的 `failure()` 守卫抢先，把「3,124 格待裁定」吞成一句「✗ 操作失败」，操作者
+  此后不再跑验收。现在只有没有 `checks/status` 的结果才显示「操作失败」，并在尾部输出
+  待裁定原因分布。
+
+### Changed
+
+- 契约版本仍为 **4**：`batch` 是可选字段，旧契约合法（未声明的策略行为完全不变）。
+
 ## [0.4.1] — 2026-10-30
 
 ### Fixed

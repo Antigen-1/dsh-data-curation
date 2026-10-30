@@ -85,6 +85,8 @@ curation_compare { "cwd": "<项目根>" }
 | 两个有效通道都说"未提供" | 接受空白 |
 | 分不清目标对象/字段归属 | 待裁定，先补目标锚定 |
 
+想看清"为什么这格没被接受"，用 `curation_query`（`what: "votes"` 看逐票原值，`what: "pending"` 看待裁定明细，`what: "counts"` 看总量），**不要**直接开工作区库写 SQL。
+
 不一致时补第三通道：再 `curation_submit` 一个独立通道，然后重新 `curation_compare`。策略命令报错（`adjudicator_error` / `adjudicator_invalid`）同样只是待裁定，不要为了让它通过而放宽策略。**不要**手工改工作区数据库（`decision` / `ledger` 表）或 `pending.json`——验收会按 run 存根与 ledger 对账，手改只会让 `decision_runs_recorded` / `ledger_complete` 失败。
 
 ### 阶段 4 · 落表

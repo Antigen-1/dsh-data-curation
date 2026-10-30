@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { statusLines, verifyLines } from '../lib/format.js'
+import { queryLines, statusLines, verifyLines } from '../lib/format.js'
 
 test('statusLines 渲染正常状态', () => {
   const lines = statusLines({
@@ -60,4 +60,65 @@ test('verifyLines 用 ✓/!/✗ 标注检查项', () => {
   assert.match(lines[1], /^✓ manifest_intact/)
   assert.match(lines[2], /^! pending_cells/)
   assert.match(lines[3], /^✗ delivery_matches/)
+})
+
+test('verifyLines 把 FAIL 当结论渲染，而不是「操作失败」', () => {
+  const lines = verifyLines({
+    ok: false,
+    status: 'FAIL',
+    checks: [{ name: 'manifest_intact', status: 'fail', detail: '源基线漂移' }],
+    accepted: 0,
+    pending: 3,
+    total: 3,
+    pendingByReason: { no_valid_channel: 2, missing_evidence: 1 },
+  })
+  const text = lines.join('\n')
+  assert.equal(lines[0], '验收结果：FAIL')
+  assert.match(text, /✗ manifest_intact: 源基线漂移/)
+  assert.match(text, /待裁定原因：no_valid_channel=2，missing_evidence=1/)
+  assert.doesNotMatch(text, /操作失败/)
+})
+
+test('verifyLines 在没有 checks 且没有 error 时才显示「操作失败」', () => {
+  assert.deepEqual(verifyLines({ ok: false }), ['✗ 操作失败'])
+  assert.deepEqual(verifyLines({ ok: false, error: '锁被占用' }), ['✗ 锁被占用'])
+})
+
+test('queryLines 渲染 counts / pending / votes / json', () => {
+  const counts = queryLines({
+    ok: true,
+    what: 'counts',
+    data: {
+      decisions: { total: 6, accepted: 4, pending: 2, byReason: { no_two_channel_agreement: 2 }, byField: [{ field: 'size', accepted: 2, pending: 1 }] },
+      submissions: [{ channel: 'text', batches: 1, records: 3 }],
+      runs: { total: 2, lastAt: '2026-10-30T00:00:00Z' },
+      applied: { ops: 4, appliedAt: '2026-10-30T00:10:00Z' },
+    },
+  }).join('\n')
+  assert.match(counts, /结论：接受 4 \/ 待裁定 2（共 6 格）/)
+  assert.match(counts, /待裁定原因：no_two_channel_agreement=2/)
+  assert.match(counts, /落表：写入 4 格/)
+
+  const pending = queryLines({
+    ok: true,
+    what: 'pending',
+    data: [{ record: 'CASE-0001', field: 'size', reason: 'competing_majorities', channels: ['text=1.2cm', 'vision=1.3cm'] }],
+  }).join('\n')
+  assert.match(pending, /CASE-0001/)
+  assert.match(pending, /competing_majorities/)
+  assert.match(pending, /text=1\.2cm,vision=1\.3cm/)
+
+  const votes = queryLines({
+    ok: true,
+    what: 'votes',
+    data: { record: 'CASE-0001', field: 'size', found: true, status: 'accepted', votes: [
+      { channel: 'text', valid: true, present: true, raw: '1.2cm', evidence: { page: 3 } },
+      { channel: 'vision', valid: false, present: true, raw: '?' },
+    ] },
+  }).join('\n')
+  assert.match(votes, /✓ text: 1\.2cm \[p3\]/)
+  assert.match(votes, /✗ vision: \?/)
+
+  const asJson = queryLines({ ok: true, what: 'counts', data: { decisions: { total: 1 } } }, { format: 'json' }).join('\n')
+  assert.equal(JSON.parse(asJson).decisions.total, 1)
 })

@@ -101,7 +101,7 @@ dsh plugin --profile <profile> add ./dsh-data-curation
 | `curation_init` | 建立源基线（只读材料） | `cwd`、`sources[]`、`force` |
 | `curation_contract` | 冻结口径契约（`dryRun` 只校验） | `cwd`、`contract`、`force`、`dryRun` |
 | `curation_submit` | 提交某通道某批结果 | `cwd`、`channel`、`batch`、`records[]` |
-| `curation_compare` | 逐格比对与裁定 | `cwd`、`records[]?`、`fields[]?` |
+| `curation_compare` | 逐格比对与裁定（默认增量） | `cwd`、`records[]?`、`fields[]?`、`scope`（`auto`/`all`） |
 | `curation_apply` | 按键落表（upsert） | `cwd`、`dryRun` |
 | `curation_verify` | 门禁验收 | `cwd` |
 | `curation_export` | 导出派生物 | `cwd`、`format`、`out` |
@@ -109,6 +109,7 @@ dsh plugin --profile <profile> add ./dsh-data-curation
 | `curation_pack` | 打包整个项目 | `cwd`、`out`、`label` |
 | `curation_progress` | 在输入框上方挂进度条（会话级，纯数据） | `upsert[]`、`remove[]`、`clear` |
 | `curation_status` | 只读汇总 | `cwd` |
+| `curation_query` | 只读查询：计数、待裁定、逐格、逐票、提交、运行、库结构 | `cwd`、`what`、`record`、`field`、`status`、`channel`、`reason`、`limit`、`format` |
 
 所有工具都接受可选 `stateDir`；`cwd` 是项目根目录的绝对路径。
 
@@ -194,6 +195,62 @@ dsh plugin --profile <profile> add ./dsh-data-curation
 - 由 `select` 合成出的写法（如把 `A、B` 写成 `A、B` 而另一通道是 `B、A`）在决策与
   `decision.synthesized` 里留痕，`curation_status` 会显示合成值格数。
 - `compare` 通过后仍需证据（`evidence.required`）与两票，策略不改变"至少两通道"这条底线。
+
+### 一次判一批（`batch`）
+
+逐格起子进程在真实项目里是灾难：999 条 × 5 字段 ≈ 5,000 次 `spawn`，单次 compare 能跑到
+10 分钟。`compare` 的命令策略可以显式声明批量：
+
+```json
+"adjudication": { "compare": { "command": "python3 tools/adjudicate.py", "batch": true } }
+```
+
+- stdin 一次收到 `{ kind: "compare-batch", cells: [{ record, field, values }] }`；
+- stdout 回 `{ results: [{ record, field, groups: [[0,1]] }] }`（每个 cell 一条）；
+- 缺结果、重复格、下标越界都按格进待裁定或整批报错，**不会**悄悄回落到逐格；
+- 只有显式写 `batch: true` 才走批量；`batch` 只允许出现在命令策略的 `compare` 上。
+
+### 增量比对
+
+`curation_compare` 默认 `scope: "auto"`：只重判"有新提交或从未判过"的格，其余保持上次结论，
+并在 run 摘要里记下重判/跳过的格数。改了契约（哈希变化）或显式 `scope: "all"` 时回到全量。
+
+## 查询（curation_query）
+
+核对到一半时，最常做的不是改表，而是**问清情况**：哪些格还没定、为什么没定、
+某个通道当时写的是什么。以前只能自己开库写 SQL，0.5.0 把这层查询做成只读工具：
+
+```text
+curation_query({ cwd, what: "counts" })
+curation_query({ cwd, what: "pending", reason: "competing_majorities", limit: 20 })
+curation_query({ cwd, what: "cells", record: "CASE-0001" })
+curation_query({ cwd, what: "votes", record: "CASE-0001", field: "size" })
+curation_query({ cwd, what: "submissions", channel: "vision", limit: 10 })
+curation_query({ cwd, what: "runs", limit: 5 })
+curation_query({ cwd, what: "schema" })
+```
+
+- `what`：`counts` / `pending` / `cells` / `votes` / `submissions` / `runs` / `schema`。
+- `limit` 默认 **50**，不设硬上限（大结果自行带 `limit`）。
+- `format: "json"` 给脚本消费；默认 `table` 是人读的等宽表格（按 CJK 宽度对齐）。
+- **只读**：以 `readOnly` 打开工作区，不加锁、不跑门禁、不写任何东西。
+- `cells` 返回每格**最新**结论（含归一化值、采纳通道、异议、证据）。
+- `votes` 返回该格最新一次比对里每个通道的原值与页码——这是回答"为什么接受/为什么没接受"的入口。
+
+## 真实使用里暴露的缺口
+
+2026-10-30 的一份真实会话日志里，curation API 只在前 3 小时被调用 40 次；之后 16 小时，
+操作者改用 `run_code` 直接开工作区库 135 次。0.5.0 针对的就是这 135 次：
+
+| 当时只能开库做的事 | 现在的入口 |
+| --- | --- |
+| `SELECT status, reason, COUNT(*) … GROUP BY` | `curation_query what="counts"` |
+| 翻 3,124 条待裁定明细 | `curation_query what="pending"` |
+| 看某格几个通道分别写了什么 | `curation_query what="votes"` |
+| 看每次 compare 跑了多久、跳过了多少格 | `curation_query what="runs"` |
+| 确认库里有哪些表、curated 表有哪些列 | `curation_query what="schema"` |
+| 每次只改一格却要全量重判 23,120 格 | `curation_compare` 默认增量（`scope: "auto"`） |
+| 自定义策略按"格"起子进程（~5,000 次） | 契约 `batch: true`，一次命令判一批 |
 
 ## 导出与打包
 
@@ -326,7 +383,7 @@ sqlite3 .curation/project.sqlite "SELECT record, field, status, reason FROM deci
 ## 开发
 
 ```bash
-node --test          # 107 个测试（端到端 / 判定策略 / 迁移 / 工具渲染 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
+node --test          # 131 个测试（端到端 / 判定策略 / 批量策略 / 迁移 / 查询 / 工具渲染 / 加固 / 锁 / 原子性 / 导出器 / 打包 / 进度条 / 客户端 bundle）
 npm run selfcheck    # 发布前泄漏扫描 + 语法检查 + 包清单核对
 npm pack --dry-run   # 查看发布内容
 ```
@@ -335,6 +392,6 @@ npm pack --dry-run   # 查看发布内容
 
 - 源码与 issue：<https://github.com/Antigen-1/dsh-data-curation>
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)；安全问题请走私密渠道：[SECURITY.md](SECURITY.md)
-- 版本：`0.4.1`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
+- 版本：`0.5.0`（npm 上尚未发布；`npm view dsh-data-curation` 目前为 404，包名可用）
 
 许可证：MIT。

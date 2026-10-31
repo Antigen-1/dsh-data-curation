@@ -4,6 +4,22 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.7.1] — 2026-10-31
+
+修复 0.7.0 批量 select 的发布验收阻断项；不改 pin 或数据库格式。
+
+### Fixed
+
+- **批量 select 无法签署**：pin/契约校验现在允许 `adjudication.select.batch`，并保持
+  `batch: true` 只能与外部 `command` 一起使用。
+- **重复结果中断整批**：批量 select 对同一格返回多个结果时，只把该格标为
+  `adjudicator_error`，同批其他格继续裁定，不再让异常逃逸出 `adjudicate`。
+
+### Tests
+
+- 新增「pin 签署 → 双通道提交 → compare → 一次批量 select 调用」端到端回归，以及
+  重复格隔离用例。
+
 ## [0.7.0] — 2026-10-31
 
 性能与审计增强，响应 0.6.0 反馈中「逐格裁定太慢 / 载荷太大 / 审计 ID 缺失」的部分。

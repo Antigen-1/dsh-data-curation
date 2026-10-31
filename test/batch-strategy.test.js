@@ -60,7 +60,7 @@ async function callsOf(root) {
   return text.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line))
 }
 
-test('契约校验：batch 只允许在 compare 的命令策略上', () => {
+test('契约校验：batch 只允许在 compare/select 的命令策略上', () => {
   const ok = validateContract(baseContract(true))
   assert.equal(ok.ok ?? ok.errors?.length === 0, true)
   assert.equal(validateContract(baseContract(true)).errors.length, 0)
@@ -72,7 +72,11 @@ test('契约校验：batch 只允许在 compare 的命令策略上', () => {
   const selectBatch = baseContract(true)
   selectBatch.adjudication.compare = { command: 'node', args: ['x.mjs'] }
   selectBatch.adjudication.select = { command: 'node', args: ['y.mjs'], batch: true }
-  assert.match(validateContract(selectBatch).errors.join('\n'), /batch 只对 compare 有意义/)
+  assert.equal(validateContract(selectBatch).errors.length, 0)
+
+  const selectBuiltinBatch = baseContract(true)
+  selectBuiltinBatch.adjudication.select = { builtin: 'first-valid', batch: true }
+  assert.match(validateContract(selectBuiltinBatch).errors.join('\n'), /batch 只能与 command 一起使用/)
 
   const notBool = baseContract(true)
   notBool.adjudication.compare.batch = 'yes'

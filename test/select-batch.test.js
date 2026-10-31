@@ -4,6 +4,8 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { adjudicate } from '../lib/adjudicate.js'
+import { doCompare, doInit, doPin, doSubmit } from '../lib/core.js'
+import { toPin } from './_pin.js'
 
 const SCRIPT = `import { readFileSync, appendFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -20,6 +22,7 @@ if (payload.kind === 'select-batch') {
   let results = payload.cells.map((c) => ({ record: c.record, field: c.field, index: 0 }))
   if (mode === 'missing') results = results.slice(0, -1)
   if (mode === 'badindex') results = results.map((r, i) => (i === 0 ? { ...r, index: 99 } : r))
+  if (mode === 'duplicate') results = [results[0], ...results]
   process.stdout.write(JSON.stringify({ results }))
 } else {
   process.stdout.write(JSON.stringify({ index: 0 }))
@@ -88,6 +91,43 @@ test('select-batch：下标越界只把该格标成 adjudicator_error', async ()
   assert.equal(pending.length, 1)
   assert.equal(pending[0].reason, 'adjudicator_error')
   assert.match(pending[0].detail, /下标越界/)
+})
+
+test('select-batch：重复结果只把该格标成 adjudicator_error，其余照常接受', async () => {
+  const root = await makeRoot('duplicate')
+  const decisions = adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
+  const pending = decisions.filter((d) => d.status === 'pending')
+  assert.equal(pending.length, 1)
+  assert.equal(pending[0].record, 'R1')
+  assert.equal(pending[0].field, 'size')
+  assert.equal(pending[0].reason, 'adjudicator_error')
+  assert.match(pending[0].detail, /重复的格/)
+  assert.equal(decisions.filter((d) => d.status === 'accepted').length, 5)
+})
+
+test('select-batch：pin 签署后经 compare 一次命令判完全部格', async () => {
+  const root = await makeRoot()
+  await mkdir(join(root, 'raw'), { recursive: true })
+  await writeFile(join(root, 'raw', 'source.txt'), 'synthetic source\n', 'utf8')
+  assert.equal((await doInit({ cwd: root, sources: ['raw'] })).ok, true)
+  const signed = await doPin({ cwd: root, pin: toPin(contractOf()) })
+  assert.equal(signed.ok, true, JSON.stringify(signed.errors))
+  for (const channel of ['text', 'vision']) {
+    const submitted = await doSubmit({
+      cwd: root, channel, batch: 'B001',
+      records: ['R1', 'R2', 'R3'].map((record_id) => ({
+        record_id, status: 'valid', values: { size: '1.2cm', note: `n-${record_id}` }, evidence: {},
+      })),
+    })
+    assert.equal(submitted.ok, true, submitted.error)
+  }
+  const compared = await doCompare({ cwd: root, scope: 'all' })
+  assert.equal(compared.ok, true, compared.error)
+  assert.equal(compared.accepted, 6)
+  assert.equal(compared.pending, 0)
+  const calls = await callsOf(root)
+  assert.equal(calls.length, 1)
+  assert.deepEqual(calls[0], { kind: 'select-batch', cells: 6 })
 })
 
 test('未开 batch 时仍然逐格调用（兼容旧 pin）', async () => {

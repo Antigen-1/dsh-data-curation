@@ -249,7 +249,7 @@ pin 是项目的口径快照，分两层：
 ## 开发
 
 ```bash
-node --test          # 151 个测试
+node --test          # 153 个测试
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -259,4 +259,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.7.0（GitHub tag `v0.7.0`）；尚未发布到 npm。
+- 当前版本 0.7.1（GitHub tag `v0.7.1`）；尚未发布到 npm。

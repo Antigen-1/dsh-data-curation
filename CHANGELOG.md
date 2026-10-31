@@ -4,6 +4,35 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.7.0] — 2026-10-31
+
+性能与审计增强，响应 0.6.0 反馈中「逐格裁定太慢 / 载荷太大 / 审计 ID 缺失」的部分。
+本轮不改 pin 格式；已有工作区打开时自动 v4→v5。
+
+### Added
+
+- **批量 select 策略**：`adjudication.select` 支持 `"batch": true`，一次命令判一批格
+  （stdin `{kind:"select-batch", cells:[…]}` → stdout `{results:[…]}`）。单格结果缺失、
+  重复或下标越界只把该格标成 `adjudicator_error`，不影响同批其它格。
+- **待裁定分页**：`curation_compare` 默认只回前 100 条 `pendingCells`，新增
+  `pendingTotal` 与 `pendingTruncated`；`full: true` 返回全部（配合 `scope: "all"` 可重算）。
+- **审计 ID**：compare 结果带 `pinId` / `tablePinRevision` / `pinnedAt`；apply 结果带
+  `applyRunId` / `decisionRunId`，可回查 `curation_query`。
+- **备份保留**：`curation_apply` 的 `keepBackups`（默认 5，`0` 不清理）在成功后按文件名
+  倒序清理旧快照。
+
+### Changed
+
+- **changed-only ledger**：schema v5 给 `ledger` 加 `changed` 列；落表只对真实变化的
+  格子写 ledger，重复落表是 no-op（不备份、不写行）。`ledger_complete` 同步改为只要求
+  实际变化格有留痕。
+- **比较/落表提示**：当选择策略逐格 spawn 且格数 > 200 时，compare 结果带 `warnings`
+  提示给策略加 `"batch": true`。
+
+### Fixed
+
+- `v3` 工作区迁移报错文案从「迁移到 v4」改为「迁移到 v5」（实际会连迁两级）。
+
 ## [0.6.1] — 2026-10-31
 
 修 0.6.0 迁移交接与审计链的 12 项问题（来自真实 v3 工作区迁移反馈）。

@@ -3,7 +3,7 @@
 一个项目 = **只读原始材料** + **一个工作区 SQLite 文件**。这个文件是本插件唯一会写的地方，
 pin、导出器、通道提交、结论、落表留痕、事件、curated 交付表全部在它里面。
 
-本文描述「现在的布局」：0.6.0，`STATE_SCHEMA_VERSION = 4`。改表结构必须同时改这里的
+本文描述「现在的布局」：0.7.0，`STATE_SCHEMA_VERSION = 5`。改表结构必须同时改这里的
 版本号与本文档。
 
 ## 1. 文件与目录
@@ -19,7 +19,7 @@ pin、导出器、通道提交、结论、落表留痕、事件、curated 交付
 ├── pin.sha256                          封印（一行哈希；与库内的哈希互为校验）
 ├── pending.json                        待裁定清单的人读镜像（权威在 decision 表）
 ├── schema.sql                          当前 schema 的导出（派生物，user_version 过期即重建）
-├── migration-report.json               v3→v4 迁移报告（占位 pin、records 漂移、回填计数）
+├── migration-report.json               v3/v4 迁移报告（占位 pin、records 漂移、回填计数）
 ├── provenance-repair.json              0.6.0 旧库的 provenance 回填报告（一次性）
 ├── backups/<stamp>__project.sqlite     落表 / 迁移前的完整快照（VACUUM INTO）
 ├── packs/<name>.zip                    项目打包产物
@@ -33,9 +33,10 @@ pin、导出器、通道提交、结论、落表留痕、事件、curated 交付
 
 | 项 | 值 |
 | --- | --- |
-| `PRAGMA user_version` | `4`（`lib/db.js` 的 `STATE_SCHEMA_VERSION`） |
+| `PRAGMA user_version` | `5`（`lib/db.js` 的 `STATE_SCHEMA_VERSION`） |
 | v2 → v3 | 自动补 `decision.synthesized` 列 |
 | v3 → v4 | 必须先有 `backupPath`；迁移建 project / table_registry / pin / table_pin / 事件 / run_table / applied_table，把旧 `contract` 转为 revision 1 的 `table_pin`，生成 v5 聚合 pin（占位，`migration_pending=1`），写 `pin.sha256` / `pin.json` / `meta.pin_id` / `migration-report.json`，并回填旧 decision/ledger 的 provenance |
+| v4 → v5 | 给 `ledger` 补 `changed` 列（默认 1），已有行按「落过表」记为变化 |
 | v1 | 拒绝打开：备份后删除 `.curation/` 重新 `curation_init` |
 | 版本更高 | 拒绝打开并提示升级插件 |
 | 建库时机 | 第一次 `curation_init`（或任何需要写库的操作） |
@@ -253,12 +254,14 @@ CREATE TABLE ledger (
   record TEXT NOT NULL, field TEXT NOT NULL,
   old_value TEXT, new_value TEXT,
   adopted TEXT, dissent TEXT, evidence TEXT,
-  run_id TEXT, decision_id INTEGER, apply_run_id TEXT
+  run_id TEXT, decision_id INTEGER, apply_run_id TEXT,
+  changed INTEGER NOT NULL DEFAULT 1
 );
 CREATE INDEX ledger_cell ON ledger (table_id, record, field, id);
 ```
 
-每次落表对每个写过的格子追加一行；verify 用它检查「交付表每个接受值都能找到留痕」。
+落表只对**真实变化**的格子追加一行（`changed = 1`）；重复落表是 no-op，不写行。
+verify 的 `ledger_complete` 只要求接受值中"实际被改动"的格有留痕。
 
 ### 4.11 `run` / `run_table`
 
@@ -321,7 +324,8 @@ CREATE TABLE "<table>" (
 
 ## 7. 备份与打包
 
-- 落表前：`VACUUM INTO .curation/backups/<stamp>__project.sqlite`。
+- 落表前：`VACUUM INTO .curation/backups/<stamp>__project.sqlite`；no-op 落表不备份。
+- 备份保留：`curation_apply` 的 `keepBackups`（默认 5）在成功后按文件名倒序清理旧快照；`0` 表示保留全部。
 - v3 → v4 迁移前：`.curation/backups/<stamp>__pre-v4.sqlite`。
 - 打包：`curation_pack` 先 `VACUUM INTO` 临时快照，再连同 `pin.json`、`exporters.json`、
   `manifest.json`、`pending.json`、被引用的外部脚本（verifyCmd / adjudication 命令）写进 zip。
@@ -339,7 +343,7 @@ CREATE TABLE "<table>" (
 ## 9. 检查与排障
 
 ```bash
-sqlite3 .curation/project.sqlite "PRAGMA user_version;"        # 应为 4
+sqlite3 .curation/project.sqlite "PRAGMA user_version;"        # 应为 5
 sqlite3 .curation/project.sqlite ".tables"
 sqlite3 .curation/project.sqlite "SELECT id, hash, pinned_at FROM pin ORDER BY pinned_at DESC LIMIT 3;"
 sqlite3 .curation/project.sqlite "SELECT table_id, revision FROM table_pin ORDER BY table_id, revision;"
@@ -355,5 +359,5 @@ sqlite3 .curation/project.sqlite "SELECT table_id, ops FROM applied_table ORDER 
 ## 10. 体量参考
 
 10^3 记录 × 20 字段 ≈ 2 万格：`decision` 与 `ledger` 各约 2 万行（重跑会更多），
-库文件通常 10–50 MB；`backups/` 随每次落表线性增长，落表完成后可手工清理旧快照。
+库文件通常 10–50 MB；`backups/` 随每次有变化的落表增长，`keepBackups` 会自动保留最近几份。
 WAL 异常增长通常意味着长事务或崩溃残留。

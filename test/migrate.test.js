@@ -107,7 +107,7 @@ test('v3 工作区迁移到 v4：先备份，再补 table 维度并把旧契约�
     assert.equal(Number(old.prepare('PRAGMA user_version').get().user_version), 3)
     old.close()
 
-    assert.equal(Number(db.prepare('PRAGMA user_version').get().user_version), 4)
+    assert.equal(Number(db.prepare('PRAGMA user_version').get().user_version), 5)
     const subCols = db.prepare("SELECT name FROM pragma_table_info('submission')").all().map((r) => r.name)
     assert.ok(subCols.includes('table_id'))
     assert.equal(db.prepare('SELECT table_id FROM submission').get().table_id, 'summary')

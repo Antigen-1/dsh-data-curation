@@ -65,7 +65,8 @@ v5：
 ## 3. 迁移步骤
 
 1. 备份整个 `.curation/`（或至少 `project.sqlite` + `manifest.json`）；
-2. 升级插件后第一次打开工作区时，schema 会自动从 v3 迁到 v4；
+2. 升级插件后第一次打开工作区时，schema 会自动从 v3 逐级迁到 v5
+   （v3→v4 建表与占位 pin，v4→v5 补 `ledger.changed`）；
    若当前是 v3，迁移前**必须**先有备份，否则插件会拒绝打开；
 3. 把旧契约按上面的形状手工展开，先跑
    `curation_pin({ cwd, pin, dryRun: true })` 看校验结果；**dryRun 返回的
@@ -88,7 +89,7 @@ v5：
 - `pin 封印与工作区存储不一致`：有人手改了 `pin.json` 或库里的 `pin` 行；
   重新签署（`force: true` + `reason`）即可。
 - `force 重签必须提供 reason`：重签已有 pin 时必须说明原因（写入项目事件）。
-- `工作区需要从 v3 迁移到 v4：迁移前必须先创建备份`：先复制
+- `工作区需要从 v3 迁移到 v5：迁移前必须先创建备份`：先复制
   `.curation/project.sqlite`（或整个目录）再重试。
 - `schema.sql 头与当前 user_version 不一致`：`schema.sql` 是派生物，下次打开
   工作区会重建；如果一直不消失，说明有进程绕过插件改了 schema。

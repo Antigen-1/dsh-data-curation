@@ -128,9 +128,11 @@ pin 声明的同义词。`strict` 只做全半角与空白。
   或 `{ "command": "node policy/select.mjs" }`。
 - 外部命令在项目根执行，stdin 收 `{ kind, table, record, field, values, options }`；`compare` 回
   `{ "groups": [[0,1]] }`，`select` 回 `{ "index": 0 }` 或 `{ "value": "…" }`。
-- 字段多、记录多时给 `compare` 命令加 `"batch": true`：一次调用收
-  `{ "kind": "compare-batch", "cells": [{ "record", "field", "values" }] }`，回
-  `{ "results": [{ "record", "field", "groups" }] }`。逐格 spawn 在大项目里会慢到不可用。
+- 字段多、记录多时给 `compare` 或 `select` 命令加 `"batch": true`：一次调用收
+  `{ "kind": "compare-batch", "cells": [{ "record", "field", "values" }] }`（select 用
+  `"select-batch"`，cells 形状相同），回 `{ "results": [{ "record", "field", "groups" }] }`
+  （select 回 `{ "record", "field", "index" }` 或 `{ "record", "field", "value" }`）。
+  逐格 spawn 在大项目里会慢到不可用；单格结果缺失/非法只影响那一格。
 - **策略失败不是"回到默认"**：命令非零退出、超时、输出不合法、下标越界，该格一律进待裁定
   （`adjudicator_error`）。宁可留白，不可猜。
 - 换策略必须重新签署 pin；策略不改变底线：仍然需要两个有效通道、仍然需要证据。

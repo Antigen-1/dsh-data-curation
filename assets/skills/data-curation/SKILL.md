@@ -95,14 +95,14 @@ curation_compare { "cwd": "<项目根>" }   // 多表项目加 "table": "summary
 
 想看清"为什么这格没被接受"，用 `curation_query`（`what: "votes"` 看逐票原值，`what: "pending"` 看待裁定明细，`what: "counts"` 看总量），**不要**直接开工作区库写 SQL。
 
-不一致时补第三通道：再 `curation_submit` 一个独立通道，然后重新 `curation_compare`。多表项目记得带 `table`；只想重判改过的格子时 `scope: "auto"`（默认），需要全量时 `scope: "all"`。策略命令报错（`adjudicator_error` / `adjudicator_invalid`）同样只是待裁定，不要为了让它通过而放宽策略。**不要**手工改工作区数据库（`decision` / `ledger` 表）或 `pending.json`——验收会按 run 存根与 ledger 对账，手改只会让 `decision_runs_recorded` / `ledger_complete` 失败。
+不一致时补第三通道：再 `curation_submit` 一个独立通道，然后重新 `curation_compare`。多表项目记得带 `table`；只想重判改过的格子时 `scope: "auto"`（默认），需要全量时 `scope: "all"`。待裁定多时默认只回前 100 条（`pendingTotal` 给出总数），需要完整清单加 `full: true`。策略命令加 `"batch": true` 可一次判一批格（compare 与 select 都支持），显著减少进程启动开销。策略命令报错（`adjudicator_error` / `adjudicator_invalid`）同样只是待裁定，不要为了让它通过而放宽策略。**不要**手工改工作区数据库（`decision` / `ledger` 表）或 `pending.json`——验收会按 run 存根与 ledger 对账，手改只会让 `decision_runs_recorded` / `ledger_complete` 失败。
 
 ### 阶段 4 · 落表
 ```json
 curation_apply { "cwd": "<项目根>", "dryRun": true }   // 多表加 "table"
 curation_apply { "cwd": "<项目根>" }
 ```
-勾选 dryRun 看样例；正式写入自动执行：`VACUUM INTO` 备份 → 单事务内按键建行（`INSERT ... ON CONFLICT DO NOTHING`）→ 逐格 UPDATE → 回读比对 → 逐格 ledger。任一格对不上即整体回滚，不得分步重试掩盖；缺表/缺列会自动创建（结果里会提示 `created` / `addedColumns`）。重复落表是幂等的。
+勾选 dryRun 看样例；正式写入自动执行：`VACUUM INTO` 备份 → 单事务内按键建行（`INSERT ... ON CONFLICT DO NOTHING`）→ 逐格 UPDATE → 回读比对 → 逐格 ledger。任一格对不上即整体回滚，不得分步重试掩盖；缺表/缺列会自动创建（结果里会提示 `created` / `addedColumns`）。重复落表是幂等的：只给真实变化的格子写 ledger，no-op 不备份、不写行；`keepBackups`（默认 5，`0` 保留全部）控制备份保留数。结果里的 `applyRunId` / `decisionRunId` 可回查 `curation_query`。
 
 ### 阶段 5 · 验收
 ```json

@@ -91,7 +91,7 @@ pin 是项目的口径快照，分两层：
 1 签署    curation_pin         项目默认 + 每表口径 → 哈希封印（dryRun 只校验）
 2 采集    curation_submit      每张表、每个通道独立提交（禁止先合并再提交）
 3 比对    curation_compare     逐格比对（策略由 pin 决定）→ 接受 / 待裁定
-4 落表    curation_apply       VACUUM INTO 备份 → 单事务 upsert + 逐格回读
+4 落表    curation_apply       VACUUM INTO 备份 → 单事务 upsert + 逐格回读（只留真实变化）
 5 验收    curation_verify      项目级 5 项 + 每表 13 项门禁，FAIL > CONDITIONAL > PASS
 6 导出    curation_export      内置 csv/jsonl/markdown/sqlite，或多表 sqlite 快照
 7 打包    curation_pack        工作区快照 + pin + 导出器 + 基线 + 被引用脚本 → zip
@@ -107,8 +107,8 @@ pin 是项目的口径快照，分两层：
 | `curation_init` | 建立项目、记录源基线、预告表 | `sources`、`tables`、`force` |
 | `curation_pin` | 签署/校验项目 pin | `pin`、`dryRun`、`force`、`reason` |
 | `curation_submit` | 提交一个通道对一批记录的抽取 | `table`、`channel`、`batch`、`records` |
-| `curation_compare` | 逐格比对，写入结论 | `table`、`records`、`fields`、`scope` |
-| `curation_apply` | 把接受值写进 curated 表 | `table`、`dryRun` |
+| `curation_compare` | 逐格比对，写入结论 | `table`、`records`、`fields`、`scope`、`full` |
+| `curation_apply` | 把接受值写进 curated 表 | `table`、`dryRun`、`keepBackups` |
 | `curation_verify` | 项目级 + 表级验收门禁 | `table`、`includeRetired` |
 | `curation_status` | 只读汇总（项目 / pin / 表 / 最近落表 / 锁） | — |
 | `curation_query` | 只读查询：counts / pending / cells / votes / submissions / runs / meta / events / schema | `what`、`table`、`record`、`field`、`status`、`channel`、`reason`、`limit`、`format` |
@@ -144,9 +144,9 @@ pin 是项目的口径快照，分两层：
   `{kind:"compare"|"select", table, field, record, values, options}`，stdout 返回
   `{groups}` 或 `{index}` / `{value}`；非零退出或输出不合法 → 该格进待裁定
   （`adjudicator_error`），**不回落默认策略**；
-- 批量：compare 策略加 `"batch": true` 时，一次命令判一批格（stdin
-  `{kind:"compare-batch", cells:[…]}`，stdout `{results:[{record,field,groups}]}`），
-  用于避免逐格 spawn；
+- 批量：compare 与 select 策略都支持 `"batch": true`：一次命令判一批格（stdin
+  `{kind:"compare-batch", cells:[…]}` / `{kind:"select-batch", cells:[…]}`，stdout
+  `{results:[…]}`），用于避免逐格 spawn；单格结果缺失或非法只影响那一格；
 - 合成值（如 `ordered-groups`）会标 `synthesized`，验收会单独计数。
 
 ## 真实项目里的用法
@@ -157,7 +157,8 @@ pin 是项目的口径快照，分两层：
    `curation_submit({ table: "esd_main", channel: "text", batch: "B001", records: [...] })`；
 4. `curation_compare({ table: "esd_main" })`；`curation_query({ what: "pending" })`
    看未决原因，逐条补证或由人裁定；
-5. `curation_apply({ table: "esd_main" })`（先 `dryRun` 看会写哪几格）；
+5. `curation_apply({ table: "esd_main" })`（先 `dryRun` 看会写哪几格；重复落表是
+   no-op，不备份也不新增 ledger 行；`keepBackups` 控制备份保留数，默认 5）；
 6. `curation_verify()` 看项目级 + 各表状态；PASS 前不要宣称"核对完成"；
 7. `curation_export({ format: "sqlite" })` 或指定表导出 csv；
 8. `curation_pack()` 归档；换机器后先 `curation_init` 的记录仍在 manifest 里，
@@ -180,7 +181,7 @@ pin 是项目的口径快照，分两层：
 `records_resolvable`、`coverage`（每格都有结论）、`accepted_two_channels`、
 `evidence_present`、`delivery_matches`（curated 表与结论一致）、
 `decision_runs_recorded`、`ledger_complete`、`accept_ratio`、`pending_cells`、
-`verify_cmd`。
+`verify_cmd`。`ledger_complete` 只要求"真实变化"的格有 ledger 行（no-op 不写行）。
 
 结论：`FAIL > CONDITIONAL > PASS`；`pending_cells` 只把结果降为 CONDITIONAL。
 
@@ -218,9 +219,10 @@ pin 是项目的口径快照，分两层：
 
 ## 迁移
 
-- **schema**：`user_version` 现在是 `4`；从 v3 打开时会先要求备份，再自动迁移
-  （旧 `contract` 转为 revision 1 的 `table_pin`，`legacy_contract_hash` 保留原哈希；
-  同时写封印 / `meta.pin_id` / `migration-report.json`，并置 `migration_pending`）。
+- **schema**：`user_version` 现在是 `5`；从 v3/v4 打开时先要求备份，再按版本逐级
+  迁移（v3 的旧 `contract` 转为 revision 1 的 `table_pin`，`legacy_contract_hash` 保留
+  原哈希，同时写封印 / `meta.pin_id` / `migration-report.json` 并置
+  `migration_pending`；v4→v5 只补 `ledger.changed` 列）。
 - **迁移中间态**：占位 pin 需要重签（`force` + `reason`）才退出中间态；记录口径
   漂移会在 `curation_status` 里列出多/少的记录号，不会静默改 `records`。
 - **0.6.0 旧库**：打开时一次性回填 decision/ledger 的 provenance（`provenance-repair.json`）。
@@ -247,7 +249,7 @@ pin 是项目的口径快照，分两层：
 ## 开发
 
 ```bash
-node --test          # 139 个测试
+node --test          # 151 个测试
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -257,4 +259,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.6.1（GitHub tag `v0.6.1`）；尚未发布到 npm。
+- 当前版本 0.7.0（GitHub tag `v0.7.0`）；尚未发布到 npm。

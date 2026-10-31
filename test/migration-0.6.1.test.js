@@ -91,7 +91,7 @@ test('v3 迁移后工作区自解释：封印/meta.pin_id/迁移中间态/记录
   assert.ok(existsSync(store.pinMirrorPath), '迁移必须写 pin.json')
   const report = JSON.parse(readFileSync(store.migrationReportPath, 'utf8'))
   assert.equal(report.fromSchema, 3)
-  assert.equal(report.toSchema, 4)
+  assert.equal(report.toSchema, 5)
   assert.deepEqual(report.records.drift.added, ['CASE-3'])
   assert.equal(report.records.drift.removedCount, 0)
 
@@ -114,7 +114,7 @@ test('v3 迁移后工作区自解释：封印/meta.pin_id/迁移中间态/记录
     assert.equal(ledger.apply_run_id, 'apply-1')
     assert.equal(db.prepare('SELECT pin_id FROM run_table').get().pin_id, report.pin.id)
     assert.ok(existsSync(store.schemaPath), '必须导出 schema.sql')
-    assert.match(readFileSync(store.schemaPath, 'utf8'), /user_version=4/)
+    assert.match(readFileSync(store.schemaPath, 'utf8'), /user_version=5/)
   } finally {
     db.close()
   }

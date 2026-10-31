@@ -4,6 +4,41 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.6.1] — 2026-10-31
+
+修 0.6.0 迁移交接与审计链的 12 项问题（来自真实 v3 工作区迁移反馈）。
+
+### Fixed
+
+- **dryRun 的 hash 与签署封印不一致**：dryRun 也按 `buildAggregate`（声明 + 表登记快照）
+  计算，返回值增加 `hashKind: "aggregate"` 与 `declaredHash`（声明部分哈希）。
+- **迁移工作区不自解释**：迁移现在写 `pin.sha256` / `pin.json` / `meta.pin_id`，置
+  `meta.migration_pending=1`，并写 `.curation/migration-report.json`；`curation_status`
+  与 `curation_verify` 会显示「迁移中间态」而不是红色「pin 缺少封印」。
+- **迁移记录口径漂移被静默沿用**：交付表记录与旧契约 `records` 不一致时，写
+  `migration_records_added/removed` 与项目事件，`curation_status` 列出多/少的记录号；
+  迁移**不改写** `records`，由人确认后重签。
+- **旧 decision/ledger 没有 provenance**：迁移与一次性修复回填 `decision.pin_id` /
+  `decision.table_pin_id`、`ledger.decision_id` / `ledger.apply_run_id`、`run_table.pin_id`；
+  写 `.curation/provenance-repair.json`（0.6.0 已迁移的库第一次被 0.6.1 打开时执行）。
+- **`docs/MIGRATION.md` 谎称 decision 行有 `legacy_contract_hash`**：改为实际追溯链
+  （pin_id / table_pin_id + ledger 绑定），并说明 `legacy_contract_hash` 只在 `table_pin` 上。
+- **旧 meta 键残留**：`contract_hash` / `contract_signed_at` 改名为
+  `legacy_contract_hash` / `legacy_contract_signed_at`，不再冒充当前口径。
+- **force 重签无理由**：`curation_pin({ force: true })` 现在必须给 `reason`，原因写入项目事件。
+- **旧名残留**：契约版本过旧的报错改为「升级为 v5 pin 后重新签署 `curation_pin`」；
+  技能与 README 同步 dryRun hash 语义。
+- **schema 不可见**：每次打开按 `user_version` 头检查并重建 `.curation/schema.sql`；
+  `curation_verify` 增加 `schema_snapshot` 检查（派生物不一致 → CONDITIONAL）。
+
+### Added
+
+- `.curation/migration-report.json`、`.curation/provenance-repair.json`、`.curation/schema.sql`。
+- `curation_pin` 的 `reason` 参数；`curation_status` 的 `migration` 字段
+  （`pending` / `at` / `recordsAdded` / `recordsRemoved`）。
+- 回归夹具 `test/migration-0.6.1.test.js`：v3 + 记录漂移 + 旧 provenance，
+  以及 dryRun==签署 hash。
+
 ## [Unreleased]
 
 ## [0.6.0] — 2026-10-31

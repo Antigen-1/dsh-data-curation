@@ -24,4 +24,5 @@ export const doPinCompat = (args = {}) => doPin({
   pin: args.pin ?? toPin(args.contract),
   force: args.force,
   dryRun: args.dryRun,
+  reason: args.reason,
 })

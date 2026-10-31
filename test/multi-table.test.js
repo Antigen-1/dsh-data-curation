@@ -135,7 +135,7 @@ test('retired 表只读：提交/比对拒绝，数据仍可导出', async () =>
     await doApply({ cwd: root, table: 't2' })
 
     const retired = { ...tableOf('t2'), status: 'retired' }
-    const re = await doPin({ cwd: root, pin: pinOf([tableOf('t1'), retired]), force: true })
+    const re = await doPin({ cwd: root, pin: pinOf([tableOf('t1'), retired]), force: true, reason: '测试：退役 t2 后重签' })
     assert.equal(re.ok, true, re.error)
 
     const submit = await doSubmit({ cwd: root, table: 't2', channel: 'text', batch: 'B2', records: [{ record_id: 'CASE-1', status: 'valid', values: { location: '丙区' } }] })

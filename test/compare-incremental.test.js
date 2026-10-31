@@ -97,7 +97,7 @@ test('契约换版后 auto 回到全量（旧结论不可复用）', async () =>
   const next = contractOf(['CASE-0001', 'CASE-0002'])
   next.fields[1] = { name: 'note', allowEmpty: true, requireEvidence: false }
   next.normalization = { mode: 'strict' }
-  const signed = await doContract({ cwd: root, contract: next, force: true })
+  const signed = await doContract({ cwd: root, contract: next, force: true, reason: '测试：契约换版后重签' })
   assert.equal(signed.ok, true, signed.error)
   const after = await doCompare({ cwd: root })
   assert.equal(after.ok, true)

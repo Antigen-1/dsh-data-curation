@@ -63,9 +63,11 @@ pin 是项目的"什么叫正确"：项目级默认 + 每张表的口径。字�
 ## 签署
 
 配置期先 `curation_pin({ ..., dryRun: true })` 只校验不落盘，确认 hash / 字段 / 记录数后再签。
+dryRun 返回的 `hash` 与正式签署后的 `pin.sha256` **一致**（同一 aggregate）；`declaredHash`
+只是声明部分的哈希，不要拿它去确认封印。
 签署会写 `pin` + 每张表一条 `table_pin`（revision+1）+ 事件 + `pin.sha256` 封印 +
-`pin.json` 镜像。重签已有 pin 必须 `force: true`，并**重新比对全部结果**——旧结论不会
-被新 pin 自动解释。
+`pin.json` 镜像。重签已有 pin 必须 `force: true` **并给 `reason`**（写入项目事件），并
+**重新比对全部结果**——旧结论不会被新 pin 自动解释。
 
 ## 字段规格
 

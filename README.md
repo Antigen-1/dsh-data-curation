@@ -92,7 +92,7 @@ pin 是项目的口径快照，分两层：
 2 采集    curation_submit      每张表、每个通道独立提交（禁止先合并再提交）
 3 比对    curation_compare     逐格比对（策略由 pin 决定）→ 接受 / 待裁定
 4 落表    curation_apply       VACUUM INTO 备份 → 单事务 upsert + 逐格回读
-5 验收    curation_verify      项目级 + 每表 13 项门禁，FAIL > CONDITIONAL > PASS
+5 验收    curation_verify      项目级 5 项 + 每表 13 项门禁，FAIL > CONDITIONAL > PASS
 6 导出    curation_export      内置 csv/jsonl/markdown/sqlite，或多表 sqlite 快照
 7 打包    curation_pack        工作区快照 + pin + 导出器 + 基线 + 被引用脚本 → zip
 8 汇报    curation_status      只读汇总；细查用 curation_query，备注用 curation_note
@@ -105,7 +105,7 @@ pin 是项目的口径快照，分两层：
 | 工具 | 作用 | 主要参数 |
 | --- | --- | --- |
 | `curation_init` | 建立项目、记录源基线、预告表 | `sources`、`tables`、`force` |
-| `curation_pin` | 签署/校验项目 pin | `pin`、`dryRun`、`force` |
+| `curation_pin` | 签署/校验项目 pin | `pin`、`dryRun`、`force`、`reason` |
 | `curation_submit` | 提交一个通道对一批记录的抽取 | `table`、`channel`、`batch`、`records` |
 | `curation_compare` | 逐格比对，写入结论 | `table`、`records`、`fields`、`scope` |
 | `curation_apply` | 把接受值写进 curated 表 | `table`、`dryRun` |
@@ -152,7 +152,7 @@ pin 是项目的口径快照，分两层：
 ## 真实项目里的用法
 
 1. 建项目：`curation_init({ cwd, sources: ["raw/"], tables: ["esd_main"] })`；
-2. 写 pin（先 `dryRun: true` 看 hash / 字段 / 记录数），确认后正式签；
+2. 写 pin（先 `dryRun: true` 看 hash / 字段 / 记录数；dryRun 的 `hash` 与正式签署后的封印一致），确认后正式签；
 3. 每个通道跑自己的抽取（**不要**把文本通道的结果喂给视觉通道），
    `curation_submit({ table: "esd_main", channel: "text", batch: "B001", records: [...] })`；
 4. `curation_compare({ table: "esd_main" })`；`curation_query({ what: "pending" })`
@@ -172,6 +172,8 @@ pin 是项目的口径快照，分两层：
 | `state_present` | 工作区存在、版本可读 |
 | `pin_intact` | pin 内容与封印、库内哈希一致 |
 | `manifest_intact` | 源基线未漂移（路径集合与 sha256） |
+| `migration_pending` | 迁移占位 pin 是否已重签（未重签 → CONDITIONAL） |
+| `schema_snapshot` | `.curation/schema.sql` 是否与 `user_version` 一致（派生物不一致 → CONDITIONAL） |
 
 表级（每张 active 表各跑一遍）：
 
@@ -217,7 +219,11 @@ pin 是项目的口径快照，分两层：
 ## 迁移
 
 - **schema**：`user_version` 现在是 `4`；从 v3 打开时会先要求备份，再自动迁移
-  （旧 `contract` 转为 revision 1 的 `table_pin`，`legacy_contract_hash` 保留原哈希）。
+  （旧 `contract` 转为 revision 1 的 `table_pin`，`legacy_contract_hash` 保留原哈希；
+  同时写封印 / `meta.pin_id` / `migration-report.json`，并置 `migration_pending`）。
+- **迁移中间态**：占位 pin 需要重签（`force` + `reason`）才退出中间态；记录口径
+  漂移会在 `curation_status` 里列出多/少的记录号，不会静默改 `records`。
+- **0.6.0 旧库**：打开时一次性回填 decision/ledger 的 provenance（`provenance-repair.json`）。
 - **pin 格式**：v4 契约已停用；按 [`docs/MIGRATION.md`](docs/MIGRATION.md) 转成
   v5 的 `{ project, defaults, tables[] }`。错误消息会指向这份文档。
 - 数据库结构细节见 [`docs/DATABASE.md`](docs/DATABASE.md)。
@@ -251,4 +257,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.6.0（GitHub tag `v0.6.0`）；尚未发布到 npm。
+- 当前版本 0.6.1（GitHub tag `v0.6.1`）；尚未发布到 npm。

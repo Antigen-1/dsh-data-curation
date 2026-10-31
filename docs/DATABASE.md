@@ -18,6 +18,9 @@ pin、导出器、通道提交、结论、落表留痕、事件、curated 交付
 ├── pin.json                            最近一次 pin 的只读镜像（权威在库里，见 §4）
 ├── pin.sha256                          封印（一行哈希；与库内的哈希互为校验）
 ├── pending.json                        待裁定清单的人读镜像（权威在 decision 表）
+├── schema.sql                          当前 schema 的导出（派生物，user_version 过期即重建）
+├── migration-report.json               v3→v4 迁移报告（占位 pin、records 漂移、回填计数）
+├── provenance-repair.json              0.6.0 旧库的 provenance 回填报告（一次性）
 ├── backups/<stamp>__project.sqlite     落表 / 迁移前的完整快照（VACUUM INTO）
 ├── packs/<name>.zip                    项目打包产物
 └── exports/<table>-<stamp>.<ext>       导出文件（可重建，不是权威数据）
@@ -32,7 +35,7 @@ pin、导出器、通道提交、结论、落表留痕、事件、curated 交付
 | --- | --- |
 | `PRAGMA user_version` | `4`（`lib/db.js` 的 `STATE_SCHEMA_VERSION`） |
 | v2 → v3 | 自动补 `decision.synthesized` 列 |
-| v3 → v4 | 必须先有 `backupPath`；迁移建 project / table_registry / pin / table_pin / 事件 / run_table / applied_table，把旧 `contract` 转为 revision 1 的 `table_pin`，并生成 v5 聚合 pin |
+| v3 → v4 | 必须先有 `backupPath`；迁移建 project / table_registry / pin / table_pin / 事件 / run_table / applied_table，把旧 `contract` 转为 revision 1 的 `table_pin`，生成 v5 聚合 pin（占位，`migration_pending=1`），写 `pin.sha256` / `pin.json` / `meta.pin_id` / `migration-report.json`，并回填旧 decision/ledger 的 provenance |
 | v1 | 拒绝打开：备份后删除 `.curation/` 重新 `curation_init` |
 | 版本更高 | 拒绝打开并提示升级插件 |
 | 建库时机 | 第一次 `curation_init`（或任何需要写库的操作） |
@@ -85,7 +88,20 @@ PRAGMA busy_timeout = 5000     -- 写冲突等待 5 秒再报 database is locked
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 ```
 
-当前写入的键：`pin_hash`、`pin_id`。其它键保留给将来使用。
+当前写入的键：
+
+| 键 | 含义 |
+| --- | --- |
+| `pin_hash` | 当前聚合 pin 的哈希（与 `pin.sha256` 互为校验） |
+| `pin_id` | 当前 pin 的 id（迁移时由迁移器写入，签署时由 `writePin` 写入） |
+| `pinned_at` | 当前 pin 的签署时间 |
+| `migration_pending` | `1` = 迁移占位 pin 尚未重签；重签后删除 |
+| `migration_at` | 迁移发生时间 |
+| `migration_records_added` / `migration_records_removed` | 迁移时交付表与旧契约 `records` 的差异（JSON 数组，最多各 50 条样例） |
+| `legacy_contract_hash` / `legacy_contract_signed_at` | v3 旧契约的封印与签署时间（只读留存，供审计） |
+| `provenance_repaired` | `1` = 已执行过一次 legacy provenance 回填（幂等门控） |
+
+旧键 `contract_hash` / `contract_signed_at` 会在迁移或一次性修复时改名，不再表示当前口径。
 
 ### 4.2 `project`（单行）
 

@@ -149,17 +149,19 @@ pin 是项目的口径快照，分两层：
   `{results:[…]}`），用于避免逐格 spawn；单格结果缺失或非法只影响那一格；
 - 合成值（如 `ordered-groups`）会标 `synthesized`，验收会单独计数。
 
-## 规则语言（0.8.0 核心，实验性）
+## 规则语言（0.9.0 核心与沙箱桥，实验性）
 
-0.8.0 新增一个可独立导入的 JSON 规则 DSL：`import { compileRule } from
-"dsh-data-curation/rules"`。它提供 `datum`/`var`/`primitive`/`if`/`begin`/`set!`/
-`lambda`/`apply` 八种核心形式、闭包、异步 primitive、尾调用优化，以及燃料/时间/深度/
-输出限制和静态检查（未绑定变量、未知原语、直接调用的参数个数、AST 大小）。
+0.9.0 扩展可独立导入的 JSON 规则 DSL：`import { compileRule } from
+"dsh-data-curation/rules"`。在 `datum`/`var`/`primitive`/`if`/`begin`/`set!`/`lambda`/
+`apply` 八种核心形式之上，新增 `let`/`letrec`/named let/`cond` 宏展开、`ffi` 显式绑定、
+`RuleRegistry` 不可变规则注册表、输入/输出签名与内容哈希，以及 capability / staged
+effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/时间/深度/输出限制。
 
 - 规则与运行时值都必须是 JSON；拒绝函数、循环引用和原型污染键；
-- 默认无 FFI、文件、网络、环境变量、进程或数据库能力，只有宿主显式注册的 primitive；
-- `compileRule` 要求 primitive registry 已封存，返回冻结的编译结果；
-- **0.8.0 尚未把规则接入 pin/判定/落表**，现有工具行为不变。
+- 默认无文件、网络、环境变量、进程或数据库能力；`data.get`/`effects.stage` 必须由
+  宿主显式授予 capability，FFI 必须列入 manifest；
+- `compileRule` 要求 primitive registry 已封存，返回冻结的编译结果与 `hash`；
+- **0.9.0 尚未把规则接入 pin/判定/落表**，现有工具行为不变。
 
 完整语法、示例、错误码与安全边界见 [docs/RULES.md](docs/RULES.md)。
 
@@ -263,7 +265,7 @@ pin 是项目的口径快照，分两层：
 ## 开发
 
 ```bash
-node --test          # 171 个测试
+node --test          # 183 个测试
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -273,4 +275,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.8.0（规则 DSL 核心）；尚未发布到 npm。
+- 当前版本 0.9.0（规则 DSL 核心与沙箱桥）；尚未发布到 npm。

@@ -136,7 +136,7 @@ test('静态检查：重复参数、未知原语与直接调用的 arity', () =>
 test('静态检查：畸形 AST、非 procedure 根、FFI 与限制', () => {
   staticCode(() => compileRule(['datum', 1]), 'RULE_MUST_BE_PROCEDURE')
   staticCode(() => compileRule(lam([], ['if', d(true)])), 'MALFORMED_AST')
-  staticCode(() => compileRule(lam([], ['ffi', 'x'])), 'FFI_UNAVAILABLE')
+  staticCode(() => compileRule(lam([], ['ffi', 'x'])), 'UNKNOWN_FFI')
   staticCode(() => compileRule(lam([], ['datum', Number.NaN])), 'MALFORMED_AST')
 
   let body = d(0)

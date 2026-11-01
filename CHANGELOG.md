@@ -4,6 +4,31 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.9.0] — 2026-11-01
+
+规则 DSL 的第二阶段：高级形式、规则身份、能力沙箱与显式 FFI。**仍未接入 pin、
+判定或数据库**，现有工具行为不变。
+
+### Added
+
+- 宏展开：`let`、`letrec`、named `let`、`cond` 编译期展开为 0.8 核心 AST，支持递归、
+  相互递归与尾递归循环。
+- `RuleRegistry` 不可变规则注册表：`define` / `seal` / `call` / `describe` /
+  `hash`，规则 id、版本、签名、FFI manifest 与调用诊断。
+- 规则签名与内容哈希：`signature` 参数/返回值类型检查，`ruleHash` 覆盖源码、签名与
+  FFI binding id；签名不匹配报 `SIGNATURE_MISMATCH`。
+- `CapabilitySet` 能力沙箱：默认无文件、网络、环境变量、进程或数据库句柄；`data.get`
+  只能经宿主授予的 `data` capability；`effects.stage` 只写内存 `EffectJournal`。
+- `invokeWithEffects()` 返回结果与 staged effects，供宿主审计后决定是否提交。
+- 显式 FFI：`FfiRegistry` / `{ id: fn }` manifest、静态 binding 检查、参数/结果 JSON
+  隔离、`FFI_ERROR` / `FFI_RESULT`。
+- 新增 12 个高级形式/注册表/沙箱/FFI 测试；`docs/RULES.md` 与 README 更新。
+
+### Notes
+
+- capability 是权限边界，不是 OS 进程边界；不提供进程内抢占或内存硬限制。
+- 0.9.0 不读取 pin 的规则字段，不参与 compare/apply/verify，不写数据库。
+
 ## [0.8.0] — 2026-11-01
 
 规则 DSL 的第一阶段：核心语言、静态检查、解释器与尾调用优化。**不改变现有 pin、

@@ -4,6 +4,30 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.10.0] — 2026-11-01
+
+pin 规则自举：pin 的 `validate` 与 defaults/table 合并可以由 JSON DSL procedures 执行，
+规则身份进入 pin 封印与签署事件。**判定与落表仍未接入**，未声明规则的 pin 行为不变。
+
+### Added
+
+- `pin.rules`（`version: 1`）支持 `validate` / `merge` / `ffi`；规则源码、id、版本、
+  签名、FFI manifest 与 `sha256:` 哈希规范化后写入 pin。
+- `validatePin()` 同步编译规则但不执行；`applyPinRules()` 异步执行 merge/validate，
+  由 `doPin()` 在签署前调用；规则失败阻断签署。
+- 默认规则包：原生 `merge` 通过 `pin.merge-table` 复用 `mergeTable`，`validate` 检查
+  每张表至少有一个字段；默认包不自动注入现有 pin。
+- 自定义 merge 不得改变 `delivery.table/key`、`fields`、`records`，仍由宿主执行
+  `validateContract`；自定义规则错误带规则 id。
+- 签署事件与 `curation_query(meta)` 暴露 pin 规则身份；`docs/RULES.md`、README 和
+  `templates/pin-rules.example.json` 更新。
+- 新增 7 个 pin 规则测试。
+
+### Notes
+
+- `canonicalize` 规则尚未实现（明确拒绝），规范化仍由宿主执行。
+- 规则执行是 async；`validatePin` 保持同步，只编译。规则不直接写数据库。
+
 ## [0.9.0] — 2026-11-01
 
 规则 DSL 的第二阶段：高级形式、规则身份、能力沙箱与显式 FFI。**仍未接入 pin、

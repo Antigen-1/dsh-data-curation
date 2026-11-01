@@ -1,8 +1,9 @@
-# 规则 DSL（0.9.0 核心与沙箱桥）
+# 规则 DSL（0.10.0：pin 规则自举）
 
-> 状态：**0.9.0 规则语言 + 规则身份 + 能力沙箱，实验性**。已实现 AST、静态检查、
-> 解释器、TCO、宏展开、规则注册表、签名/哈希、capability、staged effects 与显式 FFI；
-> **尚未接入 pin 校验、判定或落表**。当前 pin 仍是 v5 配置格式，不会执行这些规则。
+> 状态：**0.10.0 pin 规则自举，实验性**。已实现 AST、静态检查、解释器、TCO、
+> 宏展开、规则注册表、签名/哈希、capability、staged effects、显式 FFI，以及 pin 的
+> `validate`/`merge` 规则执行；**判定与落表尚未接入**。pin 仍是 v5 配置格式，规则是
+> 可选的 `rules` 块。
 
 这是一个 JSON 表示、可静态检查的小型解释型语言。目标不是做成通用编程语言，而是让
 数据核对里的“口径”可以写成有版本、有边界、可审计的规则，而不是散落在宿主代码里的
@@ -314,7 +315,44 @@ primitive 是宿主代码，**不是**沙箱里的不可信代码。它能做什
 
 所有错误都是 `RuleError`，字段包括 `code`、`message`、`path`，部分带 `detail`。
 
-## 安全边界（0.9.0）
+## pin 规则（0.10.0 自举）
+
+pin 可以选择性地声明 `rules` 块，把口径校验与 defaults/table 合并写成 DSL：
+
+```json
+{
+  "version": 5,
+  "project": { "name": "示例" },
+  "defaults": { "channels": [{ "name": "text" }, { "name": "vision" }] },
+  "tables": [{
+    "table": "summary",
+    "key": "record_id",
+    "records": { "kind": "list", "values": ["CASE-1"] },
+    "fields": [{ "name": "a" }]
+  }],
+  "rules": {
+    "version": 1,
+    "validate": { "id": "demo.validate", "version": "1", "source": ["lambda", ["input"], ["datum", { "ok": true, "errors": [] }]] }
+  }
+}
+```
+
+- `validate`：接收 `{ pin, defaults, tables }`，必须返回 `{ok, errors}`；`ok:false` 阻断签署。
+- `merge`：按表接收 `{ defaults, table }`，返回该表的有效配置；宿主随后仍会执行
+  `validateContract` 和结构约束。
+- 规则可以调用宿主 primitive `pin.merge-table` 复用原生合并，再覆盖字段。
+- **规则不能改变宿主结构**：`delivery.table`、`delivery.key`、`fields`、`records`
+  必须与声明一致；违反时签署失败。
+- `canonicalize` 尚未实现（0.10 会明确拒绝），规范化仍由宿主执行。
+- 规则源码、规范化 ID、版本、签名和 `sha256:` 哈希都会进入 pin 存档与 aggregate 封印；
+  规则哈希变化等于 pin 内容变化，必须重新签署。`doPin` 的 dryRun 返回的 hash 与正式
+  签署一致。
+- 规则 FFI 必须在 `rules.ffi` 声明；默认没有文件、网络、环境变量或进程能力。
+- 未声明 `rules` 的既有 v5 pin 行为完全不变；默认规则包只用于示例/回归，不自动注入。
+
+示例规则包：`templates/pin-rules.example.json`（只演示默认行为，不含项目数据）。
+
+## 安全边界（0.10.0）
 
 语言层能做到：
 
@@ -334,13 +372,12 @@ primitive 是宿主代码，**不是**沙箱里的不可信代码。它能做什
 
 ## 版本边界
 
-0.9.0 交付规则语言、注册表、签名/哈希、capability/staged effects 与显式 FFI，
-不改变现有工具行为：
+0.10.0 交付 pin 的 `validate`/`merge` 规则执行，并把规则身份写入 pin 封印与签署事件：
 
-- 不读取 pin 的规则字段；
-- 不参与 compare / apply / verify；
-- 不写数据库；
+- pin 规则在 `doPin` 中执行；`validatePin` 只编译，不执行；
+- 规则不参与 compare / apply / verify 的判定；
+- 规则不直接写数据库，只能返回配置对象；
 - 不修改真实 ESD 工作区。
 
-后续版本按路线图推进 pin 规则自举、判定规则与 verify 接管。详见
+后续版本按路线图推进判定规则与 verify 接管。详见
 `.omd/plans/rules-dsl-roadmap.md`（仓库内部计划，不随 npm 包发布）。

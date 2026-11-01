@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "merge": {
+    "id": "example.merge",
+    "version": "1",
+    "signature": {
+      "args": ["object"],
+      "result": "object"
+    },
+    "source": [
+      "lambda",
+      ["input"],
+      ["apply", ["primitive", "pin.merge-table"], [
+        ["apply", ["primitive", "object-get"], [["var", "input"], ["datum", "defaults"]]],
+        ["apply", ["primitive", "object-get"], [["var", "input"], ["datum", "table"]]]
+      ]]
+    ]
+  },
+  "validate": {
+    "id": "example.validate",
+    "version": "1",
+    "signature": {
+      "args": ["object"],
+      "result": "object"
+    },
+    "source": [
+      "lambda",
+      ["input"],
+      ["if", ["apply", ["primitive", "empty?"], [
+        ["apply", ["primitive", "object-get"], [["var", "input"], ["datum", "tables"]]]
+      ]],
+        ["datum", { "ok": false, "errors": ["tables 不能为空"] }],
+        ["datum", { "ok": true, "errors": [] }]
+      ]
+    ]
+  }
+}

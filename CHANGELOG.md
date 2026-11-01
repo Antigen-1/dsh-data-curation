@@ -4,6 +4,31 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.0] — 2026-11-01
+
+规则 DSL 的第一阶段：核心语言、静态检查、解释器与尾调用优化。**不改变现有 pin、
+工具或数据库行为**，也不接入判定流程。
+
+### Added
+
+- 新增 `dsh-data-curation/rules` 公共入口：`compileRule`、`runRule`。
+- 新增 JSON AST 形式：`datum`、`var`、`primitive`、`if`、`begin`、`set!`、`lambda`、
+  `apply`；闭包捕获与 `set!` 词法赋值。
+- 新增静态检查：顶层 lambda、未知形式/原语、未绑定变量、重复参数、直接调用的参数
+  个数、AST 节点数与深度、JSON 值校验与防御性克隆/冻结。
+- 新增异步解释器与尾调用优化（自/相互 100000 次尾递归不增长 JS 调用栈）、燃料、
+  墙钟超时、非尾调用深度与输出字节预算。
+- 新增不可变 `PrimitiveRegistry` 与一组纯 JSON 算术/比较/列表/字符串原语；未封存的
+  registry 不能编译规则。
+- 新增 `docs/RULES.md`、资源限制与错误码文档，以及 18 个规则测试。
+
+### Notes
+
+- 0.8.0 不提供 FFI、文件/网络/进程能力，也未把规则接入 pin 校验或判定；`ffi` 形式
+  在静态检查阶段明确拒绝。
+- 默认资源限制：20000 AST 节点、深度 256、10000000 步、5000ms、非尾调用深度 512、
+  输出 1000000 字节。
+
 ## [0.7.1] — 2026-10-31
 
 修复 0.7.0 批量 select 的发布验收阻断项；不改 pin 或数据库格式。

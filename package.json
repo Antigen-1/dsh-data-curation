@@ -1,7 +1,7 @@
 {
   "name": "dsh-data-curation",
-  "version": "0.7.1",
-  "description": "Contract-driven data curation mode for DeepSeek Harness: a two-layer pin (project defaults + per-table contracts) with multiple curated tables, immutable-source gates, independent multi-channel extraction, contract-declared adjudication strategies (built-in or project commands, batch mode, per-field overrides), read-only queries (meta/events), notes, incremental compare, a single SQLite workspace with cell-level provenance, multi-table export, packable project archives, and a generic session progress dock. 契约驱动的数据核对/清洗模式。",
+  "version": "0.8.0",
+  "description": "Contract-driven data curation mode for DeepSeek Harness: a two-layer pin (project defaults + per-table contracts) with multiple curated tables, immutable-source gates, independent multi-channel extraction, contract-declared adjudication strategies (built-in or project commands, batch mode, per-field overrides), read-only queries (meta/events), notes, incremental compare, a single SQLite workspace with cell-level provenance, multi-table export, packable project archives, a generic session progress dock, and an experimental JSON rules DSL (0.8). 契约驱动的数据核对/清洗模式。",
   "keywords": [
     "deepseek-harness",
     "dsh-plugin",
@@ -18,6 +18,7 @@
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
+    "./rules": "./lib/rules/index.js",
     "./package.json": "./package.json"
   },
   "license": "MIT",

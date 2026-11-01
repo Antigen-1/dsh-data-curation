@@ -107,7 +107,7 @@ pin 是项目的口径快照，分两层：
 
 可选项：长任务用 `curation_progress` 在输入框上方挂进度条（纯数据，见下文）。
 
-## 工具（17 个）
+## 工具（19 个）
 
 | 工具 | 作用 | 主要参数 |
 | --- | --- | --- |
@@ -151,6 +151,22 @@ curation_query({ what: "coverage", table: "summary" })
   超过上限才停。它是前台作业，不是后台守护进程。
 - `curation_query({what:"coverage"})` 按字段给出 submitted/accepted/pending，
   让未覆盖字段有明确归宿。
+
+### 完整交付（0.17.0）
+
+```text
+curation_delivery_plan({ action: "write", plan: { tables: ["summary"] } })
+curation_delivery_plan({ action: "build" })
+curation_verify_delivery({ path: ".curation/deliveries/..." })
+```
+
+交付包包含：每张表的 curated JSONL/CSV、`pending.csv`、`review.md` 和
+`delivery.json`（当前 pin 封印、各表行数、待裁定行数）。`curation_verify_delivery`
+检查这些文件与当前 pin 是否一致；它不是 `curation_verify` 的替代，业务门禁仍以
+`curation_verify` 为准。
+
+字段可标记 `"protected": true`：`curation_apply` 会跳过该字段（不写表、不写 ledger），
+`curation_verify` 的 `delivery_matches`/`ledger_complete` 也跳过它，用于人工复核列。
 
 ### 低门槛起步（0.15.0）
 
@@ -322,7 +338,7 @@ effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/�
 ## 开发
 
 ```bash
-node --test          # 215 个测试
+node --test          # 218 个测试
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -332,4 +348,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.16.0（批量提交作业与字段级状态）；尚未发布到 npm。
+- 当前版本 0.17.0（交付包与受保护列）；尚未发布到 npm。

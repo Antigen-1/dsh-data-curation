@@ -4,6 +4,25 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.17.0] — 2026-11-01
+
+完整交付：交付包计划/生成/验收，受保护列不参与自动落表。
+
+### Added
+
+- `curation_delivery_plan`：`show/write/build`；默认所有 active 表，生成
+  `tables/*.jsonl|csv`、`pending.csv`、`review.md`、`delivery.json`。
+- `curation_verify_delivery`：校验交付清单、pin 封印、各表行数、待裁定行数、复核摘要。
+- pin 字段支持 `"protected": true`：apply 跳过该字段（不写表/不写 ledger，返回
+  `protectedSkipped`）；verify 的 delivery_matches/ledger_complete 跳过它。
+- `docs/DELIVERY.md`；工具总数 17→19。
+- 全量 218/218。
+
+### Notes
+
+- 交付包不替代 `curation_verify`；它允许带待裁定格生成，业务门禁仍以 verify 为准。
+- 受保护列不改变判定本身，只改变落表与两条交付门禁的检查范围。
+
 ## [0.16.0] — 2026-11-01
 
 规模化提交：一个通道可以从文件/目录批量导入，作业按块写检查点、可续跑；查询新增

@@ -85,7 +85,7 @@ test('契约校验：batch 只允许在 compare/select 的命令策略上', () =
 
 test('批量策略：一次命令判全部格', async () => {
   const root = await makeRoot()
-  const decisions = adjudicate({ contract: baseContract(true), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
+  const decisions = await adjudicate({ contract: baseContract(true), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
   assert.equal(decisions.length, 6)
   assert.ok(decisions.every((d) => d.status === 'accepted'))
   const calls = await callsOf(root)
@@ -97,8 +97,8 @@ test('批量策略：一次命令判全部格', async () => {
 test('批量与逐格结果一致（golden）', async () => {
   const rootA = await makeRoot()
   const rootB = await makeRoot()
-  const batch = adjudicate({ contract: baseContract(true), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root: rootA })
-  const single = adjudicate({ contract: baseContract(false), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root: rootB })
+  const batch = await adjudicate({ contract: baseContract(true), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root: rootA })
+  const single = await adjudicate({ contract: baseContract(false), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root: rootB })
   const shape = (d) => ({ record: d.record, field: d.field, status: d.status, value: d.value, adopted: d.adopted, synthesized: d.synthesized })
   assert.deepEqual(batch.map(shape), single.map(shape))
   assert.equal((await callsOf(rootB)).length, 6)
@@ -106,7 +106,7 @@ test('批量与逐格结果一致（golden）', async () => {
 
 test('批量策略缺少结果 → 该格进待裁定（adjudicator_error）', async () => {
   const root = await makeRoot('missing')
-  const decisions = adjudicate({ contract: baseContract(true), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
+  const decisions = await adjudicate({ contract: baseContract(true), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
   const pending = decisions.filter((d) => d.status === 'pending')
   assert.equal(pending.length, 1)
   assert.ok(pending.every((d) => d.reason === 'adjudicator_error'))
@@ -116,8 +116,8 @@ test('批量策略缺少结果 → 该格进待裁定（adjudicator_error）', a
 
 test('批量策略返回重复格 → 整批拒绝', async () => {
   const root = await makeRoot('duplicate')
-  assert.throws(
-    () => adjudicate({ contract: baseContract(true), recordIds: ['R1'], submissionsByRecord: byRecord, root }),
+  await assert.rejects(
+    adjudicate({ contract: baseContract(true), recordIds: ['R1'], submissionsByRecord: byRecord, root }),
     /重复的格/,
   )
 })
@@ -126,7 +126,7 @@ test('批量策略退出码非零 → 全部格进待裁定', async () => {
   const root = await makeRoot()
   const contract = baseContract(true)
   contract.adjudication.compare.args = ['policy/nope.mjs']
-  const decisions = adjudicate({ contract, recordIds: ['R1'], submissionsByRecord: byRecord, root })
+  const decisions = await adjudicate({ contract, recordIds: ['R1'], submissionsByRecord: byRecord, root })
   assert.ok(decisions.every((d) => d.status === 'pending' && d.reason === 'adjudicator_error'))
   assert.match(decisions[0].detail, /退出码|无法执行/)
 })

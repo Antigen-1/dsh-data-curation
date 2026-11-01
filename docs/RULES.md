@@ -1,9 +1,9 @@
-# 规则 DSL（0.10.0：pin 规则自举）
+# 规则 DSL（0.11.0：判定规则接管）
 
-> 状态：**0.10.0 pin 规则自举，实验性**。已实现 AST、静态检查、解释器、TCO、
+> 状态：**0.11.0 判定规则接管，实验性**。已实现 AST、静态检查、解释器、TCO、
 > 宏展开、规则注册表、签名/哈希、capability、staged effects、显式 FFI，以及 pin 的
-> `validate`/`merge` 规则执行；**判定与落表尚未接入**。pin 仍是 v5 配置格式，规则是
-> 可选的 `rules` 块。
+> `validate`/`merge`/`decision` 规则执行；**落表仍由宿主执行**。pin 仍是 v5 配置格式，
+> 规则是可选的 `rules` 块。
 
 这是一个 JSON 表示、可静态检查的小型解释型语言。目标不是做成通用编程语言，而是让
 数据核对里的“口径”可以写成有版本、有边界、可审计的规则，而不是散落在宿主代码里的
@@ -352,7 +352,45 @@ pin 可以选择性地声明 `rules` 块，把口径校验与 defaults/table 合
 
 示例规则包：`templates/pin-rules.example.json`（只演示默认行为，不含项目数据）。
 
-## 安全边界（0.10.0）
+## 判定规则（0.11.0 接管）
+
+`pin.rules.decision` 是一个逐格 procedure。默认没有 decision 规则，走原有原生双通道
+逻辑；声明后，**该表所有格的接受标准由规则决定**，宿主不再强制"至少两个通道"。
+
+规则输入：
+
+```json
+{
+  "record": "CASE-1",
+  "field": "location",
+  "votes": [{ "channel": "text", "valid": true, "present": true, "raw": "A区", "normalized": "A区", "evidence": { "page": 1 } }],
+  "contract": { "...": "effective 表配置" }
+}
+```
+
+规则返回：
+
+- 接受：`{ "accepted": true, "value": "A区", "adopted": ["text"], "reason": "…", "proof": {...} }`
+- 待裁定：`{ "accepted": false, "reason": "need_three_channels", "detail": "…" }`
+
+宿主仍会检查：`value` 存在、空值策略、`adopted` 必须是有效通道、证据策略；规则抛错/
+超时/返回非对象时，该格进入 `rule_error`/`rule_invalid` 待裁定，**同批其他格不受影响，
+绝不静默回退到原生双通道**。
+
+接受格的 `decision.rule_id/rule_hash/proof` 会持久化；`verify` 的 `accepted_by_rule`
+只看该证明，不再用 `adopted.length` 反推双通道。声明规则后允许单通道提交进入 compare，
+但是否接受仍由规则决定。
+
+示例（接受第一个有效投票，允许单通道）：
+
+```json
+["lambda",["input"],["let",[["vote",["apply",["primitive","car"],[["apply",["primitive","object-get"],[["var","input"],["datum","votes"]]]]]]],["apply",["primitive","object-set"],[["apply",["primitive","object-set"],[["datum",{"accepted":true,"reason":"rule.single-channel"}],["datum","value"],["apply",["primitive","object-get"],[["var","vote"],["datum","raw"]]]]],["datum","adopted"],["apply",["primitive","list"],[["apply",["primitive","object-get"],[["var","vote"],["datum","channel"]]]]]]]]]
+```
+
+0.11 的 decision 规则不接 FFI binding；需要额外证据时先通过 `contract.evidence` 与
+`field.requireEvidence` 表达，或在 0.12 的 hook 目录中扩展。
+
+## 安全边界（0.11.0）
 
 语言层能做到：
 
@@ -372,12 +410,13 @@ pin 可以选择性地声明 `rules` 块，把口径校验与 defaults/table 合
 
 ## 版本边界
 
-0.10.0 交付 pin 的 `validate`/`merge` 规则执行，并把规则身份写入 pin 封印与签署事件：
+0.11.0 交付 pin 的 `validate`/`merge`/`decision` 规则执行，并把规则身份写入 pin
+封印、签署事件与 decision：
 
-- pin 规则在 `doPin` 中执行；`validatePin` 只编译，不执行；
-- 规则不参与 compare / apply / verify 的判定；
-- 规则不直接写数据库，只能返回配置对象；
+- pin validate/merge 在 `doPin` 中执行；`validatePin` 只编译，不执行；
+- decision 在 `curation_compare` 中逐格执行，apply 只消费宿主已接受的结论；
+- 规则不直接写数据库，只能返回配置或裁定对象；
 - 不修改真实 ESD 工作区。
 
-后续版本按路线图推进判定规则与 verify 接管。详见
+后续版本按路线图推进 0.12 的 hook 目录、隔离执行与性能基线。详见
 `.omd/plans/rules-dsl-roadmap.md`（仓库内部计划，不随 npm 包发布）。

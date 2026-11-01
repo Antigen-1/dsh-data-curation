@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "decision": {
+    "id": "example.decision",
+    "version": "1",
+    "signature": {
+      "args": [
+        "object"
+      ],
+      "result": "object"
+    },
+    "source": [
+      "lambda",
+      [
+        "input"
+      ],
+      [
+        "let",
+        [
+          [
+            "vote",
+            [
+              "apply",
+              [
+                "primitive",
+                "car"
+              ],
+              [
+                [
+                  "apply",
+                  [
+                    "primitive",
+                    "object-get"
+                  ],
+                  [
+                    [
+                      "var",
+                      "input"
+                    ],
+                    [
+                      "datum",
+                      "votes"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ],
+        [
+          "apply",
+          [
+            "primitive",
+            "object-set"
+          ],
+          [
+            [
+              "apply",
+              [
+                "primitive",
+                "object-set"
+              ],
+              [
+                [
+                  "datum",
+                  {
+                    "accepted": true,
+                    "reason": "rule.single-channel"
+                  }
+                ],
+                [
+                  "datum",
+                  "value"
+                ],
+                [
+                  "apply",
+                  [
+                    "primitive",
+                    "object-get"
+                  ],
+                  [
+                    [
+                      "var",
+                      "vote"
+                    ],
+                    [
+                      "datum",
+                      "raw"
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            [
+              "datum",
+              "adopted"
+            ],
+            [
+              "apply",
+              [
+                "primitive",
+                "list"
+              ],
+              [
+                [
+                  "apply",
+                  [
+                    "primitive",
+                    "object-get"
+                  ],
+                  [
+                    [
+                      "var",
+                      "vote"
+                    ],
+                    [
+                      "datum",
+                      "channel"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+    ]
+  }
+}

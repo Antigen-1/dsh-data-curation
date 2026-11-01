@@ -182,7 +182,7 @@ test('备份保留：keepBackups 只留最近 N 个，0 表示不清理', async 
   assert.equal((await readdir(dir)).length, 5, 'keepBackups=0 不清理')
 })
 
-test('schema v4 工作区打开时补上 ledger.changed 并升到 v5', async () => {
+test('schema v4 工作区打开时补上 ledger.changed 并升到 v6', async () => {
   const root = await makeProject()
   await doInit({ cwd: root, sources: ['raw'] })
   assert.equal((await doPin({ cwd: root, contract: contractOf() })).ok, true)
@@ -198,9 +198,38 @@ test('schema v4 工作区打开时补上 ledger.changed 并升到 v5', async () 
   assert.equal(status.ok, true)
   const upgraded = workspaceDb(root)
   try {
-    assert.equal(Number(upgraded.prepare('PRAGMA user_version').get().user_version), 5)
+    assert.equal(Number(upgraded.prepare('PRAGMA user_version').get().user_version), 6)
     const columns = upgraded.prepare("SELECT name FROM pragma_table_info('ledger')").all().map((r) => r.name)
     assert.ok(columns.includes('changed'))
+  } finally {
+    upgraded.close()
+  }
+})
+
+
+test('schema v5 工作区打开时补 decision 规则列并升到 v6', async () => {
+  const root = await makeProject()
+  await doInit({ cwd: root, sources: ['raw'] })
+  assert.equal((await doPin({ cwd: root, contract: contractOf() })).ok, true)
+  const db = workspaceDb(root)
+  try {
+    db.exec('ALTER TABLE decision DROP COLUMN rule_id')
+    db.exec('ALTER TABLE decision DROP COLUMN rule_hash')
+    db.exec('ALTER TABLE decision DROP COLUMN proof')
+    db.exec('PRAGMA user_version = 5')
+  } finally {
+    db.close()
+  }
+
+  const status = await doStatus({ cwd: root })
+  assert.equal(status.ok, true)
+  const upgraded = workspaceDb(root)
+  try {
+    assert.equal(Number(upgraded.prepare('PRAGMA user_version').get().user_version), 6)
+    const columns = upgraded.prepare("SELECT name FROM pragma_table_info('decision')").all().map((r) => r.name)
+    assert.ok(columns.includes('rule_id'))
+    assert.ok(columns.includes('rule_hash'))
+    assert.ok(columns.includes('proof'))
   } finally {
     upgraded.close()
   }

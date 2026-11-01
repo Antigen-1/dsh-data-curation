@@ -4,6 +4,29 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.11.0] — 2026-11-01
+
+判定规则接管：pin 可以声明 `rules.decision`，逐格接受标准由 DSL procedure 决定；verify
+读取 decision 的规则证明，不再用 `adopted.length` 硬编码双通道。默认无 decision 规则时
+仍走原原生逻辑。
+
+### Added
+
+- `pin.rules.decision`：输入 `{record, field, votes, contract}`，返回接受/待裁定对象；
+  声明后允许单通道提交进入 compare，由规则决定是否接受。
+- `decision.rule_id` / `rule_hash` / `proof` 持久化（schema v6）；`verify` 的
+  `accepted_by_rule` 检查自定义规则证明，旧原生结果仍要求两个一致通道。
+- 自定义规则抛错/超时/返回坏值时只把该格标为 `rule_error` / `rule_invalid`，同批其他格
+  继续裁定；绝不静默回退到原生双通道。
+- `docs/RULES.md` 判定规则章节、`templates/decision-rules.example.json`、README 更新。
+- 新增 3 个 decision 规则集成测试与 v5→v6 迁移测试；全量测试 194。
+
+### Notes
+
+- decision 规则暂不接 FFI binding；证据策略仍由 `contract.evidence` /
+  `field.requireEvidence` 宿主检查。
+- apply 仍由宿主执行；规则不直接写数据库。
+
 ## [0.10.0] — 2026-11-01
 
 pin 规则自举：pin 的 `validate` 与 defaults/table 合并可以由 JSON DSL procedures 执行，

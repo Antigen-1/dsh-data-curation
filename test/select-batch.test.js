@@ -65,7 +65,7 @@ async function callsOf(root) {
 
 test('select-batch：一次命令判完全部格，答案按 record+field 回填', async () => {
   const root = await makeRoot()
-  const decisions = adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
+  const decisions = await adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
   assert.equal(decisions.length, 6)
   assert.ok(decisions.every((d) => d.status === 'accepted'), JSON.stringify(decisions))
   const calls = await callsOf(root)
@@ -76,7 +76,7 @@ test('select-batch：一次命令判完全部格，答案按 record+field 回填
 
 test('select-batch：缺一条结果只影响那一格，其余照常接受', async () => {
   const root = await makeRoot('missing')
-  const decisions = adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
+  const decisions = await adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
   const pending = decisions.filter((d) => d.status === 'pending')
   assert.equal(pending.length, 1)
   assert.equal(pending[0].reason, 'adjudicator_error')
@@ -86,7 +86,7 @@ test('select-batch：缺一条结果只影响那一格，其余照常接受', as
 
 test('select-batch：下标越界只把该格标成 adjudicator_error', async () => {
   const root = await makeRoot('badindex')
-  const decisions = adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
+  const decisions = await adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
   const pending = decisions.filter((d) => d.status === 'pending')
   assert.equal(pending.length, 1)
   assert.equal(pending[0].reason, 'adjudicator_error')
@@ -95,7 +95,7 @@ test('select-batch：下标越界只把该格标成 adjudicator_error', async ()
 
 test('select-batch：重复结果只把该格标成 adjudicator_error，其余照常接受', async () => {
   const root = await makeRoot('duplicate')
-  const decisions = adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
+  const decisions = await adjudicate({ contract: contractOf(), recordIds: ['R1', 'R2', 'R3'], submissionsByRecord: byRecord, root })
   const pending = decisions.filter((d) => d.status === 'pending')
   assert.equal(pending.length, 1)
   assert.equal(pending[0].record, 'R1')

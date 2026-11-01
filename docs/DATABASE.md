@@ -33,10 +33,11 @@ pin、导出器、通道提交、结论、落表留痕、事件、curated 交付
 
 | 项 | 值 |
 | --- | --- |
-| `PRAGMA user_version` | `5`（`lib/db.js` 的 `STATE_SCHEMA_VERSION`） |
+| `PRAGMA user_version` | `6`（`lib/db.js` 的 `STATE_SCHEMA_VERSION`） |
 | v2 → v3 | 自动补 `decision.synthesized` 列 |
 | v3 → v4 | 必须先有 `backupPath`；迁移建 project / table_registry / pin / table_pin / 事件 / run_table / applied_table，把旧 `contract` 转为 revision 1 的 `table_pin`，生成 v5 聚合 pin（占位，`migration_pending=1`），写 `pin.sha256` / `pin.json` / `meta.pin_id` / `migration-report.json`，并回填旧 decision/ledger 的 provenance |
 | v4 → v5 | 给 `ledger` 补 `changed` 列（默认 1），已有行按「落过表」记为变化 |
+| v5 → v6 | 给 `decision` 补 `rule_id` / `rule_hash` / `proof` 列（判定规则证明） |
 | v1 | 拒绝打开：备份后删除 `.curation/` 重新 `curation_init` |
 | 版本更高 | 拒绝打开并提示升级插件 |
 | 建库时机 | 第一次 `curation_init`（或任何需要写库的操作） |
@@ -237,6 +238,7 @@ CREATE TABLE decision (
   value TEXT, normalized TEXT, adopted TEXT, dissent TEXT, votes TEXT,
   reason TEXT, evidence TEXT,
   synthesized INTEGER NOT NULL DEFAULT 0,
+  rule_id TEXT, rule_hash TEXT, proof TEXT,
   decided_at TEXT NOT NULL
 );
 CREATE INDEX decision_cell ON decision (table_id, record, field, id);
@@ -343,7 +345,7 @@ CREATE TABLE "<table>" (
 ## 9. 检查与排障
 
 ```bash
-sqlite3 .curation/project.sqlite "PRAGMA user_version;"        # 应为 5
+sqlite3 .curation/project.sqlite "PRAGMA user_version;"        # 应为 6
 sqlite3 .curation/project.sqlite ".tables"
 sqlite3 .curation/project.sqlite "SELECT id, hash, pinned_at FROM pin ORDER BY pinned_at DESC LIMIT 3;"
 sqlite3 .curation/project.sqlite "SELECT table_id, revision FROM table_pin ORDER BY table_id, revision;"

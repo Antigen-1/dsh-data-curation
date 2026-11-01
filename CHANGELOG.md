@@ -4,6 +4,10 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.13.1] — 2026-11-01
+
+文档修复：package.json description 语法与版本号残留。
+
 ## [0.13.0] — 2026-11-01
 
 规则语言 v1 稳定语义：冻结 0.8 以来已发布的语法、错误码、规则哈希算法与 pin 规则

@@ -281,4 +281,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.13.0（规则语言 v1，稳定语义）；尚未发布到 npm。
+- 当前版本 0.13.1（规则语言 v1，稳定语义）；尚未发布到 npm。

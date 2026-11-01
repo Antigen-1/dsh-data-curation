@@ -153,9 +153,9 @@ pin 是项目的口径快照，分两层：
   `{results:[…]}`），用于避免逐格 spawn；单格结果缺失或非法只影响那一格；
 - 合成值（如 `ordered-groups`）会标 `synthesized`，验收会单独计数。
 
-## 规则语言（0.13.0：规则语言 v1，稳定语义）
+## 规则语言（0.14.0：FFI 接入 pin 规则）
 
-0.13.0 把可独立导入的 JSON 规则 DSL 接到 pin 的 validate/merge/decision/verify：`import { compileRule, runRuleIsolated } from
+0.14.0 把可独立导入的 JSON 规则 DSL 接到 pin 的 validate/merge/decision/verify：`import { compileRule, runRuleIsolated } from
 "dsh-data-curation/rules"`。在 `datum`/`var`/`primitive`/`if`/`begin`/`set!`/`lambda`/
 `apply` 八种核心形式之上，新增 `let`/`letrec`/named let/`cond` 宏展开、`ffi` 显式绑定、
 `RuleRegistry` 不可变规则注册表、输入/输出签名与内容哈希，以及 capability / staged
@@ -164,6 +164,8 @@ effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/�
 - 规则与运行时值都必须是 JSON；拒绝函数、循环引用和原型污染键；
 - 默认无文件、网络、环境变量、进程或数据库能力；`data.get`/`effects.stage` 必须由
   宿主显式授予 capability，FFI 必须列入 manifest；
+- **0.14.0 新增**：pin 规则可以通过 `curation_pin` 的 `ffi` 参数加载本地 Node.js 模块，
+  模块定义合并到 `pin.rules.ffi` 使 pin 自包含，compare/verify 自动重新加载；
 - `compileRule` 要求 primitive registry 已封存，返回冻结的编译结果与 `hash`；
 - **0.13.0 冻结规则语言 v1；validate/merge/decision/verify 均已接入，落表仍由宿主执行**；未声明规则行为不变；
   `runRuleIsolated` 提供可终止的 worker 隔离执行（opt-in）。
@@ -281,4 +283,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.13.1（规则语言 v1，稳定语义）；尚未发布到 npm。
+- 当前版本 0.14.0（FFI 接入 pin 规则）；尚未发布到 npm。

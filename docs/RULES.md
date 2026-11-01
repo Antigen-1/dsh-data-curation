@@ -350,6 +350,46 @@ pin 可以选择性地声明 `rules` 块，把口径校验与 defaults/table 合
 - 规则 FFI 必须在 `rules.ffi` 声明；默认没有文件、网络、环境变量或进程能力。
 - 未声明 `rules` 的既有 v5 pin 行为完全不变；默认规则包只用于示例/回归，不自动注入。
 
+### FFI 接入（0.14.0）
+
+pin 规则现在可以使用显式声明的 FFI binding 调用本地 Node.js 模块。通过 `curation_pin`
+工具的 `ffi` 参数提供模块定义：
+
+```json
+{
+  "pin": { "version": 5, "rules": { "version": 1, "decision": {...} } },
+  "ffi": {
+    "my.processor": {
+      "module": "./ffi/processor.mjs",
+      "export": "process",
+      "arity": 1
+    }
+  }
+}
+```
+
+宿主在签署时动态加载这些模块，创建 `FfiRegistry` 并编译规则。模块定义会合并到
+`pin.rules.ffi` 中（作为 `{id, module, export, arity}` 对象数组），使 pin 自包含：
+compare/verify 阶段会从 pin 中重新加载这些定义。
+
+规则中通过 `['ffi', 'my.processor', arg]` 调用 binding：
+
+```json
+["lambda", ["input"],
+  ["let", [["vote", ["apply", ["primitive", "car"], [["apply", ["primitive", "object-get"], [["var", "input"], ["datum", "votes"]]]]]]],
+    ["ffi", "my.processor", ["apply", ["primitive", "object-get"], [["var", "vote"], ["datum", "raw"]]]]]]
+```
+
+**安全边界**：
+
+- FFI binding 是**宿主进程里的受信任函数**，不是安全隔离；
+- 规则只能调用编译时 manifest 里列出的 binding id，不能 discover 或动态加载；
+- 输入/输出必须是 JSON，拒绝原型污染键；
+- FFI 函数本身可以访问文件系统、网络、进程——**语言层无法阻止**；
+- 不可信代码的最终边界仍是操作系统沙箱。
+
+示例：`test/ffi-integration.test.js` 演示了完整的 FFI 接入流程。
+
 示例规则包：`templates/pin-rules.example.json`（只演示默认行为，不含项目数据）。
 
 ## 判定规则（0.11.0 接管）

@@ -4,6 +4,29 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.14.0] — 2026-11-01
+
+FFI 接入 pin 规则：pin 的 validate/merge/decision/verify 规则现在可以使用显式声明的
+FFI binding 调用本地 Node.js 模块。
+
+### Added
+
+- `curation_pin` 工具新增 `ffi` 参数：`{id: {module, export?, arity?}}`，宿主动态加载
+  模块并创建 `FfiRegistry`。
+- `lib/ffi-loader.js`：从模块定义创建 FFI registry 的辅助函数。
+- `pin.rules.ffi` 现在支持对象数组 `[{id, module, export, arity}]`，存储完整的模块定义；
+  旧格式（字符串数组）仍兼容。
+- compare/verify 阶段从 pin 中重新加载 FFI 定义，pin 自包含。
+- `compileDecisionRule` 支持 `ffi` 参数。
+- `test/ffi-integration.test.js`：2 个集成测试验证 FFI 接入流程。
+- 文档：`docs/RULES.md` 新增 FFI 接入章节，README 更新。
+- 全量测试 206。
+
+### Notes
+
+- FFI binding 是受信任宿主函数，不是安全隔离；规则只能调用 manifest 中声明的 id。
+- 模块定义存储在 pin 中，确保 compare/verify 阶段可以重新加载。
+
 ## [0.13.1] — 2026-11-01
 
 文档修复：package.json description 语法与版本号残留。

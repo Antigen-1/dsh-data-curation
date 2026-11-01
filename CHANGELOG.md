@@ -16,7 +16,13 @@ versions follow [SemVer](https://semver.org/).
 - pin 字段支持 `"protected": true`：apply 跳过该字段（不写表/不写 ledger，返回
   `protectedSkipped`）；verify 的 delivery_matches/ledger_complete 跳过它。
 - `docs/DELIVERY.md`；工具总数 17→19。
-- 全量 218/218。
+- 全量 221/221。
+
+### Fixed
+
+- 交付验收按解析后的 CSV 数据行计数，不再把表头或引号内换行误判为额外记录。
+- 清单改用交付包内相对路径，复制或移动整包后可独立验收，副本篡改不会误查原包。
+- 计划拒绝越界路径与未知格式，避免写出交付目录或把未知格式静默降级为 JSONL。
 
 ### Notes
 

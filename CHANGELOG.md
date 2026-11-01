@@ -4,6 +4,27 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.16.0] — 2026-11-01
+
+规模化提交：一个通道可以从文件/目录批量导入，作业按块写检查点、可续跑；查询新增
+字段级覆盖。
+
+### Added
+
+- `curation_submit` 新增 `from`/`key`：CSV/JSONL 文件或目录，支持 JSONL 证据与扁平对象；
+  与内联 `records` 二选一。
+- `curation_job`：`start/status/list/resume/cancel`，按 `chunkSize` 分块提交，每块写
+  `.curation/jobs/<jobId>.json`；单块失败记录并继续，状态含 `completed/partial/failed`。
+- `curation_query({what:"coverage"})`：按字段返回 submitted/accepted/pending。
+- `docs/SCALE.md` 与 README 规模化提交章节；工具总数 16→17。
+- 全量 215/215。
+
+### Notes
+
+- 作业是前台分块执行，不是后台守护进程；崩溃后用 `resume` 继续。
+- CSV 不能表达证据；需要证据时使用 JSONL。
+- 该版本不改 pin/schema；提交格式仍由 `curation_submit` 原有的整批校验约束。
+
 ## [0.15.0] — 2026-11-01
 
 低门槛起步：把“签 pin 之前”的成本降下来。新增记录导入、身份归一和 pin 草稿三个工具；

@@ -107,7 +107,7 @@ pin 是项目的口径快照，分两层：
 
 可选项：长任务用 `curation_progress` 在输入框上方挂进度条（纯数据，见下文）。
 
-## 工具（16 个）
+## 工具（17 个）
 
 | 工具 | 作用 | 主要参数 |
 | --- | --- | --- |
@@ -116,12 +116,13 @@ pin 是项目的口径快照，分两层：
 | `curation_records_import` | 从 CSV/JSONL 导入记录键与字段样本 | `path`、`key`、`table`、`preview` |
 | `curation_identity` | 改号 / 排除 / 文件映射并写审计 | `path`、`key`、`rename`、`exclude`、`fileMap` |
 | `curation_pin_draft` | 从样本生成 pin 草稿（不签署） | `recordsPath`、`key`、`table`、`project`、`channels`、`fields` |
-| `curation_submit` | 提交一个通道对一批记录的抽取 | `table`、`channel`、`batch`、`records` |
+| `curation_submit` | 提交一个通道对一批记录的抽取 | `table`、`channel`、`batch`、`records` 或 `from`、`key` |
+| `curation_job` | 分块、可续跑的批量提交作业 | `action`、`jobId`、`from`、`channel`、`batch`、`chunkSize` |
 | `curation_compare` | 逐格比对，写入结论 | `table`、`records`、`fields`、`scope`、`full` |
 | `curation_apply` | 把接受值写进 curated 表 | `table`、`dryRun`、`keepBackups` |
 | `curation_verify` | 项目级 + 表级验收门禁 | `table`、`includeRetired` |
 | `curation_status` | 只读汇总（项目 / pin / 表 / 最近落表 / 锁） | — |
-| `curation_query` | 只读查询：counts / pending / cells / votes / submissions / runs / meta / events / schema | `what`、`table`、`record`、`field`、`status`、`channel`、`reason`、`limit`、`format` |
+| `curation_query` | 只读查询：counts / pending / cells / votes / submissions / runs / meta / events / schema | `what`、`table`、`record`、`field`、`status`、`channel`、`reason`、`limit`、`format`（`what` 含 `coverage`） |
 | `curation_note` | 追加项目级 / 表级备注（只追加事件） | `text`、`table` |
 | `curation_export` | 导出 curated 表 | `format`、`out`、`table`、`includeRetired` |
 | `curation_exporter` | 注册 / 移除项目导出器 | `action`、`name`、`command`、`args` |
@@ -129,6 +130,27 @@ pin 是项目的口径快照，分两层：
 | `curation_progress` | 输入框上方进度条（纯数据） | `upsert`、`remove`、`clear` |
 
 流程里所有 `cwd` 都是项目根绝对路径；`stateDir` 默认 `.curation`。
+
+### 规模化提交（0.16.0）
+
+完整格式与作业状态见 [docs/SCALE.md](docs/SCALE.md)。
+
+提交不再只能内联 JSON：
+
+```text
+curation_submit({ channel: "text", batch: "B001", from: "input/text.jsonl" })
+curation_job({ action: "start", channel: "text", batch: "B001",
+               from: "input/text/", chunkSize: 200 })
+curation_job({ action: "status", jobId: "job-..." })
+curation_query({ what: "coverage", table: "summary" })
+```
+
+- `from` 支持 CSV/JSONL 文件或目录；CSV 用 `record_id` + 字段列，JSONL 用
+  `{record_id,status,values,evidence}`，也接受扁平对象。
+- `curation_job` 每块写检查点，`resume` 从断点继续；单块失败会记录并继续，累计失败
+  超过上限才停。它是前台作业，不是后台守护进程。
+- `curation_query({what:"coverage"})` 按字段给出 submitted/accepted/pending，
+  让未覆盖字段有明确归宿。
 
 ### 低门槛起步（0.15.0）
 
@@ -300,7 +322,7 @@ effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/�
 ## 开发
 
 ```bash
-node --test          # 212 个测试
+node --test          # 215 个测试
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -310,4 +332,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.15.0（低门槛导入与 pin 草稿）；尚未发布到 npm。
+- 当前版本 0.16.0（批量提交作业与字段级状态）；尚未发布到 npm。

@@ -129,3 +129,100 @@ test('pin_draft 无记录时生成带警告的草稿而不签署', async () => {
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('submit from JSONL 批量导入一个通道', async () => {
+  const root = await rootWith({
+    'raw/doc.txt': 'CASE-1 CASE-2\n',
+    'input/records.csv': 'record_id,location,note\nCASE-1,A区,ok\nCASE-2,B区,\n',
+    'input/submissions.jsonl': [
+      JSON.stringify({ record_id: 'CASE-1', status: 'valid', values: { location: 'A区', note: 'ok' }, evidence: { location: { page: 1, quote: 'A区' } } }),
+      JSON.stringify({ record_id: 'CASE-2', status: 'valid', values: { location: 'B区', note: '' } }),
+    ].join('\n'),
+  })
+  try {
+    await initWithRaw(root)
+    const imported = await doRecordsImport({ cwd: root, path: 'input/records.csv' })
+    const draft = await doPinDraft({ cwd: root, recordsPath: imported.path, table: 'summary' })
+    const signed = await doPin({ cwd: root, draftPath: draft.draftPath })
+    assert.equal(signed.ok, true, JSON.stringify(signed))
+    const { doSubmit } = await import('../lib/core.js')
+    const out = await doSubmit({ cwd: root, channel: 'text', batch: 'B001', from: 'input/submissions.jsonl' })
+    assert.equal(out.ok, true, JSON.stringify(out))
+    assert.equal(out.records, 2)
+    assert.equal(out.from, 'input/submissions.jsonl')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('job 分块提交 450 条并写检查点，可查询状态', async () => {
+  const rows = Array.from({ length: 450 }, (_, i) => `CASE-${String(i + 1).padStart(3, '0')}`)
+  const csv = ['record_id,location', ...rows.map((id) => `${id},A`)].join('\n')
+  const jsonl = rows.map((id) => JSON.stringify({ record_id: id, values: { location: 'A' } })).join('\n')
+  const root = await rootWith({
+    'raw/doc.txt': rows.join(' '),
+    'input/records.csv': csv,
+    'input/submissions.jsonl': jsonl,
+  })
+  try {
+    await initWithRaw(root)
+    const imported = await doRecordsImport({ cwd: root, path: 'input/records.csv' })
+    const draft = await doPinDraft({ cwd: root, recordsPath: imported.path, table: 'summary' })
+    const signed = await doPin({ cwd: root, draftPath: draft.draftPath })
+    assert.equal(signed.ok, true, JSON.stringify(signed))
+    const { doJob } = await import('../lib/jobs.js')
+    const started = await doJob({
+      cwd: root, action: 'start', from: 'input/submissions.jsonl', channel: 'text', batch: 'B001', chunkSize: 200,
+    })
+    assert.equal(started.ok, true, JSON.stringify(started))
+    assert.equal(started.job.total, 450)
+    assert.equal(started.job.submitted, 450)
+    assert.equal(started.job.offset, 450)
+    assert.equal(started.job.status, 'completed')
+    const status = await doJob({ cwd: root, action: 'status', jobId: started.job.jobId })
+    assert.equal(status.ok, true)
+    assert.equal(status.job.status, 'completed')
+    const list = await doJob({ cwd: root, action: 'list' })
+    assert.ok(list.jobs.some((j) => j.jobId === started.job.jobId))
+    const resume = await doJob({ cwd: root, action: 'resume', jobId: started.job.jobId })
+    assert.equal(resume.ok, false)
+    assert.match(resume.error, /已结束/)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('coverage 查询给出字段级提交/接受/待裁定', async () => {
+  const root = await rootWith({
+    'raw/doc.txt': 'CASE-1 CASE-2\n',
+    'input/records.csv': 'record_id,location\nCASE-1,A\nCASE-2,B\n',
+  })
+  try {
+    await initWithRaw(root)
+    const imported = await doRecordsImport({ cwd: root, path: 'input/records.csv' })
+    const draft = await doPinDraft({ cwd: root, recordsPath: imported.path, table: 'summary' })
+    const signed = await doPin({ cwd: root, draftPath: draft.draftPath })
+    assert.equal(signed.ok, true, JSON.stringify(signed))
+    const { doSubmit, doCompare, doQuery } = await import('../lib/core.js')
+    const text = await doSubmit({ cwd: root, channel: 'text', batch: 'B1', records: [
+      { record_id: 'CASE-1', values: { location: 'A' }, evidence: { location: { page: 1, quote: 'A' } } },
+      { record_id: 'CASE-2', values: { location: 'B' }, evidence: { location: { page: 1, quote: 'B' } } },
+    ] })
+    assert.equal(text.ok, true, JSON.stringify(text))
+    const vision = await doSubmit({ cwd: root, channel: 'vision', batch: 'B1', records: [
+      { record_id: 'CASE-1', values: { location: 'A' }, evidence: { location: { page: 1, quote: 'A' } } },
+      { record_id: 'CASE-2', values: { location: 'B' }, evidence: { location: { page: 1, quote: 'B' } } },
+    ] })
+    assert.equal(vision.ok, true, JSON.stringify(vision))
+    const compared = await doCompare({ cwd: root })
+    assert.equal(compared.ok, true, JSON.stringify(compared))
+    const out = await doQuery({ cwd: root, what: 'coverage' })
+    assert.equal(out.ok, true, JSON.stringify(out))
+    const field = out.data[0].fields.find((f) => f.field === 'location')
+    assert.equal(field.submitted, 2)
+    assert.equal(field.accepted, 2)
+    assert.equal(field.pending, 0)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})

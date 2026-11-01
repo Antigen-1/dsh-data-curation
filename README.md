@@ -92,6 +92,9 @@ pin 是项目的口径快照，分两层：
 ```
 0 立项    curation_init        源文件逐个 sha256 → .curation/manifest.json + project.sqlite
                                （可用 tables 预告表名）
+0b 导入   curation_records_import  CSV/JSONL → 记录键 + 字段样本（不写库）
+0c 归一   curation_identity     改号 / 排除 / 文件映射 → 归一 JSONL + 审计
+0d 草稿   curation_pin_draft    从样本生成 pin 草稿 → .curation/pin.draft.json（不签署）
 1 签署    curation_pin         项目默认 + 每表口径 → 哈希封印（dryRun 只校验）
 2 采集    curation_submit      每张表、每个通道独立提交（禁止先合并再提交）
 3 比对    curation_compare     逐格比对（策略由 pin 决定）→ 接受 / 待裁定
@@ -104,12 +107,15 @@ pin 是项目的口径快照，分两层：
 
 可选项：长任务用 `curation_progress` 在输入框上方挂进度条（纯数据，见下文）。
 
-## 工具（13 个）
+## 工具（16 个）
 
 | 工具 | 作用 | 主要参数 |
 | --- | --- | --- |
 | `curation_init` | 建立项目、记录源基线、预告表 | `sources`、`tables`、`force` |
-| `curation_pin` | 签署/校验项目 pin | `pin`、`dryRun`、`force`、`reason` |
+| `curation_pin` | 签署/校验项目 pin | `pin` 或 `draftPath`、`dryRun`、`force`、`reason`、`ffi` |
+| `curation_records_import` | 从 CSV/JSONL 导入记录键与字段样本 | `path`、`key`、`table`、`preview` |
+| `curation_identity` | 改号 / 排除 / 文件映射并写审计 | `path`、`key`、`rename`、`exclude`、`fileMap` |
+| `curation_pin_draft` | 从样本生成 pin 草稿（不签署） | `recordsPath`、`key`、`table`、`project`、`channels`、`fields` |
 | `curation_submit` | 提交一个通道对一批记录的抽取 | `table`、`channel`、`batch`、`records` |
 | `curation_compare` | 逐格比对，写入结论 | `table`、`records`、`fields`、`scope`、`full` |
 | `curation_apply` | 把接受值写进 curated 表 | `table`、`dryRun`、`keepBackups` |
@@ -123,6 +129,27 @@ pin 是项目的口径快照，分两层：
 | `curation_progress` | 输入框上方进度条（纯数据） | `upsert`、`remove`、`clear` |
 
 流程里所有 `cwd` 都是项目根绝对路径；`stateDir` 默认 `.curation`。
+
+### 低门槛起步（0.15.0）
+
+完整示例与边界见 [docs/INTAKE.md](docs/INTAKE.md)。
+
+如果字段还没稳定，不必一次写完整 pin：
+
+```text
+curation_records_import({ path: "input/records.csv", key: "record_id" })
+  → .curation/records/main.jsonl + 推断字段
+curation_identity({ path: "input/records.csv", rename: {...}, exclude: [...], fileMap: {...} })
+  → 归一 JSONL + .curation/identity/main.json 审计
+curation_pin_draft({ recordsPath: ".curation/records/main.jsonl", table: "summary" })
+  → .curation/pin.draft.json（可手改）
+curation_pin({ draftPath: ".curation/pin.draft.json" })
+  → 复核后正式签署
+```
+
+`curation_records_import` 当前支持 CSV/JSONL；Excel 请先导出为 CSV。记录键可以是任意
+列（默认 `record_id`），重复键保留首次出现、缺键行跳过并计数。草稿里的 `records` 是
+`kind:"list"`，因此 pin 自包含，不依赖导入文件继续存在。
 
 ## 多表
 
@@ -273,7 +300,7 @@ effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/�
 ## 开发
 
 ```bash
-node --test          # 204 个测试
+node --test          # 212 个测试
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -283,4 +310,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.14.0（FFI 接入 pin 规则）；尚未发布到 npm。
+- 当前版本 0.15.0（低门槛导入与 pin 草稿）；尚未发布到 npm。

@@ -4,6 +4,29 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.15.0] — 2026-11-01
+
+低门槛起步：把“签 pin 之前”的成本降下来。新增记录导入、身份归一和 pin 草稿三个工具；
+它们只读输入、不写工作区数据库、不签署 pin，产物都在 `.curation/` 下。
+
+### Added
+
+- `curation_records_import`：从 CSV/JSONL 导入记录键与字段样本，推断 `text`/`number`/`date`
+  和 `allowEmpty`，报告重复键与缺键；输出 `.curation/records/<table>.jsonl`。
+- `curation_identity`：按键改号、排除记录、记录→源文件映射，输出归一 JSONL 与
+  `.curation/identity/<table>.json` 审计；改号后重复键整体拒绝。
+- `curation_pin_draft`：根据记录样本生成 v5 pin 草稿（`.curation/pin.draft.json`），
+  记录集写成自包含的 `kind:"list"`；不自动签署。
+- `curation_pin` 新增 `draftPath`，可直接签署草稿；工具总数 13→16。
+- `docs/INTAKE.md` 与 README 低门槛流程说明。
+- 新增 6 个 intake 测试；全量 212/212。
+
+### Notes
+
+- Excel 不直接支持，先导出为 CSV/JSONL，避免引入 xlsx 依赖。
+- 草稿的字段推断是启发式的；enum/归一化/证据要求仍需人工补充。
+- 该版本不改变 pin v5、schema v6 或既有 pin/工具的行为。
+
 ## [0.14.0] — 2026-11-01
 
 FFI 接入 pin 规则：pin 的 validate/merge/decision/verify 规则现在可以使用显式声明的

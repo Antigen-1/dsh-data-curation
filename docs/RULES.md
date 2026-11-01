@@ -1,9 +1,9 @@
-# 规则 DSL（0.11.0：判定规则接管）
+# 规则 DSL（0.12.0：verify hook 与隔离执行）
 
-> 状态：**0.11.0 判定规则接管，实验性**。已实现 AST、静态检查、解释器、TCO、
+> 状态：**0.12.0 verify hook 与隔离执行，实验性**。已实现 AST、静态检查、解释器、TCO、
 > 宏展开、规则注册表、签名/哈希、capability、staged effects、显式 FFI，以及 pin 的
-> `validate`/`merge`/`decision` 规则执行；**落表仍由宿主执行**。pin 仍是 v5 配置格式，
-> 规则是可选的 `rules` 块。
+> `validate`/`merge`/`decision`/`verify` 规则执行；**落表仍由宿主执行**。pin 仍是 v5
+> 配置格式，规则是可选的 `rules` 块。
 
 这是一个 JSON 表示、可静态检查的小型解释型语言。目标不是做成通用编程语言，而是让
 数据核对里的“口径”可以写成有版本、有边界、可审计的规则，而不是散落在宿主代码里的
@@ -390,7 +390,50 @@ pin 可以选择性地声明 `rules` 块，把口径校验与 defaults/table 合
 0.11 的 decision 规则不接 FFI binding；需要额外证据时先通过 `contract.evidence` 与
 `field.requireEvidence` 表达，或在 0.12 的 hook 目录中扩展。
 
-## 安全边界（0.11.0）
+## verify 规则（0.12.0）
+
+`pin.rules.verify` 是每张表验收后的追加检查。它**不能移除或改写原生门禁**，只能追加
+检查项，或把状态降为 CONDITIONAL/FAIL。
+
+输入：
+
+```json
+{
+  "table": "summary",
+  "status": "PASS",
+  "checks": [{ "name": "coverage", "status": "pass", "detail": "..." }],
+  "accepted": 42,
+  "pending": 0,
+  "total": 42,
+  "pendingByReason": {}
+}
+```
+
+返回：
+
+- `{ "ok": false, "reason": "..." }` → 追加 FAIL 检查 `verify_rule_ok`；
+- `{ "checks": [{ "name": "audit", "status": "conditional", "detail": "..." }] }`
+  → 追加 `rule.audit`，表状态按最差检查降级。
+
+规则抛错、编译失败或哈希不一致时追加 FAIL，不会静默放行。声明后每条表验收都会执行；
+规则仍无文件、网络、进程、数据库权限。
+
+## 隔离执行（0.12.0，opt-in）
+
+`runRuleIsolated(source, args, { timeoutMs, limits })` 在 worker thread 中编译并执行纯规则，
+超时直接 terminate，适合不可信/可能失控的 evaluator：
+
+```js
+import { runRuleIsolated } from 'dsh-data-curation/rules'
+
+const out = await runRuleIsolated(source, [input], { timeoutMs: 500 })
+```
+
+隔离执行只提供默认 primitive registry；自定义 primitive、FFI、capability 和 effect
+journal 只在进程内可用。它也不是 OS 级沙箱：Node worker 与宿主同用户、同文件系统，
+不可信代码的最终边界仍是操作系统。
+
+## 安全边界（0.12.0）
 
 语言层能做到：
 
@@ -410,13 +453,14 @@ pin 可以选择性地声明 `rules` 块，把口径校验与 defaults/table 合
 
 ## 版本边界
 
-0.11.0 交付 pin 的 `validate`/`merge`/`decision` 规则执行，并把规则身份写入 pin
-封印、签署事件与 decision：
+0.12.0 交付 pin 的 `validate`/`merge`/`decision`/`verify` 规则执行、验证规则追加检查
+与 worker 隔离执行，并把规则身份写入 pin 封印、签署事件、decision 与 pack.json：
 
 - pin validate/merge 在 `doPin` 中执行；`validatePin` 只编译，不执行；
-- decision 在 `curation_compare` 中逐格执行，apply 只消费宿主已接受的结论；
+- decision 在 `curation_compare` 中逐格执行，verify 在原生门禁后追加检查；
+- apply 只消费宿主已接受的结论；
 - 规则不直接写数据库，只能返回配置或裁定对象；
 - 不修改真实 ESD 工作区。
 
-后续版本按路线图推进 0.12 的 hook 目录、隔离执行与性能基线。详见
+后续版本按路线图推进 0.13 的稳定语义与兼容矩阵。详见
 `.omd/plans/rules-dsl-roadmap.md`（仓库内部计划，不随 npm 包发布）。

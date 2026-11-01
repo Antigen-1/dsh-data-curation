@@ -4,6 +4,28 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.12.0] — 2026-11-01
+
+verify hook 与隔离执行：pin 可以追加 `rules.verify` 验收检查，纯规则可在可终止的 worker
+中执行；同时记录规则性能基线。仍不接真实 ESD 工作区。
+
+### Added
+
+- `pin.rules.verify`：每张表在原生门禁之后执行，只能追加检查或降级状态，不能移除原生
+  检查；规则错误/编译失败/哈希不一致一律 FAIL，不静默放行。
+- `verify` 规则身份进入签署事件、`curation_query meta` 和 `pack.json` 的 `rules` 摘要。
+- `runRuleIsolated(source, args, { timeoutMs, limits })`：worker thread 隔离执行纯规则，
+  超时 terminate；只提供默认 primitive，不提供 FFI/capability/effects。
+- `docs/PERF.md` 与 `scripts/bench-rules.mjs`：1000 格微基准，原生 9.4ms、自定义
+  decision 规则 65ms（约 6.9x）。
+- 新增 6 个测试（3 个 verify 规则、3 个隔离执行）；全量测试 200。
+
+### Notes
+
+- verify 规则只能做纯 JSON 判定，不直接写数据库；apply 仍由宿主执行。
+- worker 隔离不是 OS 级沙箱；不可信代码的最终边界仍是操作系统。
+- decision 逐格调用不默认启用 worker（启动成本过高）。
+
 ## [0.11.0] — 2026-11-01
 
 判定规则接管：pin 可以声明 `rules.decision`，逐格接受标准由 DSL procedure 决定；verify

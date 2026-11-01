@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "verify": {
+    "id": "example.verify.audit",
+    "version": "1",
+    "signature": { "args": ["object"], "result": "object" },
+    "source": ["lambda", ["input"], ["datum", {
+      "checks": [{ "name": "manual-audit", "status": "conditional", "detail": "需要人工抽检 10%" }]
+    }]]
+  }
+}

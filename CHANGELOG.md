@@ -4,6 +4,26 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.13.0] — 2026-11-01
+
+规则语言 v1 稳定语义：冻结 0.8 以来已发布的语法、错误码、规则哈希算法与 pin 规则
+结构；新增兼容性回归与 golden hash，明确后续破坏性变更的版本化方式。
+
+### Added
+
+- `RULE_LANGUAGE_VERSION = 1`，编译结果带 `languageVersion` 字段；
+  `PIN_RULES_VERSION = 1` 保持不变。
+- `test/rules-compat.test.js`：版本常量固定、简单规则 golden hash、0.8 核心形式兼容、
+  默认 primitive 无文件/网络/进程能力，共 4 个用例。
+- `docs/RULES.md` 增加 0.8→0.13 兼容矩阵与“破坏性变更必须提升规则语言版本”的边界。
+- 全量测试 204。
+
+### Notes
+
+- 规则语言 v1 内不改变语法/哈希；后续破坏性变更需提升 `RULE_LANGUAGE_VERSION` 并提供
+  迁移说明。
+- 插件版本仍为 0.x；0.13.0 是规则语义的稳定点，不代表整个插件 1.0。
+
 ## [0.12.0] — 2026-11-01
 
 verify hook 与隔离执行：pin 可以追加 `rules.verify` 验收检查，纯规则可在可终止的 worker

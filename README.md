@@ -82,7 +82,7 @@ pin 是项目的口径快照，分两层：
 - 表登记：`curation_init({ tables })` 可预告；签署 pin 时自动登记；已登记的表
   不得从 pin 里省略；不再交付的表改 `status: "retired"`（只读、导出默认跳过、
   pack 仍含）。
-- 可选 `rules` 块：用 0.12.0 的 JSON 规则 DSL 写 `validate`（签署前校验）、`merge`
+- 可选 `rules` 块：用 0.13.0 的 JSON 规则 DSL 写 `validate`（签署前校验）、`merge`
   （defaults/table 合并）、`decision`（逐格裁定）与 `verify`（验收追加检查）；规则源码
   和哈希进入 pin 封印。规则不能改变 delivery/fields/records 等宿主结构，未声明规则的
   pin 行为不变。见 [docs/RULES.md](docs/RULES.md#pin-规则0100-自举)。
@@ -153,9 +153,9 @@ pin 是项目的口径快照，分两层：
   `{results:[…]}`），用于避免逐格 spawn；单格结果缺失或非法只影响那一格；
 - 合成值（如 `ordered-groups`）会标 `synthesized`，验收会单独计数。
 
-## 规则语言（0.12.0：verify hook 与隔离执行，实验性）
+## 规则语言（0.13.0：规则语言 v1，稳定语义）
 
-0.12.0 把可独立导入的 JSON 规则 DSL 接到 pin 的 validate/merge/decision/verify：`import { compileRule, runRuleIsolated } from
+0.13.0 把可独立导入的 JSON 规则 DSL 接到 pin 的 validate/merge/decision/verify：`import { compileRule, runRuleIsolated } from
 "dsh-data-curation/rules"`。在 `datum`/`var`/`primitive`/`if`/`begin`/`set!`/`lambda`/
 `apply` 八种核心形式之上，新增 `let`/`letrec`/named let/`cond` 宏展开、`ffi` 显式绑定、
 `RuleRegistry` 不可变规则注册表、输入/输出签名与内容哈希，以及 capability / staged
@@ -165,7 +165,7 @@ effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/�
 - 默认无文件、网络、环境变量、进程或数据库能力；`data.get`/`effects.stage` 必须由
   宿主显式授予 capability，FFI 必须列入 manifest；
 - `compileRule` 要求 primitive registry 已封存，返回冻结的编译结果与 `hash`；
-- **0.12.0 接入 validate/merge/decision/verify；落表仍由宿主执行**；未声明规则行为不变；
+- **0.13.0 冻结规则语言 v1；validate/merge/decision/verify 均已接入，落表仍由宿主执行**；未声明规则行为不变；
   `runRuleIsolated` 提供可终止的 worker 隔离执行（opt-in）。
 
 完整语法、示例、错误码与安全边界见 [docs/RULES.md](docs/RULES.md)；规则路径性能基线见
@@ -271,7 +271,7 @@ effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/�
 ## 开发
 
 ```bash
-node --test          # 200 个测试
+node --test          # 204 个测试
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -281,4 +281,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.12.0（verify hook 与隔离执行）；尚未发布到 npm。
+- 当前版本 0.13.0（规则语言 v1，稳定语义）；尚未发布到 npm。

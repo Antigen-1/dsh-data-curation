@@ -4,6 +4,38 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+## [0.18.0] — 2026-11-04
+
+### Added
+
+- 规则 DSL 新增 Scheme expression 前端：reader、R6RS 风格真值/固定元数词法形式、source span、
+  reader 资源限制，以及 Scheme→v1 JSON AST→既有 compileRule 的编译路径；旧 pin 与 golden
+  hash 保持不变。
+- 新增严格 boolean 谓词/组合子标准库：`conjoin`/`disjoin`、`conjoin2`/`disjoin2`、
+  `any/c`/`none/c`、`object/c`、`validate-with`、`decision-with` 等；保留显式 FFI。
+- 新增加载期 `(register-rule! id version procedure [options])` 与 JS `registerRule` 函数接口；
+  支持词法闭包快照、循环生成规则、原子 registry 提交和 `normalizePinRules` 预检。
+- `runRuleIsolated(..., { scheme:true })` 支持纯 Scheme worker；新增 Scheme 决策模板、
+  真实 pin 端到端测试和 native/AST/Scheme 基准对照。
+
+### Fixed
+
+- `curation_query` 成功结果不再把字符串数组误当 tool content blocks；所有工具输出统一经过
+  text-block 白名单正规化，避免持久化非法 tool result 毒化会话。
+- 有基线但未签 pin 时，`curation_status` 现在返回成功并明确显示“未签署”，不再误报无基线。
+- `curation_pin` 工具现在实际传递已公开的 `draftPath`。
+- 核心 `expandRule` 现在递归展开 `apply` 操作数中的高级形式，同时不再改写 `datum` 字面量。
+- Windows 下 sources 包含工作区时改用项目相对 POSIX 路径比较，正确保留基线排除警告。
+
+### Notes
+
+- 发布验证：317 项测试中 316 通过、0 失败；1 个 symlink 用例因当前 Windows 账户无创建权限跳过；
+  selfcheck 的 76 个发布文件扫描通过。
+- 本插件修复不修改 DeepSeek Harness 安装目录；宿主 `appendToolResult` 前置内容块校验仍需
+  作为独立宿主补丁实施。已中毒的历史会话应新开，不能靠插件修复追溯清洗。
+
 ## [0.17.0] — 2026-11-01
 
 完整交付：交付包计划/生成/验收，受保护列不参与自动落表。
@@ -520,7 +552,8 @@ pin 规则自举：pin 的 `validate` 与 defaults/table 合并可以由 JSON DS
   斜杠命令 `/curation` `/curation-status` `/curation-verify`、契约模板。
 - 零第三方运行时依赖；Node ≥ 24（内置 `node:sqlite`）。
 
-[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.17.0...v0.18.0
 [0.6.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.0...v0.4.1

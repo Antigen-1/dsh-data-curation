@@ -87,6 +87,34 @@ pin 是项目的口径快照，分两层：
   和哈希进入 pin 封印。规则不能改变 delivery/fields/records 等宿主结构，未声明规则的
   pin 行为不变。见 [docs/RULES.md](docs/RULES.md#pin-规则0100-自举)。
 
+### Scheme 规则前端
+
+除 JSON AST 外，规则现在也可用 R6RS 风格的 Scheme 子集编写。源码 lowering 到同一套
+v1 AST，pin 仍持久化 AST 与内容哈希；标准库提供严格 boolean 谓词、`conjoin`/`disjoin`、
+`object/c`、`validate-with`、`decision-with` 等组合子，并保留显式 FFI。
+
+```js
+import { loadSchemeRules } from 'dsh-data-curation/rules'
+
+const loaded = await loadSchemeRules(`
+  (define (two-votes? input) (>= (length (object-get input "votes")) 2))
+  (define (first-vote input)
+    (let ((vote (car (object-get input "votes"))))
+      (object "value" (object-get vote "raw")
+              "adopted" (list (object-get vote "channel")))))
+  (register-rule! "scheme.two-channel" "1"
+    (decision-with two-votes? first-vote)
+    (object "role" "decision"
+            "signature" (object "args" (list "object") "result" "object")))
+`)
+// 将 loaded.pinRules 放进 pin.rules；注册失败不会留下部分规则。
+```
+
+Scheme `(register-rule! id version procedure [options])` 返回规则 id；JS
+`registerRule(...)` 返回同一个 registry，支持链式脚本。完整 R6RS 子集边界、组合子、FFI、注册原子性和 worker 隔离见
+[docs/RULES.md](docs/RULES.md#scheme-前端r6rs-子集)，可运行模板见
+[templates/scheme-decision.scm](templates/scheme-decision.scm)。
+
 ## 八阶段
 
 ```
@@ -348,4 +376,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.17.0（交付包与受保护列）；尚未发布到 npm。
+- 当前版本 0.18.0（Scheme 规则前端、谓词组合子与脚本化注册）；尚未发布到 npm。

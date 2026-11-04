@@ -25,6 +25,19 @@ test('let 展开为 lambda application', async () => {
   assert.equal(await runRule(rule, []), 5)
 })
 
+test('expandRule 递归展开 apply 操作数，但不改写 datum 字面量', async () => {
+  const nested = lam([], p('+',
+    ['let', [['x', d(1)]], v('x')],
+    ['let', [['y', d(2)]], v('y')],
+  ))
+  assert.equal(await runRule(nested, []), 3)
+
+  const literal = ['let', [['x', ['datum', 1]]], ['var', 'x']]
+  const rule = lam([], d(literal))
+  assert.deepEqual(expandRule(rule), rule)
+  assert.deepEqual(await runRule(rule, []), literal)
+})
+
 test('letrec 支持递归与相互绑定', async () => {
   const fact = lam(['n'], ['if', p('=', v('n'), d(0)), d(1), p('*', v('n'), call(v('fact'), p('-', v('n'), d(1))))])
   const rule = lam([], ['letrec', [['fact', fact]], call(v('fact'), d(5))])

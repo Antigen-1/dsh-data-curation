@@ -40,6 +40,137 @@ await inc.invoke([41])   // 42
 inc.hash                 // sha256:…
 ```
 
+## Scheme 前端（R6RS 子集）
+
+规则还可以写成 Scheme 文本。前端只负责读入和 lowering：源码先变成同一套 v1 JSON AST，
+再走 `compileRule` 的静态检查、哈希、解释器和限制；pin 里保存的仍然是 AST，不是源码文本。
+因此旧规则、旧 pin 和旧 golden hash 都不变。
+
+```js
+import { compileSchemeRule, readScheme } from 'dsh-data-curation/rules'
+
+const rule = compileSchemeRule(`
+  (lambda (row)
+    (and (string? (object-get row "id"))
+         (not (equal? (object-get row "state") "deleted"))))
+`, { signature: { args: ['object'], result: 'boolean' } })
+
+await rule.invoke([{ id: 'C-1', state: 'active' }]) // true
+```
+
+支持的核心形式：固定参数 `lambda`、`if`（必须带 else）、`begin`、`set!`、`quote`（只允许
+JSON 可表示的 proper list）、`let`、`let*`、`letrec`、`letrec*`、命名 `let`、`cond`
+（必须显式提供最后的 `else`）、`and`、`or`、`not`，以及函数调用和顶层 `define`。读入器支持行注释、
+可嵌套块注释、`#;` datum 注释、`'datum`、字符串、`[]`、有限的十进制数字；拒绝 vector、
+char、quasiquote、dotted list 和非 JSON 的 symbol 字面量。
+
+R6RS 真值只有 `#f` 为假；JSON `null` 在前端里是真值。为了复用核心运行时，`if`/`cond`/
+`and`/`or` 会在 lowering 时插入显式的 `%false?` 判断。JSON `null` 用常量 `%json-null`
+表示；`null?` 判断空列表，`json-null?` 判断 JSON null。`=`、`<`、`<=`、`>`、`>=` 首版
+只接受两个数字参数，非数字会按 R6RS 的契约错误处理，而不是退化成 `equal?`。
+`set!` 只能修改词法局部绑定；模块顶层绑定不能在注册闭包内写入，`register-rule!`
+在注册时按当前值快照闭合，之后模块变量变化不会影响已注册规则。
+
+### 谓词与组合子
+
+规则和谓词都是接收一个输入值的闭包，合同谓词必须返回严格 boolean；返回 `0`、`null`、
+列表等会被组合子拒绝。组合子是普通 Scheme 表达式，按 Racket 的方式调用：
+
+```scheme
+(define positive-number?
+  (conjoin number? (lambda (x) (> x 0))))
+
+(lambda (row)
+  ((object/c ("id" string?)
+             ("tags" (list-of/c string?))
+             ("score" positive-number?))
+   row))
+```
+
+- `(conjoin pred ...)` / `(all-of pred ...)`：零个返回恒真，一个返回其严格化版本，
+  多个从左到右短路。
+- `(disjoin pred ...)` / `(any-of pred ...)`：零个返回恒假，多个从左到右短路。
+- `conjoin2` / `disjoin2`：固定二元的普通高阶过程，便于作为值传递。
+- `any/c` / `none/c` 是恒真/恒假谓词；`(not/c pred)`、`(equal/c expected)`、
+  `(list-of/c pred)`、`(field/c "key" pred)`、`(object/c ("key" pred) ...)`
+  （`fields/c` 是别名；允许额外键）、`(validate-with pred message)`、
+  `(decision-with accept selector)` 是其他标准组合子。
+- `validate-with` 把 boolean 谓词适配成 `{ok, errors}`；`decision-with` 保留 pin decision
+  的对象协议：只有 accept 为真才调用 selector 并加 `accepted: true`，accept 为假直接返回
+  `{accepted:false, reason:"rule_pending"}`，不会调用 selector。原生 decision 仍可返回
+  `value`、`adopted`、`evidence` 等字段。
+- `(object "key" value ...)` 是前端提供的数据构造扩展，便于构造注册 options、签名和
+  decision/verify 结果；它由现有 `object-set` primitive 展开，不引入新的运行时对象类型。
+
+`object/c` 只检查声明过的键，额外键不会被拒绝；缺失键返回失败，谓词返回非 boolean
+则报严格合同错误（不会把 `0`、`null` 或列表当成假）。
+
+### FFI
+
+Scheme 里可以直接用 `(ffi "binding" arg ...)`，也可以用
+`(ffi-predicate "binding")` 包成严格一元谓词。FFI 仍然只能调用宿主显式注册的 binding；
+组合子里调用 FFI 时同样要求绑定返回 boolean，且短路语义优先。
+
+### 脚本化注册与 pin
+
+`register-rule!` 是加载期函数，不是运行期全局状态。调用形状为
+`(register-rule! id version procedure [options])`，返回规则 id；`options` 是可选 object，
+只接受 `role`、`description`、`signature`。`role` 为 `validate`、`merge`、`decision` 或
+`verify`；省略 options/role 的规则只进入 registry，不进入 pin。procedure 可以是固定元数
+lambda、捕获词法环境的闭包或固定元数 primitive；变参 primitive 和 FFI procedure 必须用
+固定元数 lambda 显式包装。
+
+模块加载器先收集 descriptor，再编译全部规则、生成 pin 片段并调用 `normalizePinRules`
+预检；全部成功后才一次性 `define` 到 registry。重复 id/role、非法 FFI 声明、编译或 pin
+校验失败都不会留下部分规则。默认在成功后封存 registry（包括调用方传入的 registry），
+可用 `{ seal:false }` 显式关闭。
+
+```js
+import { loadSchemeRules } from 'dsh-data-curation/rules'
+
+const loaded = await loadSchemeRules(`
+  (define (over? row)
+    (> (object-get row "amount") 100))
+  (register-rule! "acme.over" "1"
+    (lambda (row)
+      ((decision-with over?
+        (lambda (r) (object "value" (object-get r "value") "adopted" (list "scheme")))) row))
+    (object
+      "role" "decision"
+      "description" "Scheme decision"
+      "signature" (object "args" (list "object") "result" "object")))
+`, { ffi })
+// loaded.descriptors、loaded.registry、loaded.pinRules、loaded.sourceMap、loaded.diagnostics
+```
+
+JS 函数接口为 `registerRule(registry, descriptor, options)`，返回同一个 registry，支持链式脚本。
+descriptor 使用 `{ id, version, source|scheme, role?, description?, signature? }`，其中 `source` 是 v1 AST，
+`scheme` 是 Scheme 字符串，二者必须且只能提供一个。`options` 可传 `ffi`、`primitives`、
+`limits`、`reader` 和编译签名覆盖。
+`pinRulesFromDescriptors(descriptors, { ffi })` 生成可交给 `normalizePinRules` 的
+`{version:1, ffi, <role>}`；一个 pin 只允许一个同名 role，重复 role 是加载错误，不会被
+降级成 diagnostics。
+
+```js
+const loaded = await loadSchemeRules(source, { ffi })
+const pin = { version: 5, tables: [...], rules: loaded.pinRules }
+```
+
+pin 里的规则身份仍是 AST 内容哈希；原始 Scheme 文本、注释和源码 span 不直接参与哈希。
+标准库组合子和被捕获的辅助闭包会在 lowering/closure conversion 后按可达依赖内联成
+自包含 AST，因此辅助函数或标准库实现一旦改变最终 AST，hash 就会改变；只改注释不会改变。
+
+### 限制与错误
+
+`readScheme` 默认限制 1,000,000 字节、100,000 个 token、256 层嵌套；可用
+`maxSourceBytes`、`maxTokens`、`maxDepth` 覆盖，未知 option 或非正安全整数会被拒绝。
+`compileSchemeRule`、`evaluateSchemeModule`、`loadSchemeRules` 同时接受这三个直接键和
+`{ reader: { ... } }` 形式。读入错误为 `SCHEME_READ`；lowering 错误
+为 `SCHEME_SYNTAX`、`SCHEME_BINDING`、`SCHEME_QUOTE`、`SCHEME_CAPTURE_MUTATION` 等；注册阶段还会产生
+`SCHEME_REGISTER_ID/VERSION/ROLE/OPTIONS/SOURCE`、`DUPLICATE_RULE`、`SCHEME_FFI_DECL`、
+`SCHEME_PIN_RULES`、`DUPLICATE_RULE_ROLE`。
+所有错误都带源码 span（可用时）和路径，便于脚本定位。
+
 ## 数据模型
 
 规则源码和运行时值都必须是 **JSON 值**：
@@ -467,9 +598,12 @@ compare/verify 阶段会从 pin 中重新加载这些定义。
 import { runRuleIsolated } from 'dsh-data-curation/rules'
 
 const out = await runRuleIsolated(source, [input], { timeoutMs: 500 })
+// 纯 Scheme 源码使用同一 worker；pin 中持久化的 AST 不需要 scheme 标志。
+const schemeOut = await runRuleIsolated(schemeSource, [input], { scheme: true, timeoutMs: 500 })
 ```
 
-隔离执行只提供默认 primitive registry；自定义 primitive、FFI、capability 和 effect
+`scheme:true` 在 worker 内执行 Scheme→AST→compileRule；可用 `reader` 覆盖读入限制。
+两条路径使用相同 AST 解释器与哈希语义。隔离执行只提供默认 primitive registry；自定义 primitive、FFI、capability 和 effect
 journal 只在进程内可用。它也不是 OS 级沙箱：Node worker 与宿主同用户、同文件系统，
 不可信代码的最终边界仍是操作系统。
 

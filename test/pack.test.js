@@ -100,13 +100,21 @@ test('pack：被引用的脚本不存在时只警告，不影响打包', async (
   assert.ok(!pack.files.some((f) => f.name.includes('missing.mjs')))
 })
 
-test('pack：被引用的脚本是符号链接时跳过（不把外部内容打进包）', async () => {
+test('pack：被引用的脚本是符号链接时跳过（不把外部内容打进包）', async (t) => {
   const root = await makeProject()
   await seed(root)
   const outside = await mkdtemp(join(tmpdir(), 'dsh-curation-outside-'))
   const secret = join(outside, 'secret.sh')
   await writeFile(secret, 'echo top-secret\n', 'utf8')
-  await symlink(secret, join(root, 'tools', 'linked.mjs'))
+  try {
+    await symlink(secret, join(root, 'tools', 'linked.mjs'))
+  } catch (err) {
+    if (err?.code === 'EPERM') {
+      t.skip('当前 Windows 账户没有创建符号链接的权限')
+      return
+    }
+    throw err
+  }
   const add = await doExporter({ cwd: root, action: 'add', name: 'linked', command: 'node tools/linked.mjs' })
   assert.equal(add.ok, true, add.error)
 

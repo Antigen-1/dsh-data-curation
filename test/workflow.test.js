@@ -76,7 +76,7 @@ test('端到端：基线 → 契约 → 双通道 → 比对 → 落表 → 验�
   const init = await doInit({ cwd: root, sources: ['raw'] })
   assert.equal(init.ok, true)
   assert.equal(init.files, 1)
-  assert.ok(init.workspace.endsWith(WORKSPACE))
+  assert.ok(init.workspace.replaceAll('\\', '/').endsWith(WORKSPACE))
   await twoChannelRun(root)
 
   const cmp = await doCompare({ cwd: root })

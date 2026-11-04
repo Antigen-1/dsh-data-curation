@@ -96,12 +96,22 @@ test('工作区 schema 版本门：旧库与更新库都拒绝打开（S4）', a
   const older = openDb(dbPath)
   older.exec('PRAGMA user_version = 1')
   older.close()
-  assert.throws(() => ensureStateSchema(openDb(dbPath)), /工作区由旧版本创建/)
+  const outdated = openDb(dbPath)
+  try {
+    assert.throws(() => ensureStateSchema(outdated), /工作区由旧版本创建/)
+  } finally {
+    outdated.close()
+  }
 
   const newer = openDb(dbPath)
   newer.exec('PRAGMA user_version = 99')
   newer.close()
-  assert.throws(() => ensureStateSchema(openDb(dbPath)), /更新版本的 dsh-data-curation/)
+  const future = openDb(dbPath)
+  try {
+    assert.throws(() => ensureStateSchema(future), /更新版本的 dsh-data-curation/)
+  } finally {
+    future.close()
+  }
   await rm(root, { recursive: true, force: true })
 })
 

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { runRuleIsolated } from '../lib/rules/isolated.js'
+import { compileSchemeRule } from '../lib/rules/scheme/compile.js'
+import { compileRule } from '../lib/rules/compiler.js'
 
 const v = (name) => ['var', name]
 const d = (value) => ['datum', value]
@@ -23,6 +25,17 @@ test('隔离执行：失控规则在超时后被终止，不阻塞主线程', as
     (error) => error.code === 'TIMEOUT',
   )
   assert.ok(Date.now() - started < 1500)
+})
+
+test('隔离执行：纯 Scheme 源码与持久化 AST 身份、行为一致', async () => {
+  const source = '(lambda (x) ((conjoin number? (lambda (n) (> n 0))) x))'
+  const fromScheme = compileSchemeRule(source)
+  const fromAst = compileRule(fromScheme.ast)
+  assert.equal(fromScheme.hash, fromAst.hash)
+  for (const [input, expected] of [[2, true], [-1, false], ['2', false]]) {
+    assert.equal(await runRuleIsolated(source, [input], { scheme: true }), expected)
+    assert.equal(await runRuleIsolated(fromScheme.ast, [input]), expected)
+  }
 })
 
 test('隔离执行：静态错误带 code/path 返回', async () => {

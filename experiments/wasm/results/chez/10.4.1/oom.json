@@ -1,0 +1,34 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:41.487Z",
+  "node": "v24.21.0",
+  "platform": "win32-x64",
+  "capPages": 1024,
+  "capBytes": 67108864,
+  "initialPages": 256,
+  "originalMaxPages": 32768,
+  "events": [
+    {
+      "step": "capped-ready",
+      "memory": {
+        "rss": 107085824,
+        "wasmBytes": 16777216
+      }
+    },
+    {
+      "step": "oom-attempt",
+      "kind": "worker-failure",
+      "message": "worker error: RuntimeError: Aborted(). Build with -s ASSERTIONS=1 for more info.\n    at abort (eval at <anonymous> (C:\\Users\\29436\\Desktop\\Projects\\dsh-data-curation\\experiments\\wasm\\chez\\online-vm-worker.cjs:133:1), <anonymous>:3:16084)\n    at _abort (eval at <anonymous> (C:\\Users\\29436\\Desktop\\Projects\\dsh-data-curation\\experiments\\wasm\\chez\\online-vm-worker.cjs:133:1), <anonymous>:3:81665)\n    at wasm://wasm/0030795a:wasm-function[472]:0x84468\n    at wasm://wasm/0030795a:wasm-function[169]:0xda96\n    at wasm://wasm/0030795a:wasm-function[54]:0x2708\n    at wasm://wasm/0030795a:wasm-function[62]:0x2e3d\n    at wasm://wasm/0030795a:wasm-function[63]:0x309f\n    at wasm://wasm/0030795a:wasm-function[77]:0x3d15\n    at wasm://wasm/0030795a:wasm-function[498]:0x8c224\n    at wasm://wasm/0030795a:wasm-function[498]:0x8c13b"
+    },
+    {
+      "step": "fresh-instance",
+      "frame": "{\"id\":\"fresh\",\"ok\":true,\"value\":0}",
+      "memory": {
+        "rss": 109400064,
+        "wasmBytes": 16777216
+      }
+    }
+  ],
+  "mainProcessAlive": true,
+  "oomBounded": true
+}

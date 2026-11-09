@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:42.271Z",
+  "error": {
+    "code": "E-OUTPUT-LIMIT",
+    "message": "Error: dsh_dispatch exceeded the 1000000-byte C output cap"
+  },
+  "exitCode": 70,
+  "maxOutputBytes": 1000000,
+  "boundary": "Worker rejects outLen > maxOutputBytes before HEAPU8.slice and terminates the incarnation.",
+  "stderr": ""
+}

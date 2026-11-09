@@ -1,0 +1,1 @@
+{"protocolVersion":1,"id":"escape.chibi-emscripten","op":"eval","source":"(import (chibi emscripten))\n(eval-script! \"globalThis.__chibi_escape = 1\")\n(string-eval-script \"String(globalThis.__chibi_escape)\")","args":[]}

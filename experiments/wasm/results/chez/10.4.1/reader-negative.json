@@ -1,0 +1,309 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:42.436Z",
+  "vectorFile": "experiments/wasm/chez/reader-vectors.json",
+  "edgeCount": 20,
+  "edgePass": 20,
+  "edgeResults": [
+    {
+      "id": "close",
+      "source": ")",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "open",
+      "source": "(",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "dotted",
+      "source": "(a . b)",
+      "kind": "datum-error",
+      "expectedCode": "E-DOTTED",
+      "actualCode": "E-DOTTED",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-DOTTED",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "multi-form-dotted",
+      "source": "(ok)\n(a . b)",
+      "kind": "datum-error",
+      "expectedCode": "E-DOTTED",
+      "actualCode": "E-DOTTED",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-DOTTED",
+        "ruleId": "rule-abc",
+        "line": 2,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "complex",
+      "source": "1+2i",
+      "kind": "datum-error",
+      "expectedCode": "E-DATUM",
+      "actualCode": "E-DATUM",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-DATUM",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "quasiquote",
+      "source": "`x",
+      "kind": "readable",
+      "expectedCode": "NO-ERROR",
+      "actualCode": "NO-ERROR",
+      "pass": true,
+      "diagnostic": {
+        "code": "NO-ERROR",
+        "ruleId": "-",
+        "line": 0,
+        "column": 0,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "unquote",
+      "source": ",x",
+      "kind": "readable",
+      "expectedCode": "NO-ERROR",
+      "actualCode": "NO-ERROR",
+      "pass": true,
+      "diagnostic": {
+        "code": "NO-ERROR",
+        "ruleId": "-",
+        "line": 0,
+        "column": 0,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "reader-comment",
+      "source": "#;1",
+      "kind": "readable",
+      "expectedCode": "NO-ERROR",
+      "actualCode": "NO-ERROR",
+      "pass": true,
+      "diagnostic": {
+        "code": "NO-ERROR",
+        "ruleId": "-",
+        "line": 0,
+        "column": 0,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "directive",
+      "source": "#!fold-case",
+      "kind": "readable",
+      "expectedCode": "NO-ERROR",
+      "actualCode": "NO-ERROR",
+      "pass": true,
+      "diagnostic": {
+        "code": "NO-ERROR",
+        "ruleId": "-",
+        "line": 0,
+        "column": 0,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "bad-radix",
+      "source": "#x",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "unterminated-string",
+      "source": "\"abc",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "bad-char",
+      "source": "#\\x110000",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "zero-denominator",
+      "source": "1/0",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "bad-exponent",
+      "source": "1e",
+      "kind": "readable",
+      "expectedCode": "NO-ERROR",
+      "actualCode": "NO-ERROR",
+      "pass": true,
+      "diagnostic": {
+        "code": "NO-ERROR",
+        "ruleId": "-",
+        "line": 0,
+        "column": 0,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "unknown-sharp",
+      "source": "#z",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "bad-symbol",
+      "source": "1abc",
+      "kind": "readable",
+      "expectedCode": "NO-ERROR",
+      "actualCode": "NO-ERROR",
+      "pass": true,
+      "diagnostic": {
+        "code": "NO-ERROR",
+        "ruleId": "-",
+        "line": 0,
+        "column": 0,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "bytevector-range",
+      "source": "#vu8(256)",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "bytevector-eof",
+      "source": "#vu8(1",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "vector-eof",
+      "source": "#(1",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 1,
+        "version": "v2"
+      }
+    },
+    {
+      "id": "block-comment-eof",
+      "source": "#| open",
+      "kind": "read-error",
+      "expectedCode": "E-READ",
+      "actualCode": "E-READ",
+      "pass": true,
+      "diagnostic": {
+        "code": "E-READ",
+        "ruleId": "rule-abc",
+        "line": 1,
+        "column": 8,
+        "version": "v2"
+      }
+    }
+  ]
+}

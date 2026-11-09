@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "sync": {
+    "id": "f1",
+    "ok": true,
+    "value": 3
+  },
+  "async": {
+    "id": "f2",
+    "ok": true,
+    "value": "hello"
+  },
+  "failure": {
+    "id": "f3",
+    "ok": false,
+    "error": {
+      "code": "E-FFI-HOST"
+    }
+  },
+  "timeout": {
+    "id": "f4",
+    "ok": false,
+    "error": {
+      "code": "E-TIMEOUT"
+    }
+  },
+  "checkedAt": "2026-11-09T11:47:40.758Z",
+  "transport": "blocking C ABI stdin/stdout bridge, FfiBroker invocation"
+}

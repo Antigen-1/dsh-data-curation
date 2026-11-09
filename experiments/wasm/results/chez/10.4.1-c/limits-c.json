@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "transport": "c-abi",
+  "sampledAt": "2026-11-08T15:41:32.823Z",
+  "node": "v24.21.0",
+  "platform": "win32-x64",
+  "starts": [
+    {
+      "start": 1,
+      "rss": 123944960,
+      "wasmBytes": 60424192,
+      "ready": true
+    },
+    {
+      "start": 2,
+      "rss": 128995328,
+      "wasmBytes": 60424192,
+      "ready": true
+    },
+    {
+      "start": 3,
+      "rss": 127430656,
+      "wasmBytes": 60424192,
+      "ready": true
+    },
+    {
+      "start": 4,
+      "rss": 130592768,
+      "wasmBytes": 60424192,
+      "ready": true
+    },
+    {
+      "start": 5,
+      "rss": 131563520,
+      "wasmBytes": 60424192,
+      "ready": true
+    }
+  ],
+  "idlePeak": 131563520,
+  "memoryFormula": "ceil((idlePeak + 32 MiB) / 64 KiB) * 64 KiB",
+  "memoryBytes": 165150720,
+  "limits": {
+    "wallTimeoutMs": 2000,
+    "maxOutputBytes": 1000000,
+    "memoryBytes": 165150720
+  }
+}

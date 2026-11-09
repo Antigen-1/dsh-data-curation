@@ -1,0 +1,11 @@
+(load "/plugin-loader.scm")
+(define s "(library (dsh plugin missing v1) (export missing) (import (rnrs base (6))) (define (answer) 1))")
+(guard (e (#t
+            (display "PLUGIN-ERROR? ") (display (plugin-error? e)) (newline)
+            (display "CODE ") (write (plugin-error-code e)) (newline)
+            (display "CONDITION? ") (display (condition? e)) (newline)
+            (display "MESSAGE ")
+            (display (guard (e2 (#t "n/a")) (condition-message e)))
+            (newline)))
+  (load-plugin-source! s))
+(exit 0)

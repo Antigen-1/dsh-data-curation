@@ -1,0 +1,17 @@
+(import (chezscheme))
+(define (try thunk)
+  (call/cc
+    (lambda (escape)
+      (with-exception-handler
+        (lambda (e) (escape (cons 'error e)))
+        (lambda () (cons 'value (thunk)))))))
+(define (f)
+  (let ((r (try (lambda () (raise (cons 'plugin-error (cons 'E-X '())))))))
+    (if (eq? (car r) 'error)
+        (raise (cdr r))
+        (cdr r))))
+(guard (e (#t (display "CAUGHT ") (write e) (newline)))
+  (f))
+(display "DONE")
+(newline)
+(exit 0)

@@ -1,0 +1,91 @@
+{
+  "ok": true,
+  "transport": "c-abi",
+  "checkedAt": "2026-11-09T11:47:41.694Z",
+  "requests": [
+    {
+      "id": "r1",
+      "op": "set",
+      "arg": 42,
+      "payload": "(request \"r1\" set 42)"
+    },
+    {
+      "id": "r2",
+      "op": "get",
+      "payload": "(request \"r2\" get)"
+    },
+    {
+      "id": "r3",
+      "op": "inc",
+      "arg": 1,
+      "payload": "(request \"r3\" inc 1)"
+    },
+    {
+      "id": "r4",
+      "op": "get",
+      "payload": "(request \"r4\" get)"
+    }
+  ],
+  "responses": [
+    {
+      "request": {
+        "id": "r1",
+        "op": "set",
+        "arg": 42,
+        "payload": "(request \"r1\" set 42)"
+      },
+      "response": "{\"id\":\"r1\",\"ok\":true,\"value\":42}",
+      "parsed": {
+        "id": "r1",
+        "ok": true,
+        "value": 42
+      }
+    },
+    {
+      "request": {
+        "id": "r2",
+        "op": "get",
+        "payload": "(request \"r2\" get)"
+      },
+      "response": "{\"id\":\"r2\",\"ok\":true,\"value\":42}",
+      "parsed": {
+        "id": "r2",
+        "ok": true,
+        "value": 42
+      }
+    },
+    {
+      "request": {
+        "id": "r3",
+        "op": "inc",
+        "arg": 1,
+        "payload": "(request \"r3\" inc 1)"
+      },
+      "response": "{\"id\":\"r3\",\"ok\":true,\"value\":43}",
+      "parsed": {
+        "id": "r3",
+        "ok": true,
+        "value": 43
+      }
+    },
+    {
+      "request": {
+        "id": "r4",
+        "op": "get",
+        "payload": "(request \"r4\" get)"
+      },
+      "response": "{\"id\":\"r4\",\"ok\":true,\"value\":43}",
+      "parsed": {
+        "id": "r4",
+        "ok": true,
+        "value": 43
+      }
+    }
+  ],
+  "stderr": [],
+  "asset": {
+    "js": "41a57f7f08ec15eeeb1bfd3211bc8166b8febe4a0079d8772c83e3c82cc224f9",
+    "wasm": "b0aa6503c7642f3b09da229569b1cc5f9ff8ec8e01b18fb5a57b90ab5e6deceb",
+    "data": "4c7c1a1b9f68d2e58fab235a5d0e5d8b861645af7e93ac8899f1385bd56fb4c8"
+  }
+}

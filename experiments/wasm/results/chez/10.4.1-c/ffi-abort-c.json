@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:42.298Z",
+  "first": {
+    "timeoutCode": "E-TIMEOUT",
+    "aborted": 1,
+    "terminated": true,
+    "exitCode": 1,
+    "audit": {
+      "requestId": "029aa9c3-4a8f-4299-a095-c8d52f94fe22",
+      "incarnationId": "abort-test-1",
+      "ruleHash": "rule-a",
+      "kind": "ffi",
+      "target": "delay.slow",
+      "argsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "status": "timeout",
+      "error": "E-TIMEOUT",
+      "durationMs": 61.1394,
+      "late": true,
+      "lateResultHash": "02921de0ba559c7c64e594dc948ea39c48ff4f2642be7072cede26f9b6fe3ffd"
+    }
+  },
+  "second": {
+    "response": "{\"id\":\"g\",\"ok\":true,\"value\":0}"
+  }
+}

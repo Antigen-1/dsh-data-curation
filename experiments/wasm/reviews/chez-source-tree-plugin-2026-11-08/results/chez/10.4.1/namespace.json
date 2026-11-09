@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "probe": "only (rnrs) + - * = display",
+  "observed": {
+    "only-eval": "3",
+    "only-file": "ERROR: attempt to reference unbound identifier",
+    "only-import": "ERROR: attempt to reference unbound identifier"
+  },
+  "failures": []
+}

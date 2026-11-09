@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:41.702Z",
+  "vm": {
+    "timeoutCode": "E-TIMEOUT",
+    "afterDeathCode": "E-VM-DEAD"
+  },
+  "broker": {
+    "timed": {
+      "ok": false,
+      "error": "E-TIMEOUT",
+      "abortRequested": true,
+      "terminated": false,
+      "abortError": null
+    },
+    "aborted": 1,
+    "audit": {
+      "requestId": "ffi-timeout",
+      "incarnationId": null,
+      "ruleHash": "rule",
+      "kind": "ffi",
+      "target": "slow.echo",
+      "argsHash": "8b103e7c612e1838c678b8aa3aadfa195049d595c616b85c7230a1c7b1f35cca",
+      "status": "timeout",
+      "error": "E-TIMEOUT",
+      "durationMs": 30.4464,
+      "late": true,
+      "lateResultHash": "02921de0ba559c7c64e594dc948ea39c48ff4f2642be7072cede26f9b6fe3ffd"
+    },
+    "reusedCode": "E-FFI-REQUEST-REUSED",
+    "rejectionCode": "E-FFI-HOST"
+  },
+  "cancel": {
+    "requested": true,
+    "error": "E-CANCELLED",
+    "aborted": 1,
+    "status": "cancelled"
+  }
+}

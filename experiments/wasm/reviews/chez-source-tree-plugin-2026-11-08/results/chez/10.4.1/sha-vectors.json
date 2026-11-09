@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "code": 0,
+  "expected": {
+    "sha-empty": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sha-abc": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "sha-long": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"
+  },
+  "observed": {
+    "sha-empty": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sha-abc": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "sha-long": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+    "canonical-empty": "1000000000",
+    "tree-define": "d98c8a188996ffa7bbcfdd21d536b9695a7cccbc2f872e43d7a3ae01855a549e"
+  },
+  "failures": []
+}

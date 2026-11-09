@@ -1,0 +1,6 @@
+(import (chezscheme))
+(guard (e (#t (display "PAIR? ") (display (pair? e)) (newline) (write e) (newline)))
+  (raise (cons 'plugin-error (cons 'E-X '()))))
+(display "DONE")
+(newline)
+(exit 0)

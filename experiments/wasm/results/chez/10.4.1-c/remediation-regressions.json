@@ -1,0 +1,236 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T04:22:43.779Z",
+  "total": 26,
+  "passed": 26,
+  "failed": [],
+  "results": [
+    {
+      "file": "test-online-vm-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1139,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"responses\": [\n    {\n      \"id\": \"r1\",\n      \"ok\": true,\n      \"value\": 42\n    },\n    {\n      \"id\": \"r2\",\n      \"ok\": true,\n      \"value\": 42\n    },\n    {\n      \"id\": \"r3\",\n      \"ok\": true,\n      \"value\": 43\n    },\n    {\n      \"id\": \"r4\",\n      \"ok\": true,\n      \"value\": 43\n    }\n  ],\n  \"stderr\": [],\n  \"out\": \"C:\\\\Users\\\\29436\\\\Desktop\\\\Projects\\\\dsh-data-curation\\\\experiments\\\\wasm\\\\results\\\\chez\\\\10.4.1-c\\\\online-vm-c.json\"\n}\n"
+    },
+    {
+      "file": "test-online-vm-c-supervision.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 7005,
+      "stderrTail": "",
+      "stdoutTail": "\"v24.21.0\",\n  \"platform\": \"win32-x64\",\n  \"events\": [\n    {\n      \"step\": \"initial-ready\",\n      \"memory\": {\n        \"rss\": 117391360,\n        \"wasmBytes\": 60424192\n      }\n    },\n    {\n      \"step\": \"initial-set\",\n      \"value\": 7\n    },\n    {\n      \"step\": \"timeout\",\n      \"killedAfterMs\": 2208,\n      \"terminateExitCode\": 1,\n      \"mainProcessAlive\": true\n    },\n    {\n      \"step\": \"after-timeout-ready\",\n      \"memory\": {\n        \"rss\": 118513664,\n        \"wasmBytes\": 60424192\n      }\n    },\n    {\n      \"step\": \"after-timeout-state\",\n      \"value\": 0\n    },\n    {\n      \"step\": \"after-timeout-set\",\n      \"value\": 9\n    },\n    {\n      \"step\": \"guest-exit\",\n      \"exit\": {\n        \"type\": \"exit\",\n        \"code\": 7,\n        \"stderr\": \"\"\n      },\n      \"exitCodeIsSeven\": true,\n      \"mainProcessAlive\": true\n    },\n    {\n      \"step\": \"after-crash-ready\",\n      \"memory\": {\n        \"rss\": 120246272,\n        \"wasmBytes\": 60424192\n      }\n    },\n    {\n      \"step\": \"after-crash-state\",\n      \"value\": 0\n    },\n    {\n      \"step\": \"after-crash-set\",\n      \"value\": 11\n    }\n  ],\n  \"timeoutKilled\": true,\n  \"crashKilled\": true,\n  \"mainProcessSurvived\": true,\n  \"freshInstanceStateReset\": true\n}\n"
+    },
+    {
+      "file": "test-memfs-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1262,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"checkedAt\": \"2026-11-09T04:21:59.758Z\",\n  \"ok\": true,\n  \"checks\": {\n    \"projectValue\": true,\n    \"projectWriteDenied\": true,\n    \"outWrite\": true,\n    \"outRead\": true,\n    \"loadOk\": true,\n    \"hostOutSize\": true,\n    \"hostOutCount\": true\n  },\n  \"guest\": {\n    \"projectValue\": 42,\n    \"projectWriteDenied\": true,\n    \"outWrite\": true,\n    \"outRead\": true,\n    \"loadOk\": true,\n    \"outError\": \"\"\n  },\n  \"host\": {\n    \"outSize\": 2,\n    \"outCount\": 1\n  },\n  \"engine\": {\n    \"jsSha256\": \"5957c85d022a55058ae4e94668ce792010834f77065f8439cde3e967b0eb7713\",\n    \"wasmSha256\": \"b0aa6503c7642f3b09da229569b1cc5f9ff8ec8e01b18fb5a57b90ab5e6deceb\",\n    \"dataSha256\": \"0a510371bf6c352840c78c971ea47815cc7014dc568155f1751162a9de71538a\"\n  },\n  \"transport\": \"C ABI dsh_init/dsh_dispatch + dsh_mount_file/dsh_out_size/dsh_out_count\",\n  \"boundary\": \"MEMFS is Emscripten virtual FS; project files are mounted read-only; out quota is checked by host after dispatch.\"\n}\n"
+    },
+    {
+      "file": "test-memfs-quota-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1218,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"checkedAt\": \"2026-11-09T04:22:00.977Z\",\n  \"ok\": true,\n  \"checks\": {\n    \"quotaDenied\": true,\n    \"outSizeAtCap\": true,\n    \"outCountOne\": true\n  },\n  \"guest\": {\n    \"quotaDenied\": true\n  },\n  \"host\": {\n    \"outSize\": 65536,\n    \"outCount\": 1\n  },\n  \"engine\": {\n    \"jsSha256\": \"5957c85d022a55058ae4e94668ce792010834f77065f8439cde3e967b0eb7713\",\n    \"wasmSha256\": \"b0aa6503c7642f3b09da229569b1cc5f9ff8ec8e01b18fb5a57b90ab5e6deceb\",\n    \"dataSha256\": \"0a510371bf6c352840c78c971ea47815cc7014dc568155f1751162a9de71538a\"\n  },\n  \"boundary\": \"Host FS write guard rejects /out writes above 65536 bytes with ENOSPC before the guest write.\"\n}\n"
+    },
+    {
+      "file": "test-memfs-links-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1184,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:02.162Z\",\n  \"results\": {\n    \"symlink:/project/a->/project/b\": 30,\n    \"link:/project/a->/project/b\": \"not-implemented\",\n    \"rename:/project/a->/out/b\": 30,\n    \"rename:/out/a->/project/b\": 30\n  },\n  \"expected\": \"EPERM (30) for available symlink/link/rename operations crossing /project\"\n}\n"
+    },
+    {
+      "file": "test-blocking-ffi-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1347,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:03.505Z\",\n  \"success\": {\n    \"value\": 12345,\n    \"elapsedMs\": 157\n  },\n  \"error\": {\n    \"code\": \"E-TIMEOUT\",\n    \"elapsedMs\": 110\n  },\n  \"injection\": {\n    \"fields\": {\n      \"id\": \"id\\tx\",\n      \"rid\": \"rid\\ny\",\n      \"kind\": \"capability\",\n      \"rule\": \"rule\\tz\",\n      \"target\": \"clock.now\"\n    },\n    \"singleFrame\": true\n  },\n  \"frameLimit\": {\n    \"code\": \"E-FFI-FRAME-TOO-LARGE\",\n    \"multibyteCode\": \"E-FFI-FRAME-TOO-LARGE\",\n    \"maxBytes\": 65536,\n    \"multibyteChars\": 40000,\n    \"multibyteBytes\": 80000\n  },\n  \"transport\": \"C ABI dsh_dispatch + blocking stdin/stdout bridge; strict JSON frame; no continuation capture\"\n}\n"
+    },
+    {
+      "file": "test-blocking-broker-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1531,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"sync\": {\n    \"id\": \"f1\",\n    \"ok\": true,\n    \"value\": 3\n  },\n  \"async\": {\n    \"id\": \"f2\",\n    \"ok\": true,\n    \"value\": \"hello\"\n  },\n  \"failure\": {\n    \"id\": \"f3\",\n    \"ok\": false,\n    \"error\": {\n      \"code\": \"E-FFI-HOST\"\n    }\n  },\n  \"timeout\": {\n    \"id\": \"f4\",\n    \"ok\": false,\n    \"error\": {\n      \"code\": \"E-TIMEOUT\"\n    }\n  },\n  \"checkedAt\": \"2026-11-09T04:22:04.841Z\",\n  \"transport\": \"blocking C ABI stdin/stdout bridge, FfiBroker invocation\"\n}\n"
+    },
+    {
+      "file": "test-host-bridge-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 739,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:05.775Z\",\n  \"request\": \"ping\",\n  \"response\": \"pong:ping\",\n  \"elapsedMs\": 32,\n  \"totalElapsedMs\": 45,\n  \"transport\": \"C ABI dsh_dispatch + blocking stdin/stdout device; no continuation capture\"\n}\n"
+    },
+    {
+      "file": "test-output-cap-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1245,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:07.024Z\",\n  \"error\": {\n    \"code\": \"E-OUTPUT-LIMIT\",\n    \"message\": \"Error: dsh_dispatch exceeded the 1000000-byte C output cap\"\n  },\n  \"exitCode\": 70,\n  \"maxOutputBytes\": 1000000,\n  \"boundary\": \"Worker rejects outLen > maxOutputBytes before HEAPU8.slice and terminates the incarnation.\",\n  \"stderr\": \"\"\n}\n"
+    },
+    {
+      "file": "test-plugin-ab-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1723,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"checkedAt\": \"2026-11-09T04:22:08.746Z\",\n  \"ok\": true,\n  \"checks\": {\n    \"v1\": true,\n    \"v2\": true\n  },\n  \"responses\": [\n    {\n      \"id\": \"ab\",\n      \"ok\": true,\n      \"value\": 42\n    },\n    {\n      \"id\": \"ab\",\n      \"ok\": true,\n      \"value\": 43\n    }\n  ],\n  \"engine\": {\n    \"jsSha256\": \"5957c85d022a55058ae4e94668ce792010834f77065f8439cde3e967b0eb7713\",\n    \"wasmSha256\": \"b0aa6503c7642f3b09da229569b1cc5f9ff8ec8e01b18fb5a57b90ab5e6deceb\",\n    \"dataSha256\": \"0a510371bf6c352840c78c971ea47815cc7014dc568155f1751162a9de71538a\"\n  },\n  \"boundary\": \"A/B run in separate Worker incarnations of the C ABI engine; registry is not shared.\"\n}\n"
+    },
+    {
+      "file": "test-pin-v2.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 5276,
+      "stderrTail": "",
+      "stdoutTail": "failures\": [\n    {\n      \"name\": \"tree-hash-tamper\",\n      \"pass\": true,\n      \"expected\": \"E-PIN-MISMATCH:treeHash\",\n      \"actual\": \"E-PIN-MISMATCH:treeHash:rule.example\"\n    },\n    {\n      \"name\": \"source-utf8\",\n      \"pass\": true,\n      \"expected\": \"E-PIN-SOURCE-UTF8\",\n      \"actual\": \"E-PIN-SOURCE-UTF8\"\n    },\n    {\n      \"name\": \"engine-not-approved\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-NOT-APPROVED\",\n      \"actual\": \"E-ENGINE-NOT-APPROVED\"\n    },\n    {\n      \"name\": \"engine-artifact-hash\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-MANIFEST-HASH\",\n      \"actual\": \"E-ENGINE-MANIFEST-HASH\"\n    },\n    {\n      \"name\": \"module-version-mismatch\",\n      \"pass\": true,\n      \"expected\": \"E-PIN-MODULE-VERSION\",\n      \"actual\": \"E-PIN-VERIFY:E-PIN-MODULE-VERSION\"\n    },\n    {\n      \"name\": \"module-name-mismatch\",\n      \"pass\": true,\n      \"expected\": \"E-PIN-MODULE-NAME\",\n      \"actual\": \"E-PIN-VERIFY:E-PIN-MODULE-NAME\"\n    },\n    {\n      \"name\": \"module-kind\",\n      \"pass\": true,\n      \"expected\": \"E-PIN-MODULE-KIND\",\n      \"actual\": \"E-PIN-VERIFY:E-PIN-MODULE-KIND\"\n    }\n  ],\n  \"rollback\": {\n    \"afterFailuresOk\": true\n  },\n  \"checkedAt\": \"2026-11-09T04:22:14.025Z\"\n}\n"
+    },
+    {
+      "file": "test-incarnation-timeout.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1549,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:15.498Z\",\n  \"vm\": {\n    \"timeoutCode\": \"E-TIMEOUT\",\n    \"afterDeathCode\": \"E-VM-DEAD\"\n  },\n  \"broker\": {\n    \"timed\": {\n      \"ok\": false,\n      \"error\": \"E-TIMEOUT\",\n      \"abortRequested\": true,\n      \"terminated\": false,\n      \"abortError\": null\n    },\n    \"aborted\": 1,\n    \"audit\": {\n      \"requestId\": \"ffi-timeout\",\n      \"incarnationId\": null,\n      \"ruleHash\": \"rule\",\n      \"kind\": \"ffi\",\n      \"target\": \"slow.echo\",\n      \"argsHash\": \"8b103e7c612e1838c678b8aa3aadfa195049d595c616b85c7230a1c7b1f35cca\",\n      \"status\": \"timeout\",\n      \"error\": \"E-TIMEOUT\",\n      \"durationMs\": 23.8775,\n      \"late\": true,\n      \"lateResultHash\": \"02921de0ba559c7c64e594dc948ea39c48ff4f2642be7072cede26f9b6fe3ffd\"\n    },\n    \"reusedCode\": \"E-FFI-REQUEST-REUSED\",\n    \"rejectionCode\": \"E-FFI-HOST\"\n  },\n  \"cancel\": {\n    \"requested\": true,\n    \"error\": \"E-CANCELLED\",\n    \"aborted\": 1,\n    \"status\": \"cancelled\"\n  }\n}\n"
+    },
+    {
+      "file": "test-ffi-abort-c.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1783,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:17.356Z\",\n  \"first\": {\n    \"timeoutCode\": \"E-TIMEOUT\",\n    \"aborted\": 1,\n    \"terminated\": true,\n    \"exitCode\": 1,\n    \"audit\": {\n      \"requestId\": \"f8847eec-8b96-463c-b250-7db81a292b98\",\n      \"incarnationId\": \"abort-test-1\",\n      \"ruleHash\": \"rule-a\",\n      \"kind\": \"ffi\",\n      \"target\": \"delay.slow\",\n      \"argsHash\": \"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\n      \"status\": \"timeout\",\n      \"error\": \"E-TIMEOUT\",\n      \"durationMs\": 61.5519,\n      \"late\": true,\n      \"lateResultHash\": \"02921de0ba559c7c64e594dc948ea39c48ff4f2642be7072cede26f9b6fe3ffd\"\n    }\n  },\n  \"second\": {\n    \"response\": \"{\\\"id\\\":\\\"g\\\",\\\"ok\\\":true,\\\"value\\\":0}\"\n  }\n}\n"
+    },
+    {
+      "file": "test-plugin-runtime.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 2994,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checks\": [\n    {\n      \"name\": \"load-good\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"failed-load-auto-restarts-and-clears-global-library\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"restart-replays-committed-bundles\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"load-or-restart-recovers-automatically\",\n      \"ok\": true\n    }\n  ]\n}\n"
+    },
+    {
+      "file": "test-engine-registry-negative.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 661,
+      "stderrTail": "",
+      "stdoutTail": "NGINE-SIZE\",\n      \"actual\": \"E-ENGINE-SIZE:scheme-c.js\"\n    },\n    {\n      \"name\": \"digest-mismatch\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-HASH\",\n      \"actual\": \"E-ENGINE-HASH:scheme-c.js\"\n    },\n    {\n      \"name\": \"assets-traversal\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-PATH\",\n      \"actual\": \"E-ENGINE-PATH\"\n    },\n    {\n      \"name\": \"aggregate-mismatch\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-MANIFEST-HASH\",\n      \"actual\": \"E-ENGINE-MANIFEST-HASH\"\n    },\n    {\n      \"name\": \"data-file-digest\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-DATA-MANIFEST\",\n      \"actual\": \"E-ENGINE-DATA-MANIFEST\"\n    },\n    {\n      \"name\": \"data-package-size\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-DATA-MANIFEST\",\n      \"actual\": \"E-ENGINE-DATA-MANIFEST\"\n    },\n    {\n      \"name\": \"abi-contract\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-ABI\",\n      \"actual\": \"E-ENGINE-ABI\"\n    },\n    {\n      \"name\": \"abi-guest\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-ABI\",\n      \"actual\": \"E-ENGINE-ABI\"\n    },\n    {\n      \"name\": \"abi-export\",\n      \"pass\": true,\n      \"expected\": \"E-ENGINE-ABI-EXPORT\",\n      \"actual\": \"E-ENGINE-ABI-EXPORT\"\n    }\n  ]\n}\n"
+    },
+    {
+      "file": "test-ffi-types.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 627,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:21.642Z\",\n  \"cases\": [\n    \"manifest-types-required\",\n    \"number-arg-type\",\n    \"string-arg-type\",\n    \"sync-value\",\n    \"return-type\"\n  ]\n}\n"
+    },
+    {
+      "file": "test-bundle-hash.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1258,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"checkedAt\": \"2026-11-09T04:22:22.890Z\",\n  \"repeatStable\": true,\n  \"importEdgeChangesBundle\": true,\n  \"versionChangesBundle\": true,\n  \"hashes\": {\n    \"base\": \"c09f157f8cb574a2b03bca93f88d61f5135f92da28a3ce7c6775576f2f76fca4\",\n    \"repeat\": \"c09f157f8cb574a2b03bca93f88d61f5135f92da28a3ce7c6775576f2f76fca4\",\n    \"importEdge\": \"8efaaa8bc0c867c52c7387551c105897f2a6ff716b1c8a0232b66bd7fa641ed1\",\n    \"version2\": \"9dbd89fff84f777ab28dca891f09584da36aed1e800d7d4624f4199b960d5d03\"\n  }\n}\n"
+    },
+    {
+      "file": "test-cross-side-bundle.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1781,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"pinBundle\": \"2dc9a06960832541c937d48ba021724281f0da3e8af5e1307d6a158246a06f55\",\n  \"pluginBundle\": \"2dc9a06960832541c937d48ba021724281f0da3e8af5e1307d6a158246a06f55\",\n  \"module\": \"(dsh lib base v1)\",\n  \"checkedAt\": \"2026-11-09T04:22:24.676Z\"\n}\n"
+    },
+    {
+      "file": "test-pin-load-imports.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1185,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"error\": {\n    \"code\": \"E-IMPORT-DENIED\"\n  },\n  \"checkedAt\": \"2026-11-09T04:22:25.861Z\"\n}\n"
+    },
+    {
+      "file": "test-source-tree.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1438,
+      "stderrTail": "",
+      "stdoutTail": "00000000101000000030200000006646566696e6501000000020200000006646f75626c65020000000178010000000302000000012a02000000017804000000000132\",\n  \"hostVerified\": true,\n  \"checks\": {\n    \"tree.space.equal\": \"#t\",\n    \"raw.space.diff\": \"#t\",\n    \"tree.quote.equal\": \"#t\",\n    \"tree.number.equal\": \"#t\",\n    \"tree.string.equal\": \"#t\",\n    \"tree.changed.diff\": \"#t\",\n    \"tree.symbol-string.diff\": \"#t\",\n    \"tree.order.diff\": \"#t\",\n    \"base.tree\": \"\\\"d98c8a188996ffa7bbcfdd21d536b9695a7cccbc2f872e43d7a3ae01855a549e\\\"\",\n    \"base.canonical.hex\": \"\\\"100000000101000000030200000006646566696e6501000000020200000006646f75626c65020000000178010000000302000000012a02000000017804000000000132\\\"\",\n    \"plugin.register\": \"\\\"math\\\"\",\n    \"plugin.call\": \"42\",\n    \"plugin.duplicate\": \"(error \\\"math\\\")\",\n    \"plugin.unknown\": \"(error \\\"nope\\\")\",\n    \"plugin.count\": \"1\",\n    \"rule.register\": \"(\\\"org.example.plugin-double\\\" \\\"1771d8a4a48c5ce187e489e445db2a00a4bcc1c2449cb3f92de1d63316ad59d8\\\")\",\n    \"rule.call\": \"42\",\n    \"rule.duplicate\": \"(error \\\"org.example.plugin-double\\\")\",\n    \"rule.invalid-source\": \"(error \\\"~? at char ~a of ~s\\\")\",\n    \"rule.count\": \"1\",\n    \"rule.hash.nonempty\": \"64\"\n  },\n  \"failures\": []\n}\n"
+    },
+    {
+      "file": "test-source-tree-oracle.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 940,
+      "stderrTail": "",
+      "stdoutTail": "D\",\n      \"actualCode\": \"E-READ\",\n      \"pass\": true,\n      \"diagnostic\": {\n        \"code\": \"E-READ\",\n        \"ruleId\": \"rule-abc\",\n        \"line\": 1,\n        \"column\": 1,\n        \"version\": \"v2\"\n      }\n    },\n    {\n      \"id\": \"bytevector-eof\",\n      \"source\": \"#vu8(1\",\n      \"kind\": \"read-error\",\n      \"expectedCode\": \"E-READ\",\n      \"actualCode\": \"E-READ\",\n      \"pass\": true,\n      \"diagnostic\": {\n        \"code\": \"E-READ\",\n        \"ruleId\": \"rule-abc\",\n        \"line\": 1,\n        \"column\": 1,\n        \"version\": \"v2\"\n      }\n    },\n    {\n      \"id\": \"vector-eof\",\n      \"source\": \"#(1\",\n      \"kind\": \"read-error\",\n      \"expectedCode\": \"E-READ\",\n      \"actualCode\": \"E-READ\",\n      \"pass\": true,\n      \"diagnostic\": {\n        \"code\": \"E-READ\",\n        \"ruleId\": \"rule-abc\",\n        \"line\": 1,\n        \"column\": 1,\n        \"version\": \"v2\"\n      }\n    },\n    {\n      \"id\": \"block-comment-eof\",\n      \"source\": \"#| open\",\n      \"kind\": \"read-error\",\n      \"expectedCode\": \"E-READ\",\n      \"actualCode\": \"E-READ\",\n      \"pass\": true,\n      \"diagnostic\": {\n        \"code\": \"E-READ\",\n        \"ruleId\": \"rule-abc\",\n        \"line\": 1,\n        \"column\": 8,\n        \"version\": \"v2\"\n      }\n    }\n  ]\n}\n"
+    },
+    {
+      "file": "test-sha-vectors.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1480,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"code\": 0,\n  \"expected\": {\n    \"sha-empty\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"sha-abc\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\n    \"sha-long\": \"248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1\"\n  },\n  \"observed\": {\n    \"sha-empty\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"sha-abc\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\n    \"sha-long\": \"248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1\",\n    \"canonical-empty\": \"1000000000\",\n    \"tree-define\": \"d98c8a188996ffa7bbcfdd21d536b9695a7cccbc2f872e43d7a3ae01855a549e\"\n  },\n  \"failures\": []\n}\n"
+    },
+    {
+      "file": "test-namespace.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 1304,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"probe\": \"only (rnrs) + - * = display\",\n  \"observed\": {\n    \"only-eval\": \"3\",\n    \"only-file\": \"ERROR: attempt to reference unbound identifier\",\n    \"only-import\": \"ERROR: attempt to reference unbound identifier\"\n  },\n  \"failures\": []\n}\n"
+    },
+    {
+      "file": "test-r6rs-matrix.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 3732,
+      "stderrTail": "",
+      "stdoutTail": "base: PASS 3\narithmetic-bitwise: PASS 8\narithmetic-fixnums: PASS #t\narithmetic-flonums: PASS #t\nbytevectors: PASS 1\nconditions: PASS #t\ncontrol: PASS 5\nenums: PASS #t\neval: PASS 5\nexceptions: PASS 7\nfiles: PASS #f\nhashtables: PASS #t\nio-ports: PASS \"abc\"\nio-simple: PASS #t\nlists: PASS 2\nmutable-pairs: PASS 9\nmutable-strings: PASS \"zbc\"\nprograms: PASS #t\nr5rs: PASS 1.0\nrecords-procedural: PASS #t\nrecords-syntactic: PASS 1\nrecords-inspection: PASS #t\nsorting: PASS (1 2 3)\nsyntax-case: PASS 9\nunicode: PASS #\\A\ncomposite: PASS 3\n{\n  \"ok\": true,\n  \"total\": 26,\n  \"passed\": 26,\n  \"failed\": 0,\n  \"out\": \"C:\\\\Users\\\\29436\\\\Desktop\\\\Projects\\\\dsh-data-curation\\\\experiments\\\\wasm\\\\results\\\\chez\\\\10.4.1\\\\r6rs-library-matrix.json\"\n}\n"
+    },
+    {
+      "file": "run-plugin-isolation.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 2010,
+      "stderrTail": "",
+      "stdoutTail": "{\n  \"ok\": true,\n  \"passed\": 23,\n  \"failed\": 0,\n  \"ab1\": \"42\",\n  \"ab2\": \"43\"\n}\n"
+    },
+    {
+      "file": "run-corpus-v2.mjs",
+      "pass": true,
+      "exitCode": 0,
+      "durationMs": 7001,
+      "stderrTail": "PASS minimum.eval\nPASS minimum.dynamic-register\nPASS minimum.isolation\nPASS semantic.truth.false\nPASS semantic.truth.null\nPASS semantic.truth.empty-list\nPASS semantic.and-or-order\nPASS semantic.argument-order\nPASS semantic.closure\nPASS semantic.local-set\nPASS semantic.named-let-factorial\nPASS semantic.tail-recursion\nPASS semantic.macro-conjoin\nPASS semantic.object-contract\nPASS semantic.decision-pending\nPASS semantic.json-roundtrip\nPASS semantic.quote-list\nPASS semantic.error.cond-without-else\nPASS semantic.error.quote-symbol\nPASS semantic.error.unbound\nPASS semantic.error.strict-boolean\nPASS resource.output-limit\nPASS resource.timeout\nPASS dynamic.helper-forward\nPASS dynamic.loop-snapshot\nPASS dynamic.local-forms\nPASS dynamic.helper-register\nPASS dynamic.override-stdlib\nPASS dynamic.atomic.duplicate-id\nPASS dynamic.atomic.duplicate-role\nPASS dynamic.atomic.capture-mutation\n",
+      "stdoutTail": "31/31 passed\nC:\\Users\\29436\\Desktop\\Projects\\dsh-data-curation\\experiments\\wasm\\results\\chez\\10.4.1\\corpus-v2.json\nC:\\Users\\29436\\Desktop\\Projects\\dsh-data-curation\\experiments\\wasm\\results\\chez\\10.4.1\\corpus-v2-triage.json\n"
+    }
+  ],
+  "notRun": [
+    {
+      "file": "test-host-bridge.mjs",
+      "reason": "legacy Worker/SAB + libffi transport; superseded by blocking C ABI bridge"
+    },
+    {
+      "file": "test-host-capabilities.mjs",
+      "reason": "legacy two-phase suspended/resumed protocol; superseded by blocking broker tests"
+    },
+    {
+      "file": "test-suspend-c.mjs",
+      "reason": "two-phase resume was rejected; blocking model has no continuation resume"
+    },
+    {
+      "file": "test-script-output.mjs",
+      "reason": "argument-required helper, not a standalone test"
+    }
+  ],
+  "boundary": "26 = 24 current C ABI profile tests + 2 retained coverage suites: run-plugin-isolation.mjs uses the legacy 10.4.1 assets, and run-corpus-v2.mjs writes legacy 10.4.1 results. Legacy transport and standalone helper scripts are excluded; see notRun."
+}

@@ -1,0 +1,6 @@
+(import (chezscheme))
+(guard (e (#t (display "INNER ") (write e) (newline) (raise e)))
+  (raise (cons 'plugin-error (cons 'E-X '()))))
+(display "AFTER")
+(newline)
+(exit 0)

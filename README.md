@@ -115,6 +115,37 @@ Scheme `(register-rule! id version procedure [options])` 返回规则 id；JS
 [docs/RULES.md](docs/RULES.md#scheme-前端r6rs-子集)，可运行模板见
 [templates/scheme-decision.scm](templates/scheme-decision.scm)。
 
+### Scheme v2 显式 opt-in
+
+`SchemeV2Runtime` 是独立的 v2 显式 opt-in 接缝：它读取含 `sourceBase64` 的 v2 pin，
+对包内 Chez Wasm engine 校验 tree/bundle/plugin/FFI/rule hash，然后在长期
+C-ABI VM 中执行已验证的规则。v1 仍是默认，v2 不会自动启用。
+
+```js
+import { readFileSync } from 'node:fs'
+import { SchemeV2Runtime } from 'dsh-data-curation/rules'
+
+const pin = JSON.parse(readFileSync('my-v2-pin.json', 'utf8'))
+const runtime = await SchemeV2Runtime.open(pin, {
+  timeoutMs: 5000,
+  // 只有 pin 声明了 FFI 时才需要；这是宿主的显式 allowlist。
+  ffi: { call: async ({ target, args }) => target === 'math.add' ? args[0] + args[1] : undefined },
+})
+try {
+  const value = await runtime.call('rule.example', { args: [1, 2] })
+  // 规则也可以 import (dsh ffi (6)) 并调用 ffi-call。
+  const sum = await runtime.ffiCall('math.add', [1, 2])
+} finally {
+  await runtime.close()
+}
+```
+
+v2 当前边界：`plugins` 执行拒绝；FFI 只接受 pin 声明与宿主 `ffi.call`
+allowlist 同时允许的阻塞帧；没有独立 OS supervisor，timeout 会丢弃当前
+incarnation。`signature` 是纳入 `ruleHash` 的完整性元数据，运行时不会据此
+强制 arity 或返回类型；需要类型契约的调用方必须自行校验。生产默认、迁移和
+发布仍未批准。
+
 ## 八阶段
 
 ```
@@ -376,4 +407,4 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.18.0（Scheme 规则前端、谓词组合子与脚本化注册）；尚未发布到 npm。
+- 当前版本 0.19.0（Scheme v2 opt-in 运行时、阻塞 FFI 与安全加固）；尚未发布到 npm。

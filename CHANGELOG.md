@@ -6,6 +6,38 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.19.0] — 2026-11-09
+
+### Added
+
+- 新增 opt-in Scheme v2 源级 pin 与 Chez Wasm 运行时：`SchemeV2Runtime`、`loadSchemeV2Pin`、
+  `loadSchemeV2PinFile`、engine artifact/data archive 校验与长期 C ABI VM 执行。
+- 新增规则级阻塞 host FFI：严格 JSON 帧、target allowlist、每 VM token、host 绑定
+  `ruleHash`、唯一 requestId、timeout/cancel 中止整个 incarnation。
+- 发布包加入 `assets/chez-wasm/10.4.1-c/`、`engine-registry.json` 与 `SHA256SUMS`；
+  `selfcheck` 支持 Wasm 二进制 magic、size 和校验和。
+- 新增 v2 源 pin 测试、FFI 传输/故障测试、engine 负例、selfcheck 单元测试，以及可复现的
+  C ABI 构建与 engine 刷新脚本。
+
+### Changed
+
+- v2 规则只执行受限 reader 产生的 library form；`(rnrs eval (6))` 改写为
+  `(dsh safe eval (6))`，禁止 `(chezscheme)` 与 `interaction-environment` 逃逸。
+- 构建脚本自动把 C ABI 产物复制到实验目录与发布资产目录，避免手工复制漂移。
+
+### Security
+
+- 禁止空 pin 的 host FFI allow-all；拒绝未声明 target、重复 requestId、重复 rule id、
+  伪造/畸形 FFI 帧、可注入 signature 符号与非有限 FFI 返回值。
+- `kill`/`close` 中止在途 provider；输出和 MEMFS 写路径均有上限/规范化检查。
+
+### Notes
+
+- v1 仍是默认规则与 pin 路径；v2 必须显式 opt-in，尚未批准发布。
+- 发布验证：v2 测试 17/17；生产测试 335 通过、1 跳过；selfcheck 88 个文件通过。
+- 已知问题：相同输入重复构建时 `scheme-c.js` glue 的字节 hash 尚不稳定；P4 发布门禁
+  仍将其视为阻塞项。
+
 ## [0.18.0] — 2026-11-04
 
 ### Added
@@ -552,7 +584,8 @@ pin 规则自举：pin 的 `validate` 与 defaults/table 合并可以由 JSON DS
   斜杠命令 `/curation` `/curation-status` `/curation-verify`、契约模板。
 - 零第三方运行时依赖；Node ≥ 24（内置 `node:sqlite`）。
 
-[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.17.0...v0.18.0
 [0.6.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Antigen-1/dsh-data-curation/compare/v0.4.1...v0.5.0

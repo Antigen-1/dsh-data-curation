@@ -1,0 +1,90 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:45.315Z",
+  "node": "v24.21.0",
+  "platform": "win32-x64",
+  "events": [
+    {
+      "step": "initial-ready",
+      "memory": {
+        "rss": 109015040,
+        "wasmBytes": 16777216
+      }
+    },
+    {
+      "step": "initial-state",
+      "id": "s1",
+      "value": 7,
+      "requestFrameBytes": 24,
+      "responseFrameBytes": 35
+    },
+    {
+      "step": "timeout",
+      "timedOut": true,
+      "killedAfterMs": 2277,
+      "terminateExitCode": 1,
+      "mainProcessAlive": true
+    },
+    {
+      "step": "after-timeout-ready",
+      "memory": {
+        "rss": 110911488,
+        "wasmBytes": 16777216
+      }
+    },
+    {
+      "step": "after-timeout-state",
+      "id": "s2",
+      "value": 0,
+      "requestFrameBytes": 22,
+      "responseFrameBytes": 35
+    },
+    {
+      "step": "after-timeout-set",
+      "id": "s3",
+      "value": 9,
+      "requestFrameBytes": 24,
+      "responseFrameBytes": 35
+    },
+    {
+      "step": "guest-exit",
+      "exit": {
+        "type": "exit",
+        "code": 7,
+        "stderr": ""
+      },
+      "exitCodeIsSeven": true,
+      "mainProcessAlive": true
+    },
+    {
+      "step": "after-crash-ready",
+      "memory": {
+        "rss": 111316992,
+        "wasmBytes": 16777216
+      }
+    },
+    {
+      "step": "after-crash-state",
+      "id": "s4",
+      "value": 0,
+      "requestFrameBytes": 22,
+      "responseFrameBytes": 35
+    },
+    {
+      "step": "after-crash-set",
+      "id": "s5",
+      "value": 11,
+      "requestFrameBytes": 25,
+      "responseFrameBytes": 36
+    }
+  ],
+  "timeoutKilled": true,
+  "crashKilled": true,
+  "mainProcessSurvived": true,
+  "freshInstanceStateReset": true,
+  "oom": {
+    "status": "SEPARATE_EVIDENCE",
+    "evidence": "experiments/wasm/results/chez/10.4.1/oom.json",
+    "reason": "The memory-capped OOM test runs in a separate process/worker so its abort cannot be confused with timeout/crash supervision."
+  }
+}

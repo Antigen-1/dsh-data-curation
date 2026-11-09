@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-11-09T00:20:00.000Z",
+  "transport": "C ABI dsh_dispatch + dsh_resume",
+  "suspendProtocol": "two-phase pending/requestId state machine",
+  "continuationAcrossCalls": "unsupported",
+  "evidence": {
+    "probe": "experiments/wasm/chez/test-suspend-c.mjs",
+    "log": "experiments/wasm/results/chez/10.4.1-c/suspend-c.log",
+    "observed": [
+      "loaded",
+      "guest set",
+      "init 0",
+      "suspended suspended"
+    ],
+    "exitCode": 0,
+    "note": "Invoking the continuation saved by dsh_dispatch from a later dsh_resume Scall1 call terminated the Node process before the final response. The experiment therefore uses an explicit pending/requestId state machine, not a live Scheme continuation."
+  },
+  "consequence": "G4 is PARTIAL: capabilities and async fault semantics are observable, but this is not the real suspend/resume required by the plan."
+}

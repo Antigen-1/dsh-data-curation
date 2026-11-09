@@ -1,0 +1,73 @@
+{
+  "engine": "chez",
+  "version": "10.4.1",
+  "verdict": "pure-dynamic",
+  "date": "2026-11-08",
+  "toolchain": {
+    "host": "Windows 11 / Podman 6.1.4 / Debian bookworm container guix-work",
+    "sourceCommit": "e95a7efbafa2cf3bd5343ea542e6bc909a7ab2c4",
+    "sourceTag": "v10.4.1",
+    "emscripten": "3.1.6",
+    "node": "24.21.0",
+    "build": "./configure --emscripten; make",
+    "buildAdjustment": "em-pb/Mf-config exeSuffix changed from .html to .js to avoid Emscripten 3.1.6 htmlmin failure; the Wasm/JS/data assets themselves were produced by the official target"
+  },
+  "assets": {
+    "scheme.cjs": {
+      "sha256": "fa7979d987e212d932b5f78ea58bc13edbf4b6e862029ea3e485ff2c32ff6fe4",
+      "role": "Emscripten glue"
+    },
+    "scheme.wasm": {
+      "sha256": "451b62ba5e8ff29dda887df3361af71a5f48a83d210ecb5e4845ae4ba45073a5"
+    },
+    "scheme.data": {
+      "sha256": "2899aa16e06e6a42d3e2c7d81caf7e616848cd5d4a8476cbc8f58aa24fd487bc",
+      "role": "petite.boot and scheme.boot preloads"
+    }
+  },
+  "levels": {
+    "fixed-aot": {
+      "pass": false,
+      "status": "not-applicable",
+      "reason": "The official Emscripten target is a portable-bytecode VM, not a native Wasm code generator."
+    },
+    "pure-dynamic": {
+      "pass": true,
+      "evidence": [
+        "corpus.json"
+      ],
+      "smoke": "3/3 minimum operations passed: eval, dynamic registration plus call, isolated eval",
+      "corpus": "16/31 fixtures passed; failures are missing plugin library forms, JSON null representation, error-code mapping, capture/atomicity gaps, and source-order behavior",
+      "corpusHash": "84b9218f62bc893d605a86e68939840a3d6df25f97427a930bc4e003efc6fe25"
+    },
+    "async-ffi": {
+      "pass": false,
+      "status": "not-evaluated",
+      "reason": "No async FFI mechanism was exercised."
+    }
+  },
+  "imports": {
+    "modules": [
+      "env",
+      "wasi_snapshot_preview1"
+    ],
+    "count": 50,
+    "evalOrScriptImports": []
+  },
+  "protocol": {
+    "hostToGuest": "the host prepends a Scheme datum to guest.scm; this is not a strict JSON parser inside the guest",
+    "guestToHost": "guest emits one JSON object per line",
+    "note": "The minimum operations pass, but transport conformance is weaker than Hoot/Chibi and must be counted against Chez in the decision."
+  },
+  "isolation": {
+    "process": "each invocation runs run.cjs in a child process",
+    "parentSurvives": true,
+    "statePersistence": "one child process per request; cross-request state is not provided"
+  },
+  "limits": {
+    "wallTimeoutMs": 2000,
+    "maxOutputBytes": 1000000,
+    "memoryBytes": "not measured in this smoke"
+  },
+  "decision": "Chez clears the dynamic eval/register minimum and has a small Wasm asset footprint, but its R6RS-oriented runtime, non-JSON guest transport, and boot/VM complexity make it a conditional candidate rather than the preferred one."
+}

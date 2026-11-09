@@ -1,0 +1,3 @@
+{"protocolVersion":1,"id":"minimum.eval","op":"eval","source":"(lambda (x) (+ x 1))","args":[41]}
+{"protocolVersion":1,"id":"minimum.dynamic-register","op":"load-module","source":"(register-rule! \"org.example.smoke\" \"1\" (lambda (x) (number? x)))","calls":[{"rule":"org.example.smoke","args":[1]}]}
+{"protocolVersion":1,"id":"minimum.isolation","op":"isolated","source":"(lambda (x) (+ x 2))","args":[40]}

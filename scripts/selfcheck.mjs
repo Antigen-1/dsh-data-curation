@@ -13,13 +13,23 @@ import { execFileSync } from 'node:child_process'
 import { readFile, readdir, stat } from 'node:fs/promises'
 import { join, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { CHECKSUM_MANIFEST, inspectBinary, isBinary, parseChecksums } from './selfcheck-lib.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const SELF = 'scripts/selfcheck.mjs'
 const SKIP_DIRS = new Set(['node_modules', '.git', '.curation'])
 
+async function readChecksums() {
+  try {
+    return parseChecksums(await readFile(join(root, CHECKSUM_MANIFEST), 'utf8'))
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    throw error
+  }
+}
+
 const LEAKS = [
-  ['absolute local path', /(?:^|[\s"'`(=])\/(?:home|Users|root|run\/media|mnt|Volumes)\//m],
+  ['absolute local path', /(?:^|[\s"'`(=])\/(?:home(?!\/web_user)|Users|root|run\/media|mnt|Volumes)\//m],
   ['windows drive path', /[A-Za-z]:\\/],
   ['private key block', /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   ['credential token', /\b(?:sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16})\b/],
@@ -73,9 +83,15 @@ if (!pkg.author) note('package.json 缺少 author')
 if (!Array.isArray(pkg.files) || pkg.files.length === 0) note('package.json 缺少 files[]')
 
 const shipped = await collect(pkg.files ?? [])
+const checksums = await readChecksums()
 
 for (const file of shipped) {
   if (file === SELF) continue
+  if (isBinary(file)) {
+    const bytes = await readFile(join(root, file))
+    for (const problem of inspectBinary(file, bytes, checksums)) note(problem)
+    continue
+  }
   const text = await readFile(join(root, file), 'utf8')
   const lines = text.split('\n')
   for (const [label, re] of LEAKS) {

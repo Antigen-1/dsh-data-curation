@@ -1,0 +1,84 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:39.822Z",
+  "cases": [
+    {
+      "name": "missing-file",
+      "pass": true,
+      "expected": "E-ENGINE-CLOSURE",
+      "actual": "E-ENGINE-CLOSURE"
+    },
+    {
+      "name": "extra-file",
+      "pass": true,
+      "expected": "E-ENGINE-UNEXPECTED",
+      "actual": "E-ENGINE-UNEXPECTED:extra.bin"
+    },
+    {
+      "name": "duplicate-file",
+      "pass": true,
+      "expected": "E-ENGINE-DUPLICATE",
+      "actual": "E-ENGINE-DUPLICATE:scheme-c.js"
+    },
+    {
+      "name": "bad-path",
+      "pass": true,
+      "expected": "E-ENGINE-PATH",
+      "actual": "E-ENGINE-PATH"
+    },
+    {
+      "name": "size-mismatch",
+      "pass": true,
+      "expected": "E-ENGINE-SIZE",
+      "actual": "E-ENGINE-SIZE:scheme-c.js"
+    },
+    {
+      "name": "digest-mismatch",
+      "pass": true,
+      "expected": "E-ENGINE-HASH",
+      "actual": "E-ENGINE-HASH:scheme-c.js"
+    },
+    {
+      "name": "assets-traversal",
+      "pass": true,
+      "expected": "E-ENGINE-PATH",
+      "actual": "E-ENGINE-PATH"
+    },
+    {
+      "name": "aggregate-mismatch",
+      "pass": true,
+      "expected": "E-ENGINE-MANIFEST-HASH",
+      "actual": "E-ENGINE-MANIFEST-HASH"
+    },
+    {
+      "name": "data-file-digest",
+      "pass": true,
+      "expected": "E-ENGINE-DATA-MANIFEST",
+      "actual": "E-ENGINE-DATA-MANIFEST"
+    },
+    {
+      "name": "data-package-size",
+      "pass": true,
+      "expected": "E-ENGINE-DATA-MANIFEST",
+      "actual": "E-ENGINE-DATA-MANIFEST"
+    },
+    {
+      "name": "abi-contract",
+      "pass": true,
+      "expected": "E-ENGINE-ABI",
+      "actual": "E-ENGINE-ABI"
+    },
+    {
+      "name": "abi-guest",
+      "pass": true,
+      "expected": "E-ENGINE-ABI",
+      "actual": "E-ENGINE-ABI"
+    },
+    {
+      "name": "abi-export",
+      "pass": true,
+      "expected": "E-ENGINE-ABI-EXPORT",
+      "actual": "E-ENGINE-ABI-EXPORT"
+    }
+  ]
+}

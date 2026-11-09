@@ -1,0 +1,507 @@
+{
+  "schemaVersion": 1,
+  "source": "production-interpreter",
+  "generatedAt": "2026-11-08T06:48:33.620Z",
+  "corpusHash": "84b9218f62bc893d605a86e68939840a3d6df25f97427a930bc4e003efc6fe25",
+  "contractHash": "7c2563b112fbc762a124145266bd152e6569215aaf649cf992b5731432051a34",
+  "total": 31,
+  "passed": 31,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "minimum.eval",
+      "tier": "minimum",
+      "response": {
+        "protocolVersion": 1,
+        "id": "minimum.eval",
+        "ok": true,
+        "value": 42
+      }
+    },
+    {
+      "id": "minimum.dynamic-register",
+      "tier": "minimum",
+      "response": {
+        "protocolVersion": 1,
+        "id": "minimum.dynamic-register",
+        "ok": true,
+        "stateIds": [
+          "org.example.smoke"
+        ],
+        "ids": [
+          "org.example.smoke"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.smoke",
+            "ok": true,
+            "value": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "minimum.isolation",
+      "tier": "minimum",
+      "response": {
+        "protocolVersion": 1,
+        "id": "minimum.isolation",
+        "ok": true,
+        "value": 42
+      }
+    },
+    {
+      "id": "semantic.truth.false",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.truth.false",
+        "ok": true,
+        "value": "falsy"
+      }
+    },
+    {
+      "id": "semantic.truth.null",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.truth.null",
+        "ok": true,
+        "value": "truthy"
+      }
+    },
+    {
+      "id": "semantic.truth.empty-list",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.truth.empty-list",
+        "ok": true,
+        "value": "truthy"
+      }
+    },
+    {
+      "id": "semantic.and-or-order",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.and-or-order",
+        "ok": true,
+        "value": [
+          "left",
+          1
+        ]
+      }
+    },
+    {
+      "id": "semantic.argument-order",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.argument-order",
+        "ok": true,
+        "value": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "id": "semantic.closure",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.closure",
+        "ok": true,
+        "value": 42
+      }
+    },
+    {
+      "id": "semantic.local-set",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.local-set",
+        "ok": true,
+        "value": true
+      }
+    },
+    {
+      "id": "semantic.named-let-factorial",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.named-let-factorial",
+        "ok": true,
+        "value": 120
+      }
+    },
+    {
+      "id": "semantic.tail-recursion",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.tail-recursion",
+        "ok": true,
+        "value": 10000
+      }
+    },
+    {
+      "id": "semantic.macro-conjoin",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.macro-conjoin",
+        "ok": true,
+        "value": true
+      }
+    },
+    {
+      "id": "semantic.object-contract",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.object-contract",
+        "ok": true,
+        "value": true
+      }
+    },
+    {
+      "id": "semantic.decision-pending",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.decision-pending",
+        "ok": true,
+        "value": {
+          "accepted": false,
+          "reason": "rule_pending"
+        }
+      }
+    },
+    {
+      "id": "semantic.json-roundtrip",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.json-roundtrip",
+        "ok": true,
+        "value": {
+          "a": [
+            1,
+            true,
+            null,
+            "x",
+            {
+              "b": -2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "semantic.quote-list",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.quote-list",
+        "ok": true,
+        "value": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "id": "semantic.error.cond-without-else",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.error.cond-without-else",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_SYNTAX",
+          "message": "cond 必须显式包含 else 分支（第 1 行第 13 列）（路径：$[2]）",
+          "path": "$[2]"
+        }
+      }
+    },
+    {
+      "id": "semantic.error.quote-symbol",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.error.quote-symbol",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_QUOTE",
+          "message": "quote 不支持 symbol；本前端把标识符保留给变量绑定，不把它映射为字符串（第 1 行第 20 列）（路径：$[2][1]）",
+          "path": "$[2][1]"
+        }
+      }
+    },
+    {
+      "id": "semantic.error.unbound",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.error.unbound",
+        "ok": false,
+        "error": {
+          "code": "UNBOUND_VARIABLE",
+          "message": "未绑定变量：no-such-primitive。可用全局名请参考 docs/RULES.md；模块 helper 需先 define（第 1 行第 14 列）（路径：$[2][0]）",
+          "path": "$[2][0]"
+        }
+      }
+    },
+    {
+      "id": "semantic.error.strict-boolean",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "semantic.error.strict-boolean",
+        "ok": false,
+        "error": {
+          "code": "PRIMITIVE_ERROR",
+          "message": "primitive error 执行失败：合同谓词必须返回严格 boolean（路径：$[2][1][1][2][2][1][2][3]）",
+          "path": "$[2][1][1][2][2][1][2][3]"
+        }
+      }
+    },
+    {
+      "id": "resource.output-limit",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "resource.output-limit",
+        "ok": false,
+        "error": {
+          "code": "OUTPUT_LIMIT",
+          "message": "规则结果超过 64 字节",
+          "path": "$"
+        }
+      }
+    },
+    {
+      "id": "resource.timeout",
+      "tier": "semantic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "resource.timeout",
+        "ok": false,
+        "error": {
+          "code": "TIMEOUT",
+          "message": "规则隔离执行超过 150ms，已终止",
+          "path": "$"
+        }
+      }
+    },
+    {
+      "id": "dynamic.helper-forward",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-forward",
+        "ok": true,
+        "stateIds": [
+          "org.example.forward"
+        ],
+        "ids": [
+          "org.example.forward"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.loop-snapshot",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.loop-snapshot",
+        "ok": true,
+        "stateIds": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "ids": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.dynamic.0",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.dynamic.1",
+            "ok": true,
+            "value": false
+          },
+          {
+            "rule": "org.example.dynamic.2",
+            "ok": true,
+            "value": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.local-forms",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.local-forms",
+        "ok": true,
+        "stateIds": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "ids": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "calls": [
+          {
+            "rule": "local.set",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.loop",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.let-star",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.helper-register",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-register",
+        "ok": true,
+        "stateIds": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "ids": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.positive",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.over",
+            "ok": true,
+            "value": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.override-stdlib",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.override-stdlib",
+        "ok": true,
+        "stateIds": [
+          "org.example.override"
+        ],
+        "ids": [
+          "org.example.override"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.override",
+            "ok": true,
+            "value": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.atomic.duplicate-id",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-id",
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE",
+          "message": "rule 重复注册：dup（路径：$.id）",
+          "path": "$.id"
+        },
+        "stateIds": []
+      }
+    },
+    {
+      "id": "dynamic.atomic.duplicate-role",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-role",
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE_ROLE",
+          "message": "pin role 重复：decision（路径：$.options.role）",
+          "path": "$.options.role"
+        },
+        "stateIds": []
+      }
+    },
+    {
+      "id": "dynamic.atomic.capture-mutation",
+      "tier": "dynamic",
+      "response": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.capture-mutation",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_CAPTURE_MUTATION",
+          "message": "set! 只能修改词法局部变量：state（第 1 行第 49 列）（路径：$[2][1][1]）",
+          "path": "$[2][1][1]"
+        },
+        "stateIds": []
+      }
+    }
+  ]
+}

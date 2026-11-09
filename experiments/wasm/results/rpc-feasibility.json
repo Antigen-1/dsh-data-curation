@@ -1,0 +1,61 @@
+{
+  "kind": "rpc-feasibility",
+  "date": "2026-11-08",
+  "scope": "experiments/wasm",
+  "productionChanged": false,
+  "service": {
+    "path": "experiments/wasm/rpc/service.mjs",
+    "transport": "HTTP POST /rpc",
+    "engines": ["chibi", "chez"],
+    "testPath": "experiments/wasm/rpc/test.mjs",
+    "testCommand": "node experiments/wasm/rpc/test.mjs",
+    "testResult": "PASS",
+    "tests": [
+      "health lists chibi and chez",
+      "chibi eval 41 -> 42",
+      "chez eval 41 -> 42",
+      "chibi load-module register + call -> 7",
+      "chez load-module register + call -> 7",
+      "new chibi request loses registry state (UNBOUND_RULE)",
+      "chibi wall-timeout 150ms -> TIMEOUT",
+      "chibi new request after timeout succeeds",
+      "two concurrent chibi requests both return 42"
+    ],
+    "limitations": [
+      "one runtime process per request; no state reuse",
+      "timeout response has no request id/protocolVersion",
+      "no compile/check/hash/pin AST API",
+      "no FFI bridge",
+      "no memory limit enforcement"
+    ]
+  },
+  "persistentVm": {
+    "chibi": {
+      "path": "experiments/wasm/chibi/rpc-server.mjs",
+      "batchTest": "experiments/wasm/chibi/rpc-batch-test.mjs",
+      "proof": "one VM processed 5 requests: capabilities, register counter (call 1), call again (2), duplicate rejected, call again (3)",
+      "interactiveResult": "batch-only; no response until stdin EOF",
+      "probe": "experiments/wasm/chibi/rpc-probe.mjs"
+    },
+    "chez": {
+      "probe": "experiments/wasm/chez/repl-probe.mjs",
+      "interactiveResult": "batch-only; no response until stdin EOF even with explicit flush-output-port and stderr write"
+    }
+  },
+  "replAsProtocol": {
+    "verdict": "not usable as tested",
+    "reason": "stdin-pipe REPL/runtime output is delivered only after EOF; no line-interactive request/response"
+  },
+  "ruleLayerTakeover": {
+    "verdict": "not feasible with current guests",
+    "blockers": [
+      "pin stores v1 JSON AST; guests consume Scheme source and expose no compile/check/hash",
+      "plugin stdlib/macros incomplete (Chibi 15/31, Chez 16/31)",
+      "production FFI is async; guests have no async FFI bridge",
+      "service is stateless per request; batch VM cannot be used as RPC",
+      "resource limits/OOM supervision not implemented",
+      "error protocol and request correlation incomplete"
+    ]
+  },
+  "recommendation": "Keep the production JS rule layer. If a service is still desired, first build a Node rule gateway that owns compile/check/hash/pin and uses Wasm only as a stateless evaluator; do not claim whole-layer takeover."
+}

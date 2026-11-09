@@ -1,0 +1,444 @@
+{
+  "fixturesVersion": 1,
+  "contractVersion": "1.0.0",
+  "note": "Expected values come from the current production interpreter at baseline a0d5a4d. Dynamic cases assert observable registration/call behavior only; no v1 AST, pin or hash is compared.",
+  "cases": [
+    {
+      "id": "minimum.eval",
+      "tier": "minimum",
+      "request": {
+        "protocolVersion": 1,
+        "id": "minimum.eval",
+        "op": "eval",
+        "source": "(lambda (x) (+ x 1))",
+        "args": [41]
+      },
+      "expected": { "ok": true, "value": 42 }
+    },
+    {
+      "id": "minimum.dynamic-register",
+      "tier": "minimum",
+      "request": {
+        "protocolVersion": 1,
+        "id": "minimum.dynamic-register",
+        "op": "load-module",
+        "source": "(register-rule! \"org.example.smoke\" \"1\" (lambda (x) (number? x)))",
+        "calls": [{ "rule": "org.example.smoke", "args": [1] }]
+      },
+      "expected": {
+        "ok": true,
+        "stateIds": ["org.example.smoke"],
+        "ids": ["org.example.smoke"],
+        "calls": [{ "rule": "org.example.smoke", "ok": true, "value": true }]
+      }
+    },
+    {
+      "id": "minimum.isolation",
+      "tier": "minimum",
+      "request": {
+        "protocolVersion": 1,
+        "id": "minimum.isolation",
+        "op": "isolated",
+        "source": "(lambda (x) (+ x 2))",
+        "args": [40],
+        "limits": { "wallTimeoutMs": 2000, "maxOutputBytes": 1000000 }
+      },
+      "expected": { "ok": true, "value": 42 }
+    },
+    {
+      "id": "semantic.truth.false",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.truth.false",
+        "op": "eval",
+        "source": "(lambda (x) (if x \"truthy\" \"falsy\"))",
+        "args": [false]
+      },
+      "expected": { "ok": true, "value": "falsy" }
+    },
+    {
+      "id": "semantic.truth.null",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.truth.null",
+        "op": "eval",
+        "source": "(lambda (x) (if x \"truthy\" \"falsy\"))",
+        "args": [null]
+      },
+      "expected": { "ok": true, "value": "truthy" }
+    },
+    {
+      "id": "semantic.truth.empty-list",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.truth.empty-list",
+        "op": "eval",
+        "source": "(lambda (x) (if (quote ()) \"truthy\" \"falsy\"))",
+        "args": [null]
+      },
+      "expected": { "ok": true, "value": "truthy" }
+    },
+    {
+      "id": "semantic.and-or-order",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.and-or-order",
+        "op": "eval",
+        "source": "(lambda (x) (let ((n 0)) (list (or (begin (set! n (+ n 1)) \"left\") (begin (set! n 99) \"right\")) n)))",
+        "args": [null]
+      },
+      "expected": { "ok": true, "value": ["left", 1] }
+    },
+    {
+      "id": "semantic.argument-order",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.argument-order",
+        "op": "eval",
+        "source": "(lambda (x) (let ((n 0)) (list (begin (set! n (+ n 1)) n) (begin (set! n (+ n 1)) n))))",
+        "args": [null]
+      },
+      "expected": { "ok": true, "value": [1, 2] }
+    },
+    {
+      "id": "semantic.closure",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.closure",
+        "op": "eval",
+        "source": "(lambda (x) (let ((add (lambda (n) (+ n x)))) (add 1)))",
+        "args": [41]
+      },
+      "expected": { "ok": true, "value": 42 }
+    },
+    {
+      "id": "semantic.local-set",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.local-set",
+        "op": "eval",
+        "source": "(lambda (x) (let ((n 0)) (begin (set! n (+ n 1)) (= n x))))",
+        "args": [1]
+      },
+      "expected": { "ok": true, "value": true }
+    },
+    {
+      "id": "semantic.named-let-factorial",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.named-let-factorial",
+        "op": "eval",
+        "source": "(lambda (x) (let loop ((n x) (acc 1)) (if (= n 0) acc (loop (- n 1) (* acc n)))))",
+        "args": [5]
+      },
+      "expected": { "ok": true, "value": 120 }
+    },
+    {
+      "id": "semantic.tail-recursion",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.tail-recursion",
+        "op": "eval",
+        "source": "(lambda (x) (let loop ((n x) (acc 0)) (if (= n 0) acc (loop (- n 1) (+ acc 1)))))",
+        "args": [10000]
+      },
+      "expected": { "ok": true, "value": 10000 }
+    },
+    {
+      "id": "semantic.macro-conjoin",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.macro-conjoin",
+        "op": "eval",
+        "source": "(lambda (x) ((conjoin number? (lambda (v) (> v 0))) x))",
+        "args": [2]
+      },
+      "expected": { "ok": true, "value": true }
+    },
+    {
+      "id": "semantic.object-contract",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.object-contract",
+        "op": "eval",
+        "source": "(lambda (x) ((object/c (\"a\" number?) (\"b\" string?)) x))",
+        "args": [{ "a": 1, "b": "x", "extra": true }]
+      },
+      "expected": { "ok": true, "value": true }
+    },
+    {
+      "id": "semantic.decision-pending",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.decision-pending",
+        "op": "eval",
+        "source": "(lambda (x) ((decision-with (lambda (v) #f) (lambda (v) (error \"selector-called\"))) x))",
+        "args": [{}]
+      },
+      "expected": { "ok": true, "value": { "accepted": false, "reason": "rule_pending" } }
+    },
+    {
+      "id": "semantic.json-roundtrip",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.json-roundtrip",
+        "op": "eval",
+        "source": "(lambda (x) x)",
+        "args": [{ "a": [1, true, null, "x", { "b": -2 }] }]
+      },
+      "expected": { "ok": true, "value": { "a": [1, true, null, "x", { "b": -2 }] } }
+    },
+    {
+      "id": "semantic.quote-list",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.quote-list",
+        "op": "eval",
+        "source": "(lambda (x) (quote (1 2)))",
+        "args": [null]
+      },
+      "expected": { "ok": true, "value": [1, 2] }
+    },
+    {
+      "id": "semantic.error.cond-without-else",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.error.cond-without-else",
+        "op": "eval",
+        "source": "(lambda (x) (cond (#f 1)))",
+        "args": [null]
+      },
+      "expected": { "ok": false, "error": { "code": "SCHEME_SYNTAX" } }
+    },
+    {
+      "id": "semantic.error.quote-symbol",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.error.quote-symbol",
+        "op": "eval",
+        "source": "(lambda (x) (quote foo))",
+        "args": [null]
+      },
+      "expected": { "ok": false, "error": { "code": "SCHEME_QUOTE" } }
+    },
+    {
+      "id": "semantic.error.unbound",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.error.unbound",
+        "op": "eval",
+        "source": "(lambda (x) (no-such-primitive x))",
+        "args": [1]
+      },
+      "expected": { "ok": false, "error": { "code": "UNBOUND_VARIABLE", "path": "$[2][0]" } }
+    },
+    {
+      "id": "semantic.error.strict-boolean",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "semantic.error.strict-boolean",
+        "op": "eval",
+        "source": "(lambda (x) ((conjoin (lambda (v) 1)) x))",
+        "args": [1]
+      },
+      "expected": { "ok": false, "error": { "code": "PRIMITIVE_ERROR" } }
+    },
+    {
+      "id": "resource.output-limit",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "resource.output-limit",
+        "op": "isolated",
+        "source": "(lambda (x) (string-append \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"))",
+        "args": [null],
+        "limits": { "wallTimeoutMs": 2000, "maxOutputBytes": 64 }
+      },
+      "expected": { "ok": false, "error": { "code": "OUTPUT_LIMIT" } }
+    },
+    {
+      "id": "resource.timeout",
+      "tier": "semantic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "resource.timeout",
+        "op": "isolated",
+        "source": "(lambda (x) (let loop ((n x)) (if (= n 0) 0 (loop (+ n 1)))))",
+        "args": [1],
+        "limits": { "wallTimeoutMs": 150, "maxOutputBytes": 1000000, "maxFuel": 1000000000000 }
+      },
+      "expected": { "ok": false, "error": { "code": "TIMEOUT" } }
+    },
+    {
+      "id": "dynamic.helper-forward",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-forward",
+        "op": "load-module",
+        "source": "(define (a? x) (b? x)) (define (b? x) (number? x)) (register-rule! \"org.example.forward\" \"1\" (lambda (x) (a? x)) (object \"role\" \"decision\"))",
+        "calls": [
+          { "rule": "org.example.forward", "args": [1] },
+          { "rule": "org.example.forward", "args": ["1"] }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "stateIds": ["org.example.forward"],
+        "ids": ["org.example.forward"],
+        "calls": [
+          { "rule": "org.example.forward", "ok": true, "value": true },
+          { "rule": "org.example.forward", "ok": true, "value": false }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.loop-snapshot",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.loop-snapshot",
+        "op": "load-module",
+        "source": "(define (rule-id n) (string-append \"org.example.dynamic.\" (number->string n))) (let loop ((i 0)) (if (< i 3) (begin (register-rule! (rule-id i) \"1\" (lambda (x) (= x i))) (loop (+ i 1))) #f))",
+        "calls": [
+          { "rule": "org.example.dynamic.0", "args": [0] },
+          { "rule": "org.example.dynamic.1", "args": [0] },
+          { "rule": "org.example.dynamic.2", "args": [2] }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "stateIds": ["org.example.dynamic.0", "org.example.dynamic.1", "org.example.dynamic.2"],
+        "ids": ["org.example.dynamic.0", "org.example.dynamic.1", "org.example.dynamic.2"],
+        "calls": [
+          { "rule": "org.example.dynamic.0", "ok": true, "value": true },
+          { "rule": "org.example.dynamic.1", "ok": true, "value": false },
+          { "rule": "org.example.dynamic.2", "ok": true, "value": true }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.local-forms",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.local-forms",
+        "op": "load-module",
+        "source": "(register-rule! \"local.set\" \"1\" (lambda (x) (let ((n 0)) (set! n (+ n 1)) (= n x)))) (register-rule! \"local.loop\" \"1\" (lambda (x) (let loop ((n 0)) (if (= n x) #t (loop (+ n 1)))))) (register-rule! \"local.let-star\" \"1\" (lambda (x) (let* ((a x) (b (+ a 1))) (= b 2)))) (register-rule! \"primitive.number\" \"1\" number?)",
+        "calls": [
+          { "rule": "local.set", "args": [1] },
+          { "rule": "local.loop", "args": [4] },
+          { "rule": "local.let-star", "args": [1] },
+          { "rule": "primitive.number", "args": [1] },
+          { "rule": "primitive.number", "args": ["1"] }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "stateIds": ["local.let-star", "local.loop", "local.set", "primitive.number"],
+        "ids": ["local.let-star", "local.loop", "local.set", "primitive.number"],
+        "calls": [
+          { "rule": "local.set", "ok": true, "value": true },
+          { "rule": "local.loop", "ok": true, "value": true },
+          { "rule": "local.let-star", "ok": true, "value": true },
+          { "rule": "primitive.number", "ok": true, "value": true },
+          { "rule": "primitive.number", "ok": true, "value": false }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.helper-register",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-register",
+        "op": "load-module",
+        "source": "(define (positive? x) (and (number? x) (> x 0))) (define (over? x) (positive? x)) (define (register id role predicate) (register-rule! id \"1\" predicate (object \"role\" role \"description\" \"loaded from Scheme\"))) (register \"org.example.positive\" \"decision\" (lambda (x) (positive? x))) (register \"org.example.over\" \"merge\" (lambda (x) (over? x)))",
+        "calls": [
+          { "rule": "org.example.positive", "args": [2] },
+          { "rule": "org.example.over", "args": [-1] }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "stateIds": ["org.example.over", "org.example.positive"],
+        "ids": ["org.example.over", "org.example.positive"],
+        "calls": [
+          { "rule": "org.example.positive", "ok": true, "value": true },
+          { "rule": "org.example.over", "ok": true, "value": false }
+        ]
+      }
+    },
+    {
+      "id": "dynamic.override-stdlib",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.override-stdlib",
+        "op": "load-module",
+        "source": "(define (number? x) #f) (register-rule! \"org.example.override\" \"1\" (lambda (x) (number? x)))",
+        "calls": [{ "rule": "org.example.override", "args": [1] }]
+      },
+      "expected": {
+        "ok": true,
+        "stateIds": ["org.example.override"],
+        "ids": ["org.example.override"],
+        "calls": [{ "rule": "org.example.override", "ok": true, "value": false }]
+      }
+    },
+    {
+      "id": "dynamic.atomic.duplicate-id",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-id",
+        "op": "load-module",
+        "source": "(register-rule! \"dup\" \"1\" (lambda (x) #t)) (register-rule! \"dup\" \"1\" (lambda (x) #f))",
+        "calls": []
+      },
+      "expected": { "ok": false, "error": { "code": "DUPLICATE_RULE" }, "stateIds": [] }
+    },
+    {
+      "id": "dynamic.atomic.duplicate-role",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-role",
+        "op": "load-module",
+        "source": "(register-rule! \"a\" \"1\" (lambda (x) #t) (object \"role\" \"decision\")) (register-rule! \"b\" \"1\" (lambda (x) #f) (object \"role\" \"decision\"))",
+        "calls": []
+      },
+      "expected": { "ok": false, "error": { "code": "DUPLICATE_RULE_ROLE" }, "stateIds": [] }
+    },
+    {
+      "id": "dynamic.atomic.capture-mutation",
+      "tier": "dynamic",
+      "request": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.capture-mutation",
+        "op": "load-module",
+        "source": "(define state 0) (define (next? x) (begin (set! state (+ state 1)) (= x state))) (register-rule! \"org.example.next\" \"1\" (lambda (x) (next? x)))",
+        "calls": []
+      },
+      "expected": { "ok": false, "error": { "code": "SCHEME_CAPTURE_MUTATION" }, "stateIds": [] }
+    }
+  ]
+}

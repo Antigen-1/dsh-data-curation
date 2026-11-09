@@ -1,0 +1,26 @@
+(import (chezscheme))
+
+(define (allocate-rounds count)
+  (let loop ((i 0) (acc '()))
+    (if (= i count)
+        (length acc)
+        (loop (+ i 1)
+              (cons (make-vector 1000 i) acc)))))
+
+(display "collect-procedure=")
+(display (procedure? collect))
+(newline)
+
+(display "allocate-start")
+(newline)
+(let loop ((i 0))
+  (if (< i 40)
+      (begin
+        (allocate-rounds 10000)
+        (collect)
+        (loop (+ i 1)))))
+(display "allocate-done")
+(newline)
+(display "GC-PROBE-OK")
+(newline)
+(exit 0)

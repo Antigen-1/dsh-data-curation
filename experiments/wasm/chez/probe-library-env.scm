@@ -1,0 +1,12 @@
+(library (dsh plugin p v1)
+  (export f)
+  (import (rnrs base (6)))
+  (define (f) 7))
+
+(import (chezscheme))
+(define e (environment '(dsh plugin p v1) '(rnrs base (6))))
+(display (eval '(f) e))
+(newline)
+(display "PROBE-LIB-OK")
+(newline)
+(exit 0)

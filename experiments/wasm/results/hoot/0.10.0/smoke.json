@@ -1,0 +1,71 @@
+{
+  "engine": "hoot",
+  "version": "0.10.0",
+  "verdict": "fixed-only",
+  "date": "2026-11-08",
+  "toolchain": {
+    "host": "Windows 11 / Podman 6.1.4 / Debian bookworm container guix-work",
+    "guixCommit": "40a51f6569056fcd0ae0e7fff4f3bc4a973166cb",
+    "guile": "3.0.11",
+    "hootSourceCommit": "945240fe7ebda8dee09e3036ce8661f4878b3877",
+    "node": "24.21.0",
+    "compileCommand": "hoot compile --r7rs --bundle -o fixed-guest.wasm fixed-guest.scm",
+    "dynamicCompileCommand": "hoot compile --r7rs -fruntime-modules -fmutable-defs --bundle -o guest.wasm guest.scm"
+  },
+  "levels": {
+    "fixed-aot": {
+      "pass": true,
+      "evidence": [
+        "fixed-aot.log",
+        "../../../hoot/fixed-guest.wasm"
+      ],
+      "wasmSha256": "48385d839d94f696773be3f4cb1830ef436f8756430eced007766e1423fe0750",
+      "invocation": "dispatch.call('call', 'org.example.positive', 7, false, false, false)",
+      "result": true,
+      "negativeInvocation": "dispatch.call('call', 'org.example.positive', -1, false, false, false)",
+      "negativeResult": false
+    },
+    "pure-dynamic": {
+      "pass": false,
+      "evidence": [
+        "dynamic-eval-failure.log",
+        "../../../hoot/guest.wasm"
+      ],
+      "wasmSha256": "a8d33b0de1bfaede8682e344a4ab5b7fab5096083735b6acc8231c75a1aab3bd",
+      "error": {
+        "code": "EVAL_ERROR",
+        "tag": "$invalid-continuation",
+        "message": "compiled guest called eval on a string; load_main trapped with $invalid-continuation"
+      },
+      "note": "Even a top-level (eval '(+ 1 2) (interaction-environment)) compiled with -fruntime-modules traps with $invalid-continuation during load_main. The bundled hoot repl can evaluate expressions, but that path is not callable from the compiled guest adapter."
+    },
+    "async-ffi": {
+      "pass": false,
+      "status": "not-evaluated",
+      "reason": "stopped after pure-dynamic failure; no async FFI probe was run"
+    }
+  },
+  "imports": [
+    "rt.wtf8_to_string",
+    "rt.string_to_wtf8",
+    "rt.quit",
+    "rt.die",
+    "rt.bignum_*",
+    "debug.code_name",
+    "debug.code_source",
+    "io.write_stderr",
+    "io.write_stdout",
+    "io.read_stdin"
+  ],
+  "isolation": {
+    "process": "each invocation runs boot.mjs in a child process",
+    "parentSurvives": true,
+    "note": "two independent fixed-aot invocations completed while the parent stayed alive"
+  },
+  "limits": {
+    "wallTimeoutMs": 2000,
+    "maxOutputBytes": 1000000,
+    "memoryBytes": "not measured in this smoke"
+  },
+  "decision": "Use Hoot only for fixed-aot experiments. Do not claim dynamic eval/registration or async FFI support."
+}

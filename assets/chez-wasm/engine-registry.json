@@ -1,0 +1,78 @@
+{
+  "schema": "dsh-engine-registry/v1",
+  "engines": {
+    "chez-wasm-c-10.4.1-v1": {
+      "assetsDir": "10.4.1-c",
+      "engineArtifactHash": "sha256:2e6b45625af308c7452e80273a0539b7a7dd52f2c261c0e56505f90bd211f826",
+      "closure": [
+        {
+          "path": "scheme-c.js",
+          "sha256": "16eda1e853ad1d2a27bea0439091af972f8b6c38bbc9fa5f98df643918ad6659",
+          "size": 100092
+        },
+        {
+          "path": "scheme-c.wasm",
+          "sha256": "b0aa6503c7642f3b09da229569b1cc5f9ff8ec8e01b18fb5a57b90ab5e6deceb",
+          "size": 791468
+        },
+        {
+          "path": "scheme-c.data",
+          "sha256": "3b6aa297ed779a697e1a71369622ed42c1bd8e73fec7542ff02d3268b54a4692",
+          "size": 3202768
+        },
+        {
+          "path": "online-vm-abi.json",
+          "sha256": "f6cddd99e0edb8faa2ad8cbdfdd30df43f526f95fd2ad3a9fbda3bde56817973",
+          "size": 470
+        }
+      ],
+      "dataArchive": {
+        "remotePackageSize": 3202768,
+        "files": [
+          {
+            "filename": "/petite.boot",
+            "start": 0,
+            "end": 2059287,
+            "sha256": "b4f07c7bbc1c379ba7998a3af4023a5f303007c7d663ba7f29460fc10fc6ced0",
+            "size": 2059287
+          },
+          {
+            "filename": "/scheme.boot",
+            "start": 2059287,
+            "end": 3142946,
+            "sha256": "8a2ef3e0d523b8f37ae99e210a3a6d8e9a2ee4186db45d29c3fbc781abb2424e",
+            "size": 1083659
+          },
+          {
+            "filename": "/online-vm-c.scm",
+            "start": 3142946,
+            "end": 3166929,
+            "sha256": "9142edcaffa5e00889e07b05446b69fe0dde8a3976173bffe222c24ac94a0afd",
+            "size": 23983
+          },
+          {
+            "filename": "/plugin-loader.scm",
+            "start": 3166929,
+            "end": 3185649,
+            "sha256": "cec9b58654ff12ec8282db4ec4fb16263973b743c815088ab3d5993057871aef",
+            "size": 18720
+          },
+          {
+            "filename": "/source-tree-reader.scm",
+            "start": 3185649,
+            "end": 3202220,
+            "sha256": "bcdfe2c609ce0031f6c947043d28e56a37dff0772bd3e1ac7a1bfd5dd5b83b7f",
+            "size": 16571
+          },
+          {
+            "filename": "/suspend-probe.scm",
+            "start": 3202220,
+            "end": 3202768,
+            "sha256": "6792b4778bf82e35430341dd67061b369420e21de4ce7c81b702e6557f5c0211",
+            "size": 548
+          }
+        ]
+      }
+    }
+  }
+}

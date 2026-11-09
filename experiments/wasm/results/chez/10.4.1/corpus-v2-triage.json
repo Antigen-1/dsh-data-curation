@@ -1,0 +1,987 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "file": "experiments/wasm/results/chez/10.4.1/corpus.json",
+    "passed": 16,
+    "failed": 15
+  },
+  "current": {
+    "file": "experiments/wasm/results/chez/10.4.1/corpus-v2.json",
+    "passed": 31,
+    "failed": 0
+  },
+  "method": "Read-based guest reproduces v1 observable semantics; host runner enforces isolated wall/output limits.",
+  "failures": [
+    {
+      "id": "semantic.macro-conjoin",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.macro-conjoin",
+        "op": "eval",
+        "source": "(lambda (x) ((conjoin number? (lambda (v) (> v 0))) x))",
+        "args": [
+          2
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "value": true
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.macro-conjoin",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        }
+      },
+      "rootCause": "missing conjoin macro",
+      "v2Actual": {
+        "id": "semantic.macro-conjoin",
+        "ok": true,
+        "value": true,
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.macro-conjoin",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "semantic.object-contract",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.object-contract",
+        "op": "eval",
+        "source": "(lambda (x) ((object/c (\"a\" number?) (\"b\" string?)) x))",
+        "args": [
+          {
+            "a": 1,
+            "b": "x",
+            "extra": true
+          }
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "value": true
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.object-contract",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        }
+      },
+      "rootCause": "missing object/c and object predicates",
+      "v2Actual": {
+        "id": "semantic.object-contract",
+        "ok": true,
+        "value": true,
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.object-contract",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "semantic.decision-pending",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.decision-pending",
+        "op": "eval",
+        "source": "(lambda (x) ((decision-with (lambda (v) #f) (lambda (v) (error \"selector-called\"))) x))",
+        "args": [
+          {}
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "value": {
+          "accepted": false,
+          "reason": "rule_pending"
+        }
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.decision-pending",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        }
+      },
+      "rootCause": "missing decision-with; accept must gate selector",
+      "v2Actual": {
+        "id": "semantic.decision-pending",
+        "ok": true,
+        "value": {
+          "accepted": false,
+          "reason": "rule_pending"
+        },
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.decision-pending",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "semantic.json-roundtrip",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.json-roundtrip",
+        "op": "eval",
+        "source": "(lambda (x) x)",
+        "args": [
+          {
+            "a": [
+              1,
+              true,
+              null,
+              "x",
+              {
+                "b": -2
+              }
+            ]
+          }
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "value": {
+          "a": [
+            1,
+            true,
+            null,
+            "x",
+            {
+              "b": -2
+            }
+          ]
+        }
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.json-roundtrip",
+        "ok": true,
+        "value": {
+          "a": [
+            1,
+            true,
+            [],
+            "x",
+            {
+              "b": -2
+            }
+          ]
+        }
+      },
+      "rootCause": "JSON null was encoded as []",
+      "v2Actual": {
+        "id": "semantic.json-roundtrip",
+        "ok": true,
+        "value": {
+          "a": [
+            1,
+            true,
+            null,
+            "x",
+            {
+              "b": -2
+            }
+          ]
+        },
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.json-roundtrip",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "semantic.error.cond-without-else",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.error.cond-without-else",
+        "op": "eval",
+        "source": "(lambda (x) (cond (#f 1)))",
+        "args": [
+          null
+        ]
+      },
+      "v1Expected": {
+        "ok": false,
+        "error": {
+          "code": "SCHEME_SYNTAX"
+        }
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.error.cond-without-else",
+        "ok": true,
+        "value": null
+      },
+      "rootCause": "missing cond/else validation",
+      "v2Actual": {
+        "id": "semantic.error.cond-without-else",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_SYNTAX",
+          "message": "cond requires else clause",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.error.cond-without-else",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "semantic.error.quote-symbol",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.error.quote-symbol",
+        "op": "eval",
+        "source": "(lambda (x) (quote foo))",
+        "args": [
+          null
+        ]
+      },
+      "v1Expected": {
+        "ok": false,
+        "error": {
+          "code": "SCHEME_QUOTE"
+        }
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.error.quote-symbol",
+        "ok": true,
+        "value": null
+      },
+      "rootCause": "missing quoted-symbol validation",
+      "v2Actual": {
+        "id": "semantic.error.quote-symbol",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_QUOTE",
+          "message": "quoted symbol cannot be a rule result",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.error.quote-symbol",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "semantic.error.unbound",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.error.unbound",
+        "op": "eval",
+        "source": "(lambda (x) (no-such-primitive x))",
+        "args": [
+          1
+        ]
+      },
+      "v1Expected": {
+        "ok": false,
+        "error": {
+          "code": "UNBOUND_VARIABLE",
+          "path": "$[2][0]"
+        }
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.error.unbound",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        }
+      },
+      "rootCause": "compound condition was not mapped to UNBOUND_VARIABLE",
+      "v2Actual": {
+        "id": "semantic.error.unbound",
+        "ok": false,
+        "error": {
+          "code": "UNBOUND_VARIABLE",
+          "message": "variable ~:s is not bound",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.error.unbound",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "semantic.error.strict-boolean",
+      "input": {
+        "protocolVersion": 1,
+        "id": "semantic.error.strict-boolean",
+        "op": "eval",
+        "source": "(lambda (x) ((conjoin (lambda (v) 1)) x))",
+        "args": [
+          1
+        ]
+      },
+      "v1Expected": {
+        "ok": false,
+        "error": {
+          "code": "PRIMITIVE_ERROR"
+        }
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "semantic.error.strict-boolean",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        }
+      },
+      "rootCause": "missing strict boolean contract",
+      "v2Actual": {
+        "id": "semantic.error.strict-boolean",
+        "ok": false,
+        "error": {
+          "code": "PRIMITIVE_ERROR",
+          "message": "contract predicate must return strict boolean",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#semantic.error.strict-boolean",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "dynamic.helper-forward",
+      "input": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-forward",
+        "op": "load-module",
+        "source": "(define (a? x) (b? x)) (define (b? x) (number? x)) (register-rule! \"org.example.forward\" \"1\" (lambda (x) (a? x)) (object \"role\" \"decision\"))",
+        "calls": [
+          {
+            "rule": "org.example.forward",
+            "args": [
+              1
+            ]
+          },
+          {
+            "rule": "org.example.forward",
+            "args": [
+              "1"
+            ]
+          }
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.forward"
+        ],
+        "ids": [
+          "org.example.forward"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-forward",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        },
+        "stateIds": []
+      },
+      "rootCause": "missing module helper evaluation path",
+      "v2Actual": {
+        "id": "dynamic.helper-forward",
+        "ok": true,
+        "stateIds": [
+          "org.example.forward"
+        ],
+        "ids": [
+          "org.example.forward"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": false
+          }
+        ],
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#dynamic.helper-forward",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "dynamic.helper-register",
+      "input": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-register",
+        "op": "load-module",
+        "source": "(define (positive? x) (and (number? x) (> x 0))) (define (over? x) (positive? x)) (define (register id role predicate) (register-rule! id \"1\" predicate (object \"role\" role \"description\" \"loaded from Scheme\"))) (register \"org.example.positive\" \"decision\" (lambda (x) (positive? x))) (register \"org.example.over\" \"merge\" (lambda (x) (over? x)))",
+        "calls": [
+          {
+            "rule": "org.example.positive",
+            "args": [
+              2
+            ]
+          },
+          {
+            "rule": "org.example.over",
+            "args": [
+              -1
+            ]
+          }
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "ids": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.positive",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.over",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "dynamic.helper-register",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        },
+        "stateIds": []
+      },
+      "rootCause": "missing registry mutation/rollback path",
+      "v2Actual": {
+        "id": "dynamic.helper-register",
+        "ok": true,
+        "stateIds": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "ids": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.positive",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.over",
+            "ok": true,
+            "value": false
+          }
+        ],
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#dynamic.helper-register",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "dynamic.atomic.duplicate-id",
+      "input": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-id",
+        "op": "load-module",
+        "source": "(register-rule! \"dup\" \"1\" (lambda (x) #t)) (register-rule! \"dup\" \"1\" (lambda (x) #f))",
+        "calls": []
+      },
+      "v1Expected": {
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE"
+        },
+        "stateIds": []
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-id",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        },
+        "stateIds": [
+          "dup"
+        ]
+      },
+      "rootCause": "missing duplicate rule id rejection",
+      "v2Actual": {
+        "id": "dynamic.atomic.duplicate-id",
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE",
+          "message": "duplicate rule: dup"
+        },
+        "stateIds": [],
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#dynamic.atomic.duplicate-id",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "dynamic.atomic.duplicate-role",
+      "input": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-role",
+        "op": "load-module",
+        "source": "(register-rule! \"a\" \"1\" (lambda (x) #t) (object \"role\" \"decision\")) (register-rule! \"b\" \"1\" (lambda (x) #f) (object \"role\" \"decision\"))",
+        "calls": []
+      },
+      "v1Expected": {
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE_ROLE"
+        },
+        "stateIds": []
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.duplicate-role",
+        "ok": false,
+        "error": {
+          "code": "EVAL_ERROR",
+          "message": "#<compound condition>"
+        },
+        "stateIds": []
+      },
+      "rootCause": "missing duplicate role rejection",
+      "v2Actual": {
+        "id": "dynamic.atomic.duplicate-role",
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE_ROLE",
+          "message": "duplicate role: decision"
+        },
+        "stateIds": [],
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#dynamic.atomic.duplicate-role",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "dynamic.atomic.capture-mutation",
+      "input": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.capture-mutation",
+        "op": "load-module",
+        "source": "(define state 0) (define (next? x) (begin (set! state (+ state 1)) (= x state))) (register-rule! \"org.example.next\" \"1\" (lambda (x) (next? x)))",
+        "calls": []
+      },
+      "v1Expected": {
+        "ok": false,
+        "error": {
+          "code": "SCHEME_CAPTURE_MUTATION"
+        },
+        "stateIds": []
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "dynamic.atomic.capture-mutation",
+        "ok": true,
+        "stateIds": [
+          "org.example.next"
+        ],
+        "ids": [
+          "org.example.next"
+        ],
+        "calls": []
+      },
+      "rootCause": "missing captured set! rejection",
+      "v2Actual": {
+        "id": "dynamic.atomic.capture-mutation",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_CAPTURE_MUTATION",
+          "message": "top-level mutation captured: state"
+        },
+        "stateIds": [],
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#dynamic.atomic.capture-mutation",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "dynamic.loop-snapshot",
+      "input": {
+        "protocolVersion": 1,
+        "id": "dynamic.loop-snapshot",
+        "op": "load-module",
+        "source": "(define (rule-id n) (string-append \"org.example.dynamic.\" (number->string n))) (let loop ((i 0)) (if (< i 3) (begin (register-rule! (rule-id i) \"1\" (lambda (x) (= x i))) (loop (+ i 1))) #f))",
+        "calls": [
+          {
+            "rule": "org.example.dynamic.0",
+            "args": [
+              0
+            ]
+          },
+          {
+            "rule": "org.example.dynamic.1",
+            "args": [
+              0
+            ]
+          },
+          {
+            "rule": "org.example.dynamic.2",
+            "args": [
+              2
+            ]
+          }
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "ids": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.dynamic.0",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.dynamic.1",
+            "ok": true,
+            "value": false
+          },
+          {
+            "rule": "org.example.dynamic.2",
+            "ok": true,
+            "value": true
+          }
+        ]
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "dynamic.loop-snapshot",
+        "ok": true,
+        "stateIds": [
+          "org.example.dynamic.2",
+          "org.example.dynamic.1",
+          "org.example.dynamic.0"
+        ],
+        "ids": [
+          "org.example.dynamic.2",
+          "org.example.dynamic.1",
+          "org.example.dynamic.0"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.dynamic.0",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.dynamic.1",
+            "ok": true,
+            "value": false
+          },
+          {
+            "rule": "org.example.dynamic.2",
+            "ok": true,
+            "value": true
+          }
+        ]
+      },
+      "rootCause": "id list ordering differed",
+      "v2Actual": {
+        "id": "dynamic.loop-snapshot",
+        "ok": true,
+        "stateIds": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "ids": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.dynamic.0",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.dynamic.1",
+            "ok": true,
+            "value": false
+          },
+          {
+            "rule": "org.example.dynamic.2",
+            "ok": true,
+            "value": true
+          }
+        ],
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#dynamic.loop-snapshot",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    },
+    {
+      "id": "dynamic.local-forms",
+      "input": {
+        "protocolVersion": 1,
+        "id": "dynamic.local-forms",
+        "op": "load-module",
+        "source": "(register-rule! \"local.set\" \"1\" (lambda (x) (let ((n 0)) (set! n (+ n 1)) (= n x)))) (register-rule! \"local.loop\" \"1\" (lambda (x) (let loop ((n 0)) (if (= n x) #t (loop (+ n 1)))))) (register-rule! \"local.let-star\" \"1\" (lambda (x) (let* ((a x) (b (+ a 1))) (= b 2)))) (register-rule! \"primitive.number\" \"1\" number?)",
+        "calls": [
+          {
+            "rule": "local.set",
+            "args": [
+              1
+            ]
+          },
+          {
+            "rule": "local.loop",
+            "args": [
+              4
+            ]
+          },
+          {
+            "rule": "local.let-star",
+            "args": [
+              1
+            ]
+          },
+          {
+            "rule": "primitive.number",
+            "args": [
+              1
+            ]
+          },
+          {
+            "rule": "primitive.number",
+            "args": [
+              "1"
+            ]
+          }
+        ]
+      },
+      "v1Expected": {
+        "ok": true,
+        "stateIds": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "ids": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "calls": [
+          {
+            "rule": "local.set",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.loop",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.let-star",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "v1Actual": {
+        "protocolVersion": 1,
+        "id": "dynamic.local-forms",
+        "ok": true,
+        "stateIds": [
+          "primitive.number",
+          "local.let-star",
+          "local.loop",
+          "local.set"
+        ],
+        "ids": [
+          "primitive.number",
+          "local.let-star",
+          "local.loop",
+          "local.set"
+        ],
+        "calls": [
+          {
+            "rule": "local.set",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.loop",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.let-star",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "rootCause": "id list ordering differed",
+      "v2Actual": {
+        "id": "dynamic.local-forms",
+        "ok": true,
+        "stateIds": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "ids": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "calls": [
+          {
+            "rule": "local.set",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.loop",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.let-star",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": false
+          }
+        ],
+        "stderr": ""
+      },
+      "v2Disposition": "fixed in experimental guest; production v1 semantics unchanged",
+      "evidence": "experiments/wasm/results/chez/10.4.1/corpus-v2.json#dynamic.local-forms",
+      "baselinePassed": false,
+      "currentPassed": true,
+      "currentDiffs": []
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "checkedAt": "2026-11-09T04:22:36.763Z",
+  "ok": true,
+  "engine": {
+    "assetDir": "experiments/wasm/chez/10.4.1",
+    "schemeWasmSha256": "451b62ba5e8ff29dda887df3361af71a5f48a83d210ecb5e4845ae4ba45073a5",
+    "schemeDataSha256": "2899aa16e06e6a42d3e2c7d81caf7e616848cd5d4a8476cbc8f58aa24fd487bc"
+  },
+  "transport": "legacy Worker + SharedArrayBuffer device bridge; not C ABI",
+  "loaderTest": {
+    "exitCode": 0,
+    "stderr": "",
+    "passed": 23,
+    "failed": 0,
+    "cases": [
+      {
+        "name": "load-good",
+        "pass": true,
+        "detail": "42"
+      },
+      {
+        "name": "plugin-count",
+        "pass": true,
+        "detail": "1"
+      },
+      {
+        "name": "duplicate-plugin",
+        "pass": true,
+        "detail": "E-DUPLICATE-PLUGIN"
+      },
+      {
+        "name": "denied-import",
+        "pass": true,
+        "detail": "E-IMPORT-DENIED"
+      },
+      {
+        "name": "hash-mismatch",
+        "pass": true,
+        "detail": "E-TREE-HASH-MISMATCH"
+      },
+      {
+        "name": "registry-after-failures",
+        "pass": true,
+        "detail": "1"
+      },
+      {
+        "name": "bundle-util",
+        "pass": true,
+        "detail": "42"
+      },
+      {
+        "name": "library-count",
+        "pass": true,
+        "detail": "3"
+      },
+      {
+        "name": "duplicate-library",
+        "pass": true,
+        "detail": "E-DUPLICATE-LIBRARY"
+      },
+      {
+        "name": "missing-import",
+        "pass": true,
+        "detail": "E-IMPORT-DENIED"
+      },
+      {
+        "name": "unknown-plugin",
+        "pass": true,
+        "detail": "E-UNKNOWN-PLUGIN"
+      },
+      {
+        "name": "unknown-export",
+        "pass": true,
+        "detail": "E-UNKNOWN-EXPORT"
+      },
+      {
+        "name": "dynamic-import-safe",
+        "pass": true,
+        "detail": "3"
+      },
+      {
+        "name": "dynamic-import-denied",
+        "pass": true,
+        "detail": "E-IMPORT-DENIED"
+      },
+      {
+        "name": "composite-import-denied",
+        "pass": true,
+        "detail": "E-IMPORT-DENIED"
+      },
+      {
+        "name": "bundle-missing-export",
+        "pass": true,
+        "detail": "E-EXPORT-MISSING"
+      },
+      {
+        "name": "registry-unchanged-after-failed-bundle",
+        "pass": true,
+        "detail": "#t"
+      },
+      {
+        "name": "libraries-unchanged-after-failed-bundle",
+        "pass": true,
+        "detail": "#t"
+      },
+      {
+        "name": "vm-poisoned",
+        "pass": true,
+        "detail": "E-VM-POISONED"
+      },
+      {
+        "name": "existing-plugin-after-poison",
+        "pass": true,
+        "detail": "E-VM-POISONED"
+      },
+      {
+        "name": "bundle-hash-changes",
+        "pass": true,
+        "detail": "(\"fefa5d0d315cfe4bb416d141e95026c46ba15e3880ce582f3f4fcb9af6e85ddc\" \"d363877342774667452baa6bed412f9e286ca52a079db29962a1efb1d9a601ad\")"
+      },
+      {
+        "name": "bundle-hash-imports",
+        "pass": true,
+        "detail": "(\"fefa5d0d315cfe4bb416d141e95026c46ba15e3880ce582f3f4fcb9af6e85ddc\" \"34abab66d670af3a0161f3d7ec8367d7e5d72520f1f9a2fc1d9eb2ce28c05ac7\")"
+      },
+      {
+        "name": "bundle-hash-version",
+        "pass": true,
+        "detail": "(\"fefa5d0d315cfe4bb416d141e95026c46ba15e3880ce582f3f4fcb9af6e85ddc\" \"9d30cae29451df1355aa39569368d4503df2b1db917b2e2a6456f4c3c4273dcf\")"
+      }
+    ]
+  },
+  "abIsolation": {
+    "samePluginId": "demo",
+    "v1": {
+      "value": 42,
+      "exitCode": 0,
+      "stderr": ""
+    },
+    "v2": {
+      "value": 43,
+      "exitCode": 0,
+      "stderr": ""
+    },
+    "separateIncarnations": true
+  }
+}

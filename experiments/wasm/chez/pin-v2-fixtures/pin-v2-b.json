@@ -1,0 +1,40 @@
+{
+  "schema": "dsh-pin/v2",
+  "project": "pin-v2-fixture-b",
+  "engine": {
+    "contract": "chez-wasm-c-10.4.1-v1",
+    "engineArtifactHash": "sha256:c18c33b4e2372f332488fd9d9eb298ad6e3bccd8d55480651d97f40b57639881"
+  },
+  "modules": [
+    {
+      "name": "(dsh lib base v1)",
+      "version": "v1",
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgYmFzZSB2MSkKICAoZXhwb3J0IHR3bykKICAoaW1wb3J0IChybnJzIGJhc2UgKDYpKSkKICAoZGVmaW5lICh0d28pIDIpKQo="
+    },
+    {
+      "name": "(dsh lib math v1)",
+      "version": "v1",
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgbWF0aCB2MSkKICAoZXhwb3J0IGRvdWJsZSkKICAoaW1wb3J0IChybnJzIGJhc2UgKDYpKSAob25seSAoZHNoIGxpYiBiYXNlIHYxKSB0d28pKQogIChkZWZpbmUgKGRvdWJsZSB4KSAoKiB4ICh0d28pKSkpCg=="
+    }
+  ],
+  "plugins": [],
+  "ffi": [],
+  "rules": [
+    {
+      "id": "rule.example",
+      "version": "1.0.1",
+      "sourceEncoding": "utf-8-base64",
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBydWxlIGV4YW1wbGUgdjIpCiAgKGV4cG9ydCBlbnRyeSkKICAoaW1wb3J0IChybnJzIGJhc2UgKDYpKSkKICAoZGVmaW5lIChlbnRyeSkgNDMpKQo=",
+      "treeHash": "sha256:1aed7f02ecfdcabf046b1685ec5a84f128eb30d9a306c97de4d3c239dc89dfd5",
+      "bundleHash": "sha256:2dc9a06960832541c937d48ba021724281f0da3e8af5e1307d6a158246a06f55",
+      "signature": {
+        "inputs": [],
+        "output": "boolean",
+        "variadic": false
+      },
+      "pluginEnvironmentHash": "sha256:7fc687443333364e12e9f4b6bace8ab0550c8000daf863ece53d7dbf164cf3d9",
+      "ffiEnvironmentHash": "sha256:db849eb6960061a4c2e130544af3d1d4809bca62b6e6e6b67374100c5d239564",
+      "ruleHash": "sha256:abcdca398676e1bae2364aff5c4acf5501a0d5adc6dbfe903dbb07bc4fe26eb2"
+    }
+  ]
+}

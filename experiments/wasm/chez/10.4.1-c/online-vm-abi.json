@@ -1,0 +1,19 @@
+{
+  "contract": "chez-wasm-c-10.4.1-v1",
+  "guest": "online-vm-c.scm",
+  "exports": [
+    "_dsh_init",
+    "_dsh_dispatch",
+    "_dsh_resume",
+    "_dsh_out_ptr",
+    "_dsh_out_len",
+    "_dsh_set_guest",
+    "_dsh_mount_file",
+    "_dsh_read_file",
+    "_dsh_file_size",
+    "_dsh_out_size",
+    "_dsh_out_count"
+  ],
+  "protocol": "dsh-dispatch request datum -> JSON bytevector; blocking FFI uses DSH-FFI stdout line and stdin reply",
+  "continuation_resume": false
+}

@@ -1,0 +1,553 @@
+{
+  "ok": true,
+  "checkedAt": "2026-11-09T11:47:47.309Z",
+  "node": "v24.21.0",
+  "platform": "win32-x64",
+  "total": 26,
+  "passed": 26,
+  "failed": 0,
+  "results": [
+    {
+      "id": "base",
+      "library": "base",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))"
+      ],
+      "expression": "(+ 1 2)",
+      "status": "PASS",
+      "value": "3",
+      "stdout": "MATRIX base PASS 3",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "arithmetic-bitwise",
+      "library": "arithmetic bitwise",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs arithmetic bitwise (6))"
+      ],
+      "expression": "(bitwise-and #b1100 #b1010)",
+      "status": "PASS",
+      "value": "8",
+      "stdout": "MATRIX arithmetic-bitwise PASS 8",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "arithmetic-fixnums",
+      "library": "arithmetic fixnums",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs arithmetic fixnums (6))"
+      ],
+      "expression": "(fixnum? 1)",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX arithmetic-fixnums PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "arithmetic-flonums",
+      "library": "arithmetic flonums",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs arithmetic flonums (6))"
+      ],
+      "expression": "(flonum? 1.0)",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX arithmetic-flonums PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "bytevectors",
+      "library": "bytevectors",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs bytevectors (6))"
+      ],
+      "expression": "(bytevector-u8-ref (bytevector 1 2) 0)",
+      "status": "PASS",
+      "value": "1",
+      "stdout": "MATRIX bytevectors PASS 1",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "conditions",
+      "library": "conditions",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs conditions (6))"
+      ],
+      "expression": "(condition? (make-message-condition \"x\"))",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX conditions PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "control",
+      "library": "control",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs control (6))"
+      ],
+      "expression": "(call/cc (lambda (k) (k 5)))",
+      "status": "PASS",
+      "value": "5",
+      "stdout": "MATRIX control PASS 5",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "enums",
+      "library": "enums",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs enums (6))"
+      ],
+      "expression": "(enum-set-member? 'a (make-enumeration '(a b)))",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX enums PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "eval",
+      "library": "eval",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs eval (6))"
+      ],
+      "expression": "(eval '(+ 2 3) (environment '(rnrs base (6))))",
+      "status": "PASS",
+      "value": "5",
+      "stdout": "MATRIX eval PASS 5",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "exceptions",
+      "library": "exceptions",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs exceptions (6))"
+      ],
+      "expression": "(guard (e (#t 7)) (raise 'x))",
+      "status": "PASS",
+      "value": "7",
+      "stdout": "MATRIX exceptions PASS 7",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "files",
+      "library": "files",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs files (6))"
+      ],
+      "expression": "(file-exists? \"/definitely-not-here\")",
+      "status": "PASS",
+      "value": "#f",
+      "stdout": "MATRIX files PASS #f",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "hashtables",
+      "library": "hashtables",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs hashtables (6))"
+      ],
+      "expression": "(hashtable? (make-eq-hashtable))",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX hashtables PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "io-ports",
+      "library": "io ports",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io ports (6))"
+      ],
+      "expression": "(get-string-all (open-string-input-port \"abc\"))",
+      "status": "PASS",
+      "value": "\"abc\"",
+      "stdout": "MATRIX io-ports PASS \"abc\"",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "io-simple",
+      "library": "io simple",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))"
+      ],
+      "expression": "(input-port? (current-input-port))",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX io-simple PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "lists",
+      "library": "lists",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs lists (6))"
+      ],
+      "expression": "(find even? '(1 2 3))",
+      "status": "PASS",
+      "value": "2",
+      "stdout": "MATRIX lists PASS 2",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "mutable-pairs",
+      "library": "mutable pairs",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs mutable-pairs (6))"
+      ],
+      "expression": "(let ((p (cons 1 2))) (set-car! p 9) (car p))",
+      "status": "PASS",
+      "value": "9",
+      "stdout": "MATRIX mutable-pairs PASS 9",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "mutable-strings",
+      "library": "mutable strings",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs mutable-strings (6))"
+      ],
+      "expression": "(let ((s (string-copy \"abc\"))) (string-set! s 0 #\\z) s)",
+      "status": "PASS",
+      "value": "\"zbc\"",
+      "stdout": "MATRIX mutable-strings PASS \"zbc\"",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "programs",
+      "library": "programs",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs programs (6))"
+      ],
+      "expression": "(procedure? command-line)",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX programs PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "r5rs",
+      "library": "r5rs",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs r5rs (6))"
+      ],
+      "expression": "(exact->inexact 1)",
+      "status": "PASS",
+      "value": "1.0",
+      "stdout": "MATRIX r5rs PASS 1.0",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "records-procedural",
+      "library": "records procedural",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs records procedural (6))"
+      ],
+      "expression": "(let ((rtd (make-record-type-descriptor 'point #f #f #f #f '#()))) (record-type-descriptor? rtd))",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX records-procedural PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "records-syntactic",
+      "library": "records syntactic",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs records syntactic (6))"
+      ],
+      "expression": "(let () (define-record-type point (fields (immutable x) (immutable y))) (point-x (make-point 1 2)))",
+      "status": "PASS",
+      "value": "1",
+      "stdout": "MATRIX records-syntactic PASS 1",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "records-inspection",
+      "library": "records inspection",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs records syntactic (6))",
+        "(rnrs records inspection (6))"
+      ],
+      "expression": "(let () (define-record-type point (fields (immutable x))) (record? (make-point 1)))",
+      "status": "PASS",
+      "value": "#t",
+      "stdout": "MATRIX records-inspection PASS #t",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "sorting",
+      "library": "sorting",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs sorting (6))"
+      ],
+      "expression": "(list-sort < '(3 1 2))",
+      "status": "PASS",
+      "value": "(1 2 3)",
+      "stdout": "MATRIX sorting PASS (1 2 3)",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "syntax-case",
+      "library": "syntax-case",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs syntax-case (6))"
+      ],
+      "expression": "(let-syntax ((m (lambda (x) (syntax-case x () ((_ a) #'a))))) (m 9))",
+      "status": "PASS",
+      "value": "9",
+      "stdout": "MATRIX syntax-case PASS 9",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "unicode",
+      "library": "unicode",
+      "imports": [
+        "(rnrs base (6))",
+        "(rnrs io simple (6))",
+        "(rnrs unicode (6))"
+      ],
+      "expression": "(char-upcase #\\a)",
+      "status": "PASS",
+      "value": "#\\A",
+      "stdout": "MATRIX unicode PASS #\\A",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    },
+    {
+      "id": "composite",
+      "library": "composite",
+      "imports": [
+        "(rnrs (6))"
+      ],
+      "expression": "(+ 1 2)",
+      "status": "PASS",
+      "value": "3",
+      "stdout": "MATRIX composite PASS 3",
+      "stderr": "",
+      "exit": {
+        "type": "exit",
+        "code": 0,
+        "stderr": ""
+      },
+      "failure": null,
+      "timedOut": false
+    }
+  ]
+}

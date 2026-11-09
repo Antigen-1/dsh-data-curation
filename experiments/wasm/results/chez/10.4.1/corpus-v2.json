@@ -1,0 +1,821 @@
+{
+  "schemaVersion": 1,
+  "source": "guest-v2.scm",
+  "generatedAt": "2026-11-09T04:22:43.767Z",
+  "total": 31,
+  "passed": 31,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "minimum.eval",
+      "expected": {
+        "ok": true,
+        "value": 42
+      },
+      "actual": {
+        "id": "minimum.eval",
+        "ok": true,
+        "value": 42,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "minimum.dynamic-register",
+      "expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.smoke"
+        ],
+        "ids": [
+          "org.example.smoke"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.smoke",
+            "ok": true,
+            "value": true
+          }
+        ]
+      },
+      "actual": {
+        "id": "minimum.dynamic-register",
+        "ok": true,
+        "stateIds": [
+          "org.example.smoke"
+        ],
+        "ids": [
+          "org.example.smoke"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.smoke",
+            "ok": true,
+            "value": true
+          }
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "minimum.isolation",
+      "expected": {
+        "ok": true,
+        "value": 42
+      },
+      "actual": {
+        "id": "minimum.isolation",
+        "ok": true,
+        "value": 42,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.truth.false",
+      "expected": {
+        "ok": true,
+        "value": "falsy"
+      },
+      "actual": {
+        "id": "semantic.truth.false",
+        "ok": true,
+        "value": "falsy",
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.truth.null",
+      "expected": {
+        "ok": true,
+        "value": "truthy"
+      },
+      "actual": {
+        "id": "semantic.truth.null",
+        "ok": true,
+        "value": "truthy",
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.truth.empty-list",
+      "expected": {
+        "ok": true,
+        "value": "truthy"
+      },
+      "actual": {
+        "id": "semantic.truth.empty-list",
+        "ok": true,
+        "value": "truthy",
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.and-or-order",
+      "expected": {
+        "ok": true,
+        "value": [
+          "left",
+          1
+        ]
+      },
+      "actual": {
+        "id": "semantic.and-or-order",
+        "ok": true,
+        "value": [
+          "left",
+          1
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.argument-order",
+      "expected": {
+        "ok": true,
+        "value": [
+          1,
+          2
+        ]
+      },
+      "actual": {
+        "id": "semantic.argument-order",
+        "ok": true,
+        "value": [
+          1,
+          2
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.closure",
+      "expected": {
+        "ok": true,
+        "value": 42
+      },
+      "actual": {
+        "id": "semantic.closure",
+        "ok": true,
+        "value": 42,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.local-set",
+      "expected": {
+        "ok": true,
+        "value": true
+      },
+      "actual": {
+        "id": "semantic.local-set",
+        "ok": true,
+        "value": true,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.named-let-factorial",
+      "expected": {
+        "ok": true,
+        "value": 120
+      },
+      "actual": {
+        "id": "semantic.named-let-factorial",
+        "ok": true,
+        "value": 120,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.tail-recursion",
+      "expected": {
+        "ok": true,
+        "value": 10000
+      },
+      "actual": {
+        "id": "semantic.tail-recursion",
+        "ok": true,
+        "value": 10000,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.macro-conjoin",
+      "expected": {
+        "ok": true,
+        "value": true
+      },
+      "actual": {
+        "id": "semantic.macro-conjoin",
+        "ok": true,
+        "value": true,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.object-contract",
+      "expected": {
+        "ok": true,
+        "value": true
+      },
+      "actual": {
+        "id": "semantic.object-contract",
+        "ok": true,
+        "value": true,
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.decision-pending",
+      "expected": {
+        "ok": true,
+        "value": {
+          "accepted": false,
+          "reason": "rule_pending"
+        }
+      },
+      "actual": {
+        "id": "semantic.decision-pending",
+        "ok": true,
+        "value": {
+          "accepted": false,
+          "reason": "rule_pending"
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.json-roundtrip",
+      "expected": {
+        "ok": true,
+        "value": {
+          "a": [
+            1,
+            true,
+            null,
+            "x",
+            {
+              "b": -2
+            }
+          ]
+        }
+      },
+      "actual": {
+        "id": "semantic.json-roundtrip",
+        "ok": true,
+        "value": {
+          "a": [
+            1,
+            true,
+            null,
+            "x",
+            {
+              "b": -2
+            }
+          ]
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.quote-list",
+      "expected": {
+        "ok": true,
+        "value": [
+          1,
+          2
+        ]
+      },
+      "actual": {
+        "id": "semantic.quote-list",
+        "ok": true,
+        "value": [
+          1,
+          2
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.error.cond-without-else",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "SCHEME_SYNTAX"
+        }
+      },
+      "actual": {
+        "id": "semantic.error.cond-without-else",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_SYNTAX",
+          "message": "cond requires else clause",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.error.quote-symbol",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "SCHEME_QUOTE"
+        }
+      },
+      "actual": {
+        "id": "semantic.error.quote-symbol",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_QUOTE",
+          "message": "quoted symbol cannot be a rule result",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.error.unbound",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "UNBOUND_VARIABLE",
+          "path": "$[2][0]"
+        }
+      },
+      "actual": {
+        "id": "semantic.error.unbound",
+        "ok": false,
+        "error": {
+          "code": "UNBOUND_VARIABLE",
+          "message": "variable ~:s is not bound",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "semantic.error.strict-boolean",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "PRIMITIVE_ERROR"
+        }
+      },
+      "actual": {
+        "id": "semantic.error.strict-boolean",
+        "ok": false,
+        "error": {
+          "code": "PRIMITIVE_ERROR",
+          "message": "contract predicate must return strict boolean",
+          "path": "$[2][0]"
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "resource.output-limit",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "OUTPUT_LIMIT"
+        }
+      },
+      "actual": {
+        "id": "resource.output-limit",
+        "ok": false,
+        "error": {
+          "code": "OUTPUT_LIMIT"
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "resource.timeout",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "TIMEOUT"
+        }
+      },
+      "actual": {
+        "id": "resource.timeout",
+        "ok": false,
+        "error": {
+          "code": "TIMEOUT"
+        },
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.helper-forward",
+      "expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.forward"
+        ],
+        "ids": [
+          "org.example.forward"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "actual": {
+        "id": "dynamic.helper-forward",
+        "ok": true,
+        "stateIds": [
+          "org.example.forward"
+        ],
+        "ids": [
+          "org.example.forward"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.forward",
+            "ok": true,
+            "value": false
+          }
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.loop-snapshot",
+      "expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "ids": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.dynamic.0",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.dynamic.1",
+            "ok": true,
+            "value": false
+          },
+          {
+            "rule": "org.example.dynamic.2",
+            "ok": true,
+            "value": true
+          }
+        ]
+      },
+      "actual": {
+        "id": "dynamic.loop-snapshot",
+        "ok": true,
+        "stateIds": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "ids": [
+          "org.example.dynamic.0",
+          "org.example.dynamic.1",
+          "org.example.dynamic.2"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.dynamic.0",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.dynamic.1",
+            "ok": true,
+            "value": false
+          },
+          {
+            "rule": "org.example.dynamic.2",
+            "ok": true,
+            "value": true
+          }
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.local-forms",
+      "expected": {
+        "ok": true,
+        "stateIds": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "ids": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "calls": [
+          {
+            "rule": "local.set",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.loop",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.let-star",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "actual": {
+        "id": "dynamic.local-forms",
+        "ok": true,
+        "stateIds": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "ids": [
+          "local.let-star",
+          "local.loop",
+          "local.set",
+          "primitive.number"
+        ],
+        "calls": [
+          {
+            "rule": "local.set",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.loop",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "local.let-star",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "primitive.number",
+            "ok": true,
+            "value": false
+          }
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.helper-register",
+      "expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "ids": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.positive",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.over",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "actual": {
+        "id": "dynamic.helper-register",
+        "ok": true,
+        "stateIds": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "ids": [
+          "org.example.over",
+          "org.example.positive"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.positive",
+            "ok": true,
+            "value": true
+          },
+          {
+            "rule": "org.example.over",
+            "ok": true,
+            "value": false
+          }
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.override-stdlib",
+      "expected": {
+        "ok": true,
+        "stateIds": [
+          "org.example.override"
+        ],
+        "ids": [
+          "org.example.override"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.override",
+            "ok": true,
+            "value": false
+          }
+        ]
+      },
+      "actual": {
+        "id": "dynamic.override-stdlib",
+        "ok": true,
+        "stateIds": [
+          "org.example.override"
+        ],
+        "ids": [
+          "org.example.override"
+        ],
+        "calls": [
+          {
+            "rule": "org.example.override",
+            "ok": true,
+            "value": false
+          }
+        ],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.atomic.duplicate-id",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE"
+        },
+        "stateIds": []
+      },
+      "actual": {
+        "id": "dynamic.atomic.duplicate-id",
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE",
+          "message": "duplicate rule: dup"
+        },
+        "stateIds": [],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.atomic.duplicate-role",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE_ROLE"
+        },
+        "stateIds": []
+      },
+      "actual": {
+        "id": "dynamic.atomic.duplicate-role",
+        "ok": false,
+        "error": {
+          "code": "DUPLICATE_RULE_ROLE",
+          "message": "duplicate role: decision"
+        },
+        "stateIds": [],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "id": "dynamic.atomic.capture-mutation",
+      "expected": {
+        "ok": false,
+        "error": {
+          "code": "SCHEME_CAPTURE_MUTATION"
+        },
+        "stateIds": []
+      },
+      "actual": {
+        "id": "dynamic.atomic.capture-mutation",
+        "ok": false,
+        "error": {
+          "code": "SCHEME_CAPTURE_MUTATION",
+          "message": "top-level mutation captured: state"
+        },
+        "stateIds": [],
+        "stderr": ""
+      },
+      "pass": true,
+      "diffs": []
+    }
+  ]
+}

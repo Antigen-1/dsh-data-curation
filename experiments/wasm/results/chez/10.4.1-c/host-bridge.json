@@ -1,9 +1,0 @@
-{
-  "ok": true,
-  "checkedAt": "2026-11-09T11:47:40.195Z",
-  "request": "ping",
-  "response": "pong:ping",
-  "elapsedMs": 49,
-  "totalElapsedMs": 65,
-  "transport": "C ABI dsh_dispatch + blocking stdin/stdout device; no continuation capture"
-}

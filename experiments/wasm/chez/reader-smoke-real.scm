@@ -1,6 +1,0 @@
-(load "/restricted-reader.scm")
-(display "string->number: ") (display (string->number "1.5")) (newline)
-(display "exact->inexact: ") (display (exact->inexact (string->number "1.5"))) (newline)
-(display "real?: ") (display (real? (string->number "1.5"))) (newline)
-(display "canonical: ") (display (bytevector->hex (canonical-source-bytes "1.5"))) (newline)
-(exit 0)

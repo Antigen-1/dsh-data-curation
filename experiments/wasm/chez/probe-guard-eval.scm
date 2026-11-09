@@ -1,7 +1,0 @@
-(import (chezscheme))
-(define e (environment '(rnrs base (6))))
-(guard (x (#t (display "CAUGHT ") (write x) (newline)))
-  (eval 'missing e))
-(display "AFTER")
-(newline)
-(exit 0)

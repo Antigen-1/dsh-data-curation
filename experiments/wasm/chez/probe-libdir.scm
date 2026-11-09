@@ -1,5 +1,0 @@
-(import (chezscheme))
-(display "before ") (write (library-directories)) (newline)
-(guard (e (#t (display "set-error ") (display (condition-message e)) (newline)))
-  (library-directories '("/work/lib" "/tmp/lib"))
-  (display "after ") (write (library-directories)) (newline))

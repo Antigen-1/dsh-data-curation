@@ -1,6 +1,0 @@
-(import (chezscheme))
-(display (string-contains "variable missing is not bound" "export"))
-(newline)
-(display (condition-message (make-message-condition "variable missing is not bound")))
-(newline)
-(exit 0)

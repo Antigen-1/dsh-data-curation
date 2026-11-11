@@ -1,6 +1,6 @@
 {
   "name": "dsh-data-curation",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Contract-driven data curation mode for DeepSeek Harness: a two-layer pin (project defaults + per-table contracts) with multiple curated tables, immutable-source gates, independent multi-channel extraction, contract-declared adjudication strategies (built-in or project commands, batch mode, per-field overrides), read-only queries (meta/events), notes, incremental compare, a single SQLite workspace with cell-level provenance, multi-table export, packable project archives, a generic session progress dock, and a stable JSON rules DSL (language v1), plus low-friction CSV/JSONL record import, identity normalization, pin drafts, resumable batch submission jobs, field-level coverage, delivery packages and protected columns with pin validate/merge/decision/verify rules. 契约驱动的数据核对/清洗模式。",
   "keywords": [
     "deepseek-harness",
@@ -28,6 +28,12 @@
   "engines": {
     "node": ">=24"
   },
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "files": [
     "lib",
     "assets",
@@ -38,6 +44,8 @@
     "docs",
     "README.md",
     "LICENSE",
+    "NOTICE",
+    "LICENSES",
     "CHANGELOG.md",
     "SECURITY.md"
   ],
@@ -53,9 +61,9 @@
     }
   },
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
     "selfcheck": "node scripts/selfcheck.mjs",
-    "prepack": "npm run selfcheck && npm test"
+    "prepack": "node scripts/selfcheck.mjs && node --test test/*.test.js"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-commands": ">=0.1.2-rc.1 <0.2.0 || >=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-rc.1 <0.3.0-0",

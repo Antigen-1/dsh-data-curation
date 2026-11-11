@@ -43,7 +43,9 @@
   被引用的外部脚本，换个地方解开就能继续核对漂移。
 
 用的是 Node 内置 `node:sqlite`：**不引第三方依赖**。该模块自 Node 23.4 起无需
-flag，因此本包要求 **Node >= 24**（`engines` 已声明）。
+flag，因此本包要求 **Node >= 24**（`engines` 已声明）。包级平台门禁为
+**Windows x64**（`os: ["win32"]`、`cpu: ["x64"]`），Scheme v2 运行时另在
+`SchemeV2Runtime.open` 做同样的运行期检查，不匹配抛 `E-UNSUPPORTED-PLATFORM`。
 
 ## 两层 pin（v5）
 
@@ -128,23 +130,34 @@ import { SchemeV2Runtime } from 'dsh-data-curation/rules'
 const pin = JSON.parse(readFileSync('my-v2-pin.json', 'utf8'))
 const runtime = await SchemeV2Runtime.open(pin, {
   timeoutMs: 5000,
-  // 只有 pin 声明了 FFI 时才需要；这是宿主的显式 allowlist。
-  ffi: { call: async ({ target, args }) => target === 'math.add' ? args[0] + args[1] : undefined },
+  // 只有 pin 声明了 FFI 时才需要；key 是 target 命名空间。
+  ffiModules: { math: new URL('./ffi/math.mjs', import.meta.url) },
 })
 try {
   const value = await runtime.call('rule.example', { args: [1, 2] })
-  // 规则也可以 import (dsh ffi (6)) 并调用 ffi-call。
-  const sum = await runtime.ffiCall('math.add', [1, 2])
+  // 规则也可以 import (dsh ffi (6)) 并调用 ffi-call；不保留宿主 ffi.call 闭包。
 } finally {
   await runtime.close()
 }
 ```
 
-v2 当前边界：`plugins` 执行拒绝；FFI 只接受 pin 声明与宿主 `ffi.call`
-allowlist 同时允许的阻塞帧；没有独立 OS supervisor，timeout 会丢弃当前
-incarnation。`signature` 是纳入 `ruleHash` 的完整性元数据，运行时不会据此
-强制 arity 或返回类型；需要类型契约的调用方必须自行校验。生产默认、迁移和
-发布仍未批准。
+v2 支持项目级 library/program 插件。固定搜索路径是
+`<project>/rules/scheme/lib` 与 `<project>/rules/scheme/programs`；pin 只列出允许
+挂载的文件，运行时校验每个文件的 `treeHash` 后才放进 MEMFS。library 用
+`(library (dsh plugin <id> (<version>...)) ...)`，program 是 R6RS top-level
+program，在 open 时按 pin 顺序执行一次，可 import library 并通过
+`(dsh rules (6))` 注册动态规则。`callPlugin` 调用 library 导出，
+`callRule` 调用 program 注册的规则，`programResult` 取 program 最后表达式的值。
+
+v2 当前边界：FFI 走 fd-backed stream + 二进制 TLV，**不再依赖 stdin/stdout**；Wasm
+线性内存上限 512MiB，但没有 OS 级 RSS 硬上限，timeout 会丢弃当前 incarnation；
+`supervised: true` 也支持 `ffiModules`，provider 在子进程内执行，超时会终止该 incarnation，
+父进程保持存活并可 restart。`signature` 是纳入
+`ruleHash` 的完整性元数据，
+运行时不会据此强制 arity 或返回类型；需要类型契约的调用方必须自行校验。pin
+格式与安全边界见 [docs/PIN-V2.md](docs/PIN-V2.md)，发布包与可复现结论见
+[docs/SCHEME-V2-PACKAGING.md](docs/SCHEME-V2-PACKAGING.md)，性能基线见
+[docs/SCHEME-V2-PERF.md](docs/SCHEME-V2-PERF.md)。生产默认、迁移和发布仍未批准。
 
 ## 八阶段
 
@@ -397,7 +410,7 @@ effects 沙箱桥；保留闭包、异步 primitive、尾调用优化与燃料/�
 ## 开发
 
 ```bash
-node --test          # 218 个测试
+node --test          # 完整测试套件
 npm run selfcheck    # 发布前泄漏 / 结构检查
 npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache）
 ```
@@ -407,4 +420,5 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.19.0（Scheme v2 opt-in 运行时、阻塞 FFI 与安全加固）；尚未发布到 npm。
+- 当前候选版本 0.20.0（Scheme v2 opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未发布到 npm。
+- 版本号不是发布：只有打了 tag 才算发布；下一发布版本可 bump 到 0.20.1、0.21.0 或更高，未打 tag 的 commit/package 都只是候选。

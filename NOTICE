@@ -1,0 +1,47 @@
+dsh-data-curation third-party notices
+=====================================
+
+This package contains or distributes compiled third-party runtime artifacts.
+The project source itself is licensed under the MIT License (see LICENSE).
+
+Chez Scheme 10.4.1
+------------------
+Copyright 1984-2024 Cisco Systems, Inc. and the Chez Scheme contributors.
+License: Apache License 2.0.
+Project: https://github.com/cisco/ChezScheme
+License text: https://www.apache.org/licenses/LICENSE-2.0 (copy: LICENSES/Apache-2.0.txt)
+Distributed as compiled WebAssembly/data artifacts in
+assets/chez-wasm/10.4.1-c/; no Chez Scheme source tree is included.
+
+Emscripten 3.1.6 runtime glue
+-----------------------------
+Copyright the Emscripten contributors.
+License: MIT / University of Illinois Open Source License (UIUC).
+Project: https://emscripten.org/
+License text: LICENSES/MIT.txt and LICENSES/UIUC.txt
+The generated scheme-c.js glue and Wasm runtime support are built with
+Emscripten 3.1.6.
+
+lz4
+---
+Copyright the lz4 contributors.
+License: BSD 2-Clause.
+Project: https://github.com/lz4/lz4
+License text: LICENSES/BSD-2-Clause.txt
+
+Node.js runtime
+---------------
+The package requires Node.js; Node.js is not bundled by this package.
+Node.js is distributed under the MIT license and additional third-party
+licenses. See https://nodejs.org/en/about/previous-releases for the
+matching Node.js release and its LICENSE file.
+
+License texts
+-------------
+- LICENSES/MIT.txt
+- LICENSES/UIUC.txt
+- LICENSES/BSD-2-Clause.txt
+- LICENSES/Apache-2.0.txt
+- Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+This NOTICE is informational and does not modify any license.

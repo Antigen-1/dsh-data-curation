@@ -6,6 +6,49 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.20.0] — 2026-11-09 (unreleased candidate)
+
+0.20.0 是当前候选版本；版本号不是发布，只有打了 tag 才算发布。下一发布版本可 bump 到
+0.20.1、0.21.0 或更高，未打 tag 的 commit/package 都只是候选。
+
+### Added
+
+- 项目级 Scheme v2 插件：固定搜索路径 `rules/scheme/lib` 与 `rules/scheme/programs`，
+  library/program 的 pin 条目、treeHash 校验、依赖 DAG 拓扑排序与环拒绝。
+- `SchemeV2Runtime.callPlugin`、`callRule`、`programResult`、`runtime.rules`；program 在
+  `open` 时按 pin 顺序执行，可通过 `(dsh rules (6))` 注册动态规则。
+- FFI 改为 fd-backed `/dev/dsh-in-<suffix>`、`/dev/dsh-out-<suffix>` + 二进制 TLV，移除
+  Worker 的 Emscripten stdin/stdout 字节函数；设备名每 incarnation 随机，帧长度前缀、
+  类型标签与 64KiB 上限。
+- FFI 授权改为 pin 的 `{id, subjects}` 绑定；宿主用 `ffiModules` 在 open 时预加载模块，
+  模块在承载 VM 的 Worker/子进程内执行；删除公开 `ffi.call` 闭包。
+- `CvmSupervisor`：可选 `supervised: true`，支持 kill/restart、超时和崩溃恢复；FFI 与
+  `ffiModules` 在子进程内执行，provider 超时终止该子进程。
+- `runtime.gc()` / `runtime.metrics()`：GC 触发、RSS/Wasm 字节与调用/错误/规则计数。
+- 发布包 P4：`NOTICE`、`LICENSES/`、平台门禁、engine 闭包与可复现性结论；
+  `docs/PIN-V2.md`、`docs/SCHEME-V2-PACKAGING.md`、`docs/SCHEME-V2-PERF.md`。
+
+### Changed
+
+- v2 pin 的模块/规则/插件名改为 R6RS version list，如 `(dsh plugin demo (1 0 0))`；
+  符号版本 `v1` 拒绝为 `E-PIN-V2-PRE-RELEASE-NAME`。旧字符串 plugin 条目拒绝。
+- `pluginEnvironmentHash` 参与 ruleHash；0.20.0 的 fixture 由当前 engine 重新生成。跨 0.19.0 的 pin hash 兼容性未作为 0.20.0 的保证。
+- 构建源迁入 tracked `native/chez/`，不再依赖 `experiments/`。
+- 规则/插件过程按 `(id,version,name)` 缓存，env spec 只在首次解析时创建 `environment`；修复连续调用下每次创建 environment 导致的延迟增长。
+
+### Security
+
+- 插件全部校验后原子发布；路径逃逸、symlink、未列入 pin 的文件和 NUL/非法 UTF-8 拒绝。
+- program 失败/exit 关闭 VM；不可调用 program；重复/覆盖静态规则拒绝。
+- 动态规则继承所属 program 的 FFI 授权；`callRule` 使用 `programSubject`，规则自身的动态 subject 只用于规则身份。
+
+### Known limitations
+
+- FFI 已改为 fd-backed `/dev/dsh-in`、`/dev/dsh-out` + 二进制 TLV，不再依赖 stdin/stdout；设备路径未作为独立权限边界。
+- 无 OS 级 RSS 硬上限；live-set OOM 只能 fail-closed，不能在 abort 前区分可回收耗尽。Wasm/Chez 内存安全漏洞仍是残余风险，不宣称 OS 级隔离。
+- 1h 串行纯规则 soak 完成（34,621,517 次、0 error）；10 分钟混合 smoke 完成（387,037 次、0 error）；完整 1h 混合负载按计划留到发布后验证。
+- 独立子代理审阅已执行 security/code/release 三路，结论仍为 NO-GO（无 APPROVE 签字）；0.20.0 未发布、未打 tag，v1 仍是默认。
+
 ## [0.19.0] — 2026-11-09
 
 ### Added

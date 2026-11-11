@@ -3,13 +3,14 @@
 //
 // Checks, in order:
 //   1. leak scan     no absolute local paths, private keys, credential tokens
-//   2. syntax        every shipped .js/.mjs passes `node --check`
+//   2. syntax        every shipped .js/.cjs/.mjs passes `node --check`
 //   3. hygiene       required package.json fields, files[] present on disk
 //   4. skills        every SKILL.md has name/description frontmatter
 //
 // Exit code 1 on any problem. Scans only what `files[]` ships (this script is
 // skipped by name so its own pattern literals do not trip the scan).
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { readFile, readdir, stat } from 'node:fs/promises'
 import { join, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -33,7 +34,7 @@ const LEAKS = [
   ['windows drive path', /[A-Za-z]:\\/],
   ['private key block', /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   ['credential token', /\b(?:sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16})\b/],
-  ['unfilled placeholder', /\{\{\s*(?:TODO|PATH|NAME|FIXME)\s*\}\}/],
+  ['unfilled placeholder', /\{\{\s*(?:TODO|PATH|NAME|FIXME)\s*\}\}|<year>|<copyright holders>|<owner>/i],
 ]
 
 const problems = []
@@ -85,6 +86,52 @@ if (!Array.isArray(pkg.files) || pkg.files.length === 0) note('package.json 缺�
 const shipped = await collect(pkg.files ?? [])
 const checksums = await readChecksums()
 
+async function checkEngineRegistry() {
+  const registryPath = 'assets/chez-wasm/engine-registry.json'
+  let registry
+  try {
+    registry = JSON.parse(await readFile(join(root, registryPath), 'utf8'))
+  } catch (error) {
+    note(`engine registry 不可读：${registryPath}: ${error.message}`)
+    return
+  }
+  if (registry.schema !== 'dsh-engine-registry/v1' || typeof registry.engines !== 'object') {
+    note(`engine registry schema 不正确：${registryPath}`)
+    return
+  }
+  for (const [name, engine] of Object.entries(registry.engines)) {
+    const dir = join(root, 'assets/chez-wasm', engine.assetsDir)
+    let dataBytes = null
+    for (const entry of engine.closure ?? []) {
+      let bytes
+      try {
+        bytes = await readFile(join(dir, entry.path))
+      } catch {
+        note(`engine ${name} 缺少闭包文件：${entry.path}`)
+        continue
+      }
+      if (entry.path === 'scheme-c.data') dataBytes = bytes
+      const actual = createHash('sha256').update(bytes).digest('hex')
+      if (bytes.length !== entry.size) note(`engine ${name} 文件大小不匹配：${entry.path}`)
+      if (actual !== entry.sha256) note(`engine ${name} 文件 hash 不匹配：${entry.path}`)
+    }
+    if (dataBytes && engine.dataArchive?.files) {
+      for (const member of engine.dataArchive.files) {
+        if (!Number.isInteger(member.start) || !Number.isInteger(member.end) ||
+            member.end < member.start || member.end > dataBytes.length ||
+            member.end - member.start !== member.size) {
+          note(`engine ${name} dataArchive 偏移不合法：${member.filename}`)
+          continue
+        }
+        const actual = createHash('sha256').update(dataBytes.subarray(member.start, member.end)).digest('hex')
+        if (actual !== member.sha256) note(`engine ${name} dataArchive hash 不匹配：${member.filename}`)
+      }
+    }
+  }
+}
+
+await checkEngineRegistry()
+
 for (const file of shipped) {
   if (file === SELF) continue
   if (isBinary(file)) {
@@ -99,7 +146,7 @@ for (const file of shipped) {
       if (re.test(line)) note(`${label} @ ${file}:${i + 1}: ${line.trim().slice(0, 120)}`)
     })
   }
-  if (/\.(?:m?js)$/.test(file)) {
+  if (/\.(?:cjs|m?js)$/.test(file)) {
     try {
       execFileSync(process.execPath, ['--check', join(root, file)], { stdio: 'pipe' })
     } catch (e) {

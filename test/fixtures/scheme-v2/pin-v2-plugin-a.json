@@ -1,0 +1,83 @@
+{
+  "schema": "dsh-pin/v2",
+  "project": "pin-v2-plugin-fixture-a",
+  "engine": {
+    "contract": "chez-wasm-c-10.4.1-v1",
+    "engineArtifactHash": "sha256:8ec8aa06a20f2c0a3ea512ac39a9f1f787eca75d68dfe0481dadd040029f8c4b"
+  },
+  "modules": [
+    {
+      "name": "(dsh lib base (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgYmFzZSAoMSAwIDApKQogIChleHBvcnQgdHdvKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpKQogIChkZWZpbmUgKHR3bykgMikpCg=="
+    },
+    {
+      "name": "(dsh lib math (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgbWF0aCAoMSAwIDApKQogIChleHBvcnQgZG91YmxlKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpIChvbmx5IChkc2ggbGliIGJhc2UgKDEgMCAwKSkgdHdvKSkKICAoZGVmaW5lIChkb3VibGUgeCkgKCogeCAodHdvKSkpKQo="
+    }
+  ],
+  "plugins": [
+    {
+      "id": "demo",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "kind": "library",
+      "path": "lib/dsh/plugin/demo/1.0.0.sls",
+      "treeHash": "sha256:5824c9902c6bca9c2d1775fb1c5d14b50956ee53219d6d0e6a12f4940fc22a15",
+      "exports": [
+        "answer"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "base",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "kind": "library",
+      "path": "lib/dsh/plugin/base/1.0.0.sls",
+      "treeHash": "sha256:fc96ece5f824296921062d188a6e619651464f0bb43623b039e9e88a0888f15c",
+      "exports": [
+        "bump"
+      ],
+      "capabilities": []
+    }
+  ],
+  "ffi": [],
+  "rules": [
+    {
+      "id": "rule.example",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceEncoding": "utf-8-base64",
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBydWxlIHJ1bGUuZXhhbXBsZSAoMSAwIDApKQogIChleHBvcnQgZW50cnkpCiAgKGltcG9ydCAocm5ycyBiYXNlICg2KSkgKGRzaCBwbHVnaW4gZGVtbyAoMSAwIDApKSkKICAoZGVmaW5lIChlbnRyeSkgKGFuc3dlcikpKQo=",
+      "treeHash": "sha256:2e3c6d0c8858c3abe7d90c7ee0a5d6607ea842718906d6a96c8f979103a548c8",
+      "bundleHash": "sha256:3b11042a2dfd2e48ab20ba7d1f6e4d78d6f28b470af3ef1d2ebc1871393a9a66",
+      "signature": {
+        "inputs": [],
+        "output": "number",
+        "variadic": false
+      },
+      "pluginEnvironmentHash": "sha256:a1ab9aa2ee8be0049c2d087d4c616a775d91197576827ed1c6cb36029f03f6d0",
+      "ffiEnvironmentHash": "sha256:db849eb6960061a4c2e130544af3d1d4809bca62b6e6e6b67374100c5d239564",
+      "ruleHash": "sha256:1af452991228daa3b0ed864faf35877cafc85b8669afa954b3ff7b2c94b84073"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+(import (rnrs base (6))
+        (dsh rules (6))
+        (dsh ffi (6)))
+(register-rule! 'ffi-total '(1 0 0) (lambda (x) (ffi-call "math.add" x 21)))
+(list (ffi-call "math.add" 20 22) 42)

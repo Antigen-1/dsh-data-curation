@@ -3,18 +3,26 @@
   "project": "pin-v2-fixture-a",
   "engine": {
     "contract": "chez-wasm-c-10.4.1-v1",
-    "engineArtifactHash": "sha256:2e6b45625af308c7452e80273a0539b7a7dd52f2c261c0e56505f90bd211f826"
+    "engineArtifactHash": "sha256:8ec8aa06a20f2c0a3ea512ac39a9f1f787eca75d68dfe0481dadd040029f8c4b"
   },
   "modules": [
     {
-      "name": "(dsh lib base v1)",
-      "version": "v1",
-      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgYmFzZSB2MSkKICAoZXhwb3J0IHR3bykKICAoaW1wb3J0IChybnJzIGJhc2UgKDYpKSkKICAoZGVmaW5lICh0d28pIDIpKQo="
+      "name": "(dsh lib base (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgYmFzZSAoMSAwIDApKQogIChleHBvcnQgdHdvKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpKQogIChkZWZpbmUgKHR3bykgMikpCg=="
     },
     {
-      "name": "(dsh lib math v1)",
-      "version": "v1",
-      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgbWF0aCB2MSkKICAoZXhwb3J0IGRvdWJsZSkKICAoaW1wb3J0IChybnJzIGJhc2UgKDYpKSAob25seSAoZHNoIGxpYiBiYXNlIHYxKSB0d28pKQogIChkZWZpbmUgKGRvdWJsZSB4KSAoKiB4ICh0d28pKSkpCg=="
+      "name": "(dsh lib math (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgbWF0aCAoMSAwIDApKQogIChleHBvcnQgZG91YmxlKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpIChvbmx5IChkc2ggbGliIGJhc2UgKDEgMCAwKSkgdHdvKSkKICAoZGVmaW5lIChkb3VibGUgeCkgKCogeCAodHdvKSkpKQo="
     }
   ],
   "plugins": [],
@@ -22,11 +30,15 @@
   "rules": [
     {
       "id": "rule.example",
-      "version": "1.0.0",
+      "version": [
+        1,
+        0,
+        0
+      ],
       "sourceEncoding": "utf-8-base64",
-      "sourceBase64": "KGxpYnJhcnkgKGRzaCBydWxlIGV4YW1wbGUgdjEpCiAgKGV4cG9ydCBlbnRyeSkKICAoaW1wb3J0IChybnJzIGJhc2UgKDYpKSkKICAoZGVmaW5lIChlbnRyeSkgNDIpKQo=",
-      "treeHash": "sha256:31244d52d5b5ac56c4fd8269af48a944a7781ba68ad41a83ad6160a73502f38b",
-      "bundleHash": "sha256:2dc9a06960832541c937d48ba021724281f0da3e8af5e1307d6a158246a06f55",
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBydWxlIHJ1bGUuZXhhbXBsZSAoMSAwIDApKQogIChleHBvcnQgZW50cnkpCiAgKGltcG9ydCAocm5ycyBiYXNlICg2KSkpCiAgKGRlZmluZSAoZW50cnkpIDQyKSkK",
+      "treeHash": "sha256:24db3291fdc3b0fde159a423fdb0cbc827209c333502b362f06a6c1aa99aefbf",
+      "bundleHash": "sha256:3b11042a2dfd2e48ab20ba7d1f6e4d78d6f28b470af3ef1d2ebc1871393a9a66",
       "signature": {
         "inputs": [],
         "output": "boolean",
@@ -34,7 +46,7 @@
       },
       "pluginEnvironmentHash": "sha256:7fc687443333364e12e9f4b6bace8ab0550c8000daf863ece53d7dbf164cf3d9",
       "ffiEnvironmentHash": "sha256:db849eb6960061a4c2e130544af3d1d4809bca62b6e6e6b67374100c5d239564",
-      "ruleHash": "sha256:aa62edc7eb673e60a636a9fafbb0bab4426e37a36e69babaf2ef60d486b64a00"
+      "ruleHash": "sha256:b34d24aa192407693aba7980d53ca930498535536c3c5118fecf4c42a201f693"
     }
   ]
 }

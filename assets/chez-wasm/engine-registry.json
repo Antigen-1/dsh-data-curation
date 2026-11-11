@@ -3,22 +3,22 @@
   "engines": {
     "chez-wasm-c-10.4.1-v1": {
       "assetsDir": "10.4.1-c",
-      "engineArtifactHash": "sha256:2e6b45625af308c7452e80273a0539b7a7dd52f2c261c0e56505f90bd211f826",
+      "engineArtifactHash": "sha256:8ec8aa06a20f2c0a3ea512ac39a9f1f787eca75d68dfe0481dadd040029f8c4b",
       "closure": [
         {
           "path": "scheme-c.js",
-          "sha256": "16eda1e853ad1d2a27bea0439091af972f8b6c38bbc9fa5f98df643918ad6659",
-          "size": 100092
+          "sha256": "64aaecda2c6051a6dedd88a8992ac2bb3e2951b227b9d8925bb62a3981512b42",
+          "size": 100027
         },
         {
           "path": "scheme-c.wasm",
-          "sha256": "b0aa6503c7642f3b09da229569b1cc5f9ff8ec8e01b18fb5a57b90ab5e6deceb",
-          "size": 791468
+          "sha256": "968a915130ee6caa5baea5ddbb5d5cef9ba3d4183a6d2401960d4e278e18ad99",
+          "size": 791467
         },
         {
           "path": "scheme-c.data",
-          "sha256": "3b6aa297ed779a697e1a71369622ed42c1bd8e73fec7542ff02d3268b54a4692",
-          "size": 3202768
+          "sha256": "a50164905073018857e51b44b0a5490bf70ad4615bc85b0e422a8e56219fe8f0",
+          "size": 3233188
         },
         {
           "path": "online-vm-abi.json",
@@ -27,7 +27,7 @@
         }
       ],
       "dataArchive": {
-        "remotePackageSize": 3202768,
+        "remotePackageSize": 3233188,
         "files": [
           {
             "filename": "/petite.boot",
@@ -46,30 +46,23 @@
           {
             "filename": "/online-vm-c.scm",
             "start": 3142946,
-            "end": 3166929,
-            "sha256": "9142edcaffa5e00889e07b05446b69fe0dde8a3976173bffe222c24ac94a0afd",
-            "size": 23983
+            "end": 3197071,
+            "sha256": "9f3cc88bb3f69dd34adbb512c382e013f7a2a588e74c431d0c35fb4548eb74a3",
+            "size": 54125
           },
           {
             "filename": "/plugin-loader.scm",
-            "start": 3166929,
-            "end": 3185649,
-            "sha256": "cec9b58654ff12ec8282db4ec4fb16263973b743c815088ab3d5993057871aef",
-            "size": 18720
+            "start": 3197071,
+            "end": 3216617,
+            "sha256": "a8760f0eec976392714995f3c01a7edb2c8e4caebd90c47238eb1d50b56b2dd5",
+            "size": 19546
           },
           {
             "filename": "/source-tree-reader.scm",
-            "start": 3185649,
-            "end": 3202220,
+            "start": 3216617,
+            "end": 3233188,
             "sha256": "bcdfe2c609ce0031f6c947043d28e56a37dff0772bd3e1ac7a1bfd5dd5b83b7f",
             "size": 16571
-          },
-          {
-            "filename": "/suspend-probe.scm",
-            "start": 3202220,
-            "end": 3202768,
-            "sha256": "6792b4778bf82e35430341dd67061b369420e21de4ce7c81b702e6557f5c0211",
-            "size": 548
           }
         ]
       }

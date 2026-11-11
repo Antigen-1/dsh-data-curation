@@ -1,0 +1,67 @@
+{
+  "schema": "dsh-pin/v2",
+  "project": "pin-v2-ffi-fixture-a",
+  "engine": {
+    "contract": "chez-wasm-c-10.4.1-v1",
+    "engineArtifactHash": "sha256:8ec8aa06a20f2c0a3ea512ac39a9f1f787eca75d68dfe0481dadd040029f8c4b"
+  },
+  "modules": [
+    {
+      "name": "(dsh lib base (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgYmFzZSAoMSAwIDApKQogIChleHBvcnQgdHdvKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpKQogIChkZWZpbmUgKHR3bykgMikpCg=="
+    },
+    {
+      "name": "(dsh lib math (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgbWF0aCAoMSAwIDApKQogIChleHBvcnQgZG91YmxlKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpIChvbmx5IChkc2ggbGliIGJhc2UgKDEgMCAwKSkgdHdvKSkKICAoZGVmaW5lIChkb3VibGUgeCkgKCogeCAodHdvKSkpKQo="
+    }
+  ],
+  "plugins": [],
+  "ffi": [
+    {
+      "id": "math.add",
+      "subjects": [
+        {
+          "kind": "rule",
+          "id": "rule.example",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule.example",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceEncoding": "utf-8-base64",
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBydWxlIHJ1bGUuZXhhbXBsZSAoMSAwIDApKQogIChleHBvcnQgZW50cnkpCiAgKGltcG9ydCAocm5ycyBiYXNlICg2KSkgKGRzaCBmZmkgKDYpKSkKICAoZGVmaW5lIChlbnRyeSkgKGZmaS1jYWxsICJtYXRoLmFkZCIgMjAgMjIpKSkK",
+      "treeHash": "sha256:4c5b052db4db370326a0f5f8d3577d1e4348bffe114a5d7e92ae937f23229b0d",
+      "bundleHash": "sha256:3b11042a2dfd2e48ab20ba7d1f6e4d78d6f28b470af3ef1d2ebc1871393a9a66",
+      "signature": {
+        "inputs": [],
+        "output": "boolean",
+        "variadic": false
+      },
+      "pluginEnvironmentHash": "sha256:7fc687443333364e12e9f4b6bace8ab0550c8000daf863ece53d7dbf164cf3d9",
+      "ffiEnvironmentHash": "sha256:914e41ba86c6326c51fe30eaa546be2a8032698c6136da456c5567b08e7542f9",
+      "ruleHash": "sha256:dcdeb52beefcee08b4fcfed28dbf8083538e0349623ac265a09c0159ee138221"
+    }
+  ]
+}

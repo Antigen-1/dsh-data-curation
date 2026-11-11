@@ -1,0 +1,63 @@
+{
+  "schema": "dsh-pin/v2",
+  "project": "pin-v2-program-static-fixture-a",
+  "engine": {
+    "contract": "chez-wasm-c-10.4.1-v1",
+    "engineArtifactHash": "sha256:8ec8aa06a20f2c0a3ea512ac39a9f1f787eca75d68dfe0481dadd040029f8c4b"
+  },
+  "modules": [
+    {
+      "name": "(dsh lib base (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgYmFzZSAoMSAwIDApKQogIChleHBvcnQgdHdvKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpKQogIChkZWZpbmUgKHR3bykgMikpCg=="
+    },
+    {
+      "name": "(dsh lib math (1 0 0))",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBsaWIgbWF0aCAoMSAwIDApKQogIChleHBvcnQgZG91YmxlKQogIChpbXBvcnQgKHJucnMgYmFzZSAoNikpIChvbmx5IChkc2ggbGliIGJhc2UgKDEgMCAwKSkgdHdvKSkKICAoZGVmaW5lIChkb3VibGUgeCkgKCogeCAodHdvKSkpKQo="
+    }
+  ],
+  "plugins": [
+    {
+      "id": "bootstrap",
+      "version": [
+        1
+      ],
+      "kind": "program",
+      "path": "programs/010-conflict.scm",
+      "treeHash": "sha256:aa2ec3bd77e3909afbe40b2a355fb2d7a8f12a761ab1f21375d5eb1e203ed558",
+      "capabilities": []
+    }
+  ],
+  "ffi": [],
+  "rules": [
+    {
+      "id": "rule.example",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "sourceEncoding": "utf-8-base64",
+      "sourceBase64": "KGxpYnJhcnkgKGRzaCBydWxlIHJ1bGUuZXhhbXBsZSAoMSAwIDApKQogIChleHBvcnQgZW50cnkpCiAgKGltcG9ydCAocm5ycyBiYXNlICg2KSkpCiAgKGRlZmluZSAoZW50cnkpIDQyKSkK",
+      "treeHash": "sha256:24db3291fdc3b0fde159a423fdb0cbc827209c333502b362f06a6c1aa99aefbf",
+      "bundleHash": "sha256:3b11042a2dfd2e48ab20ba7d1f6e4d78d6f28b470af3ef1d2ebc1871393a9a66",
+      "signature": {
+        "inputs": [],
+        "output": "number",
+        "variadic": false
+      },
+      "pluginEnvironmentHash": "sha256:5ad96fc16f1df550b8a3dcec73c19dee162e06911fdb3acf7750d93211505c02",
+      "ffiEnvironmentHash": "sha256:db849eb6960061a4c2e130544af3d1d4809bca62b6e6e6b67374100c5d239564",
+      "ruleHash": "sha256:a7509e64c6e9aca0db1651488faae6d51281d67ff655ee808ce0e333620a8f6a"
+    }
+  ]
+}

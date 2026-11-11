@@ -1,0 +1,6 @@
+(import (rnrs base (6))
+        (only (dsh lib math (1 0 0)) double)
+        (dsh rules (6)))
+(set-rule-option! 'total 'mode "strict")
+(register-rule! 'total '(1 0 0) (lambda (x) (double x)))
+(list (rule-option 'total 'mode) 42)

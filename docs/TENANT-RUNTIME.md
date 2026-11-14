@@ -134,6 +134,6 @@ VM/规则/FFI 的底层错误码（`E-RULE-*`、`E-FFI-*`、`E-PLUGIN-*`）在�
 ## 6. 验证
 
 - `test/scheme-v2-tenant.test.js`：两租户独立调用、队列满、关闭隔离、restart/terminate、FFI 租户、非法 id、插件根、restart 窗口、gc、programResult。
-- 全量：Windows 397 tests / 396 pass / 1 skip（symlink 权限）；Linux x64 + Node 24 10 分钟 supervised smoke 通过。
-- selfcheck：108 个发布文件。
+- 全量：Windows 401 tests / 400 pass / 1 skip（symlink 权限）；Linux x64 + Node 24 10 分钟 supervised smoke 通过。
+- selfcheck：112 个发布文件。
 - 独立审阅记录见 `docs/reviews/os-supervision-0.22.0.md`；当前审阅状态为 CONDITIONAL，fix-verification 完成前不得宣称 APPROVE。

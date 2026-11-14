@@ -21,10 +21,11 @@ versions follow [SemVer](https://semver.org/).
 - 心跳检查要求连续多次过期才终止，避免父事件循环一次短暂停顿误杀健康 incarnation。
 - `TenantManager` 默认 `process` 隔离：每租户一个 `CvmSupervisor` OS 子进程；
   `worker` 隔离保留为显式兼容选项。
-- 混合负载 1 小时 soak 证据（Windows x64）：4 个 supervised runtime，70% 静态规则、
-  20% plugin、10% program 与 FFI；120 个 30 秒窗口、2,200,847 calls、0 error、0 restart，
-  p95 0.879×、p99 1.186×；30 分钟 RSS 斜率为正，但窗口内不单调，末段仍上升，
-  因此只记录为“1 小时内未触发资源阈值”，不声明 RSS 已进入平台期。Linux x64 补 10 分钟 smoke（1,162,307 calls、
+- 混合负载 1 小时 soak 证据（Windows x64，final4）：4 个 supervised runtime，70% 静态规则、
+  20% plugin、10% program 与 FFI；120 个 30 秒窗口、2,280,907 calls、0 error、0 restart，
+  p95 0.985×、p99 0.981×。该 run **未通过** 0.22.0 的 RSS 验收：末段 9 分钟单调上升
+  （57.1MB → 82.9MB），且四个 runtime 结束后 GC 均未回到 GC 前水平；因此只记录为
+  **NO-GO 证据**，不声明 RSS 已进入平台期。Linux x64 补 10 分钟 smoke（1,162,307 calls、
   0 error、0 restart）；不把 Linux 10 分钟当作 1 小时平台期证据。
 
 ### Changed

@@ -46,20 +46,21 @@ fix-verification and a fresh 1h soak on `82ab855` are still required.
 |---|---|---|---|
 | R1 | HIGH | 1h evidence was not reproducible / not bound to a tree. | Raw 120-window JSONL, analyzer summary, environment, command, commit, engine and registry hashes are tracked under `docs/evidence/`. |
 | R2 | MEDIUM | Heartbeat could kill a busy synchronous call; docs presented it as hang detection. | Active calls no longer accumulate heartbeat misses; per-request timeout remains the hang control. |
-| R3 | MEDIUM | TENANT counts were stale; review record bound an old tree; PACKAGING claimed Linux full suite. | Counts updated to 397/396/1 and selfcheck 108; review bound to this record; Linux labelled 10min smoke. |
+| R3 | MEDIUM | TENANT counts were stale; review record bound an old tree; PACKAGING claimed Linux full suite. | Counts updated to 401/400/1 and selfcheck 112; review bound to this record; Linux labelled 10min smoke. |
 | R4 | MEDIUM | TENANT claimed review complete while pending; referenced review did not cover 0.22. | This record covers 0.22 and stays CONDITIONAL until fix-verification. |
 | R5 | MEDIUM | Missing tests for heartbeat kill, Wasm threshold, Windows sampler, openTimeout, terminate/auto-restart. | Added resource validation, active heartbeat, auto-restart, restart-limit, terminate and programResult tests. |
 | R6 | LOW | open timeout no-op; terminate auto-restart; overlapping Linux windows; stale platform text. | Fixed; Linux evidence explicitly pre-fix. |
 
 ## Verification evidence
 
-- Full suite: 397 tests / 396 pass / 1 skip / 0 fail (`ae5aa93`).
-- Tenant + resource targeted: 15/15.
-- selfcheck: 108 release files.
-- Windows 1h supervised mixed: 120 windows, 2,200,847 calls, 0 errors,
-  0 restarts, p95 0.879×, p99 1.186×, RSS slope +0.843 MiB/min,
-  heartbeat max 1000 ms, post-GC RSS 65.5 MiB.
-- Raw evidence: `docs/evidence/os-supervision-1h-2026-11-14.jsonl`.
+- Full suite: 401 tests / 400 pass / 1 skip / 0 fail (`82ab855`).
+- selfcheck: 112 release files.
+- Windows 1h supervised mixed `final4`: **FAILED** criterion 3 and 4.
+  2,280,907 calls, 0 errors, 0 restarts, p95 0.985×, p99 0.981×, but the last
+  9 minutes rose monotonically from 57.1MB to 82.9MB and every runtime's
+  post-GC RSS was above its pre-GC value. See
+  `docs/evidence/os-supervision-1h-2026-11-14-final4.md`.
+- Verdict: **NO-GO**; do not tag or publish. Per plan §7.1, no automatic re-run.
 - Linux 10min: 600s, 1,162,307 calls, 0 errors, 0 restarts, p95 1.023×,
   RSS +3.785 MiB/min; pre-fix tree, labelled as such.
 

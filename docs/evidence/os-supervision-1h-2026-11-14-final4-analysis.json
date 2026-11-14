@@ -1,0 +1,31 @@
+{
+  "path": "docs/evidence/os-supervision-1h-2026-11-14-final4.jsonl",
+  "samples": 120,
+  "durationMs": 3600012,
+  "calls": 2280907,
+  "errors": 0,
+  "first": {
+    "t": 30020,
+    "rss": 142962688,
+    "p95Ms": 12.709,
+    "p99Ms": 13.735
+  },
+  "last": {
+    "t": 3600012,
+    "rss": 82878464,
+    "wasmBytes": 60424192,
+    "p95Ms": 13.03,
+    "p99Ms": 14.05
+  },
+  "earlyP95": 13.1831,
+  "lateP95": 12.985857142857142,
+  "p95Ratio": 0.985,
+  "earlyP99": 14.295750000000002,
+  "lateP99": 14.018428571428572,
+  "p99Ratio": 0.981,
+  "rssSlopeMiBPerMin": 0.189,
+  "rssMax": 150786048,
+  "rssLast": 82878464,
+  "restarts": 0,
+  "heartbeatAgeMaxMs": 1016
+}

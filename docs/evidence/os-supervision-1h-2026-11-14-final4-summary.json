@@ -1,0 +1,270 @@
+{
+  "durationMs": 3600173,
+  "supervised": true,
+  "calls": 2280907,
+  "staticCalls": 1596637,
+  "pluginCalls": 456180,
+  "programCalls": 228090,
+  "ffiCalls": 228091,
+  "errors": 0,
+  "errorsByCode": {},
+  "events": [],
+  "samples": 120,
+  "finalMetrics": {
+    "rss": 72073216,
+    "wasmBytes": 60424192,
+    "pid": 11932,
+    "resource": {
+      "rss": 71999488,
+      "wasmBytes": 60424192,
+      "lastHeartbeatAt": 1794662194755,
+      "samples": 720
+    },
+    "calls": 1596637,
+    "errors": 0,
+    "errorCodes": {},
+    "restarts": 0,
+    "gcs": 1,
+    "latencyMs": {
+      "windowMs": 30000,
+      "count": 10000,
+      "p50": 0.189,
+      "p95": 0.415,
+      "p99": 0.71
+    },
+    "staticRules": 1,
+    "dynamicRules": 0,
+    "plugins": 0,
+    "programs": 0
+  },
+  "finalGc": {
+    "static": {
+      "before": {
+        "rss": 72065024,
+        "wasmBytes": 60424192,
+        "pid": 11932,
+        "resource": {
+          "rss": 71999488,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662194755,
+          "samples": 720
+        },
+        "calls": 1596637,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 0,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 10000,
+          "p50": 0.189,
+          "p95": 0.415,
+          "p99": 0.71
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "after": {
+        "rss": 72073216,
+        "wasmBytes": 60424192,
+        "pid": 11932,
+        "resource": {
+          "rss": 71999488,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662194755,
+          "samples": 720
+        },
+        "calls": 1596637,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 1,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 10000,
+          "p50": 0.189,
+          "p95": 0.415,
+          "p99": 0.71
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "error": null
+    },
+    "plugin": {
+      "before": {
+        "rss": 62623744,
+        "wasmBytes": 60424192,
+        "pid": 10460,
+        "resource": {
+          "rss": 62390272,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662194755,
+          "samples": 720
+        },
+        "calls": 456180,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 0,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 3804,
+          "p50": 0.253,
+          "p95": 0.734,
+          "p99": 1.192
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 2,
+        "programs": 0
+      },
+      "after": {
+        "rss": 62631936,
+        "wasmBytes": 60424192,
+        "pid": 10460,
+        "resource": {
+          "rss": 62390272,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662194755,
+          "samples": 720
+        },
+        "calls": 456180,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 1,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 3804,
+          "p50": 0.253,
+          "p95": 0.734,
+          "p99": 1.192
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 2,
+        "programs": 0
+      },
+      "error": null
+    },
+    "program": {
+      "before": {
+        "rss": 46366720,
+        "wasmBytes": 60424192,
+        "pid": 15736,
+        "resource": {
+          "rss": 46329856,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662194398,
+          "samples": 720
+        },
+        "calls": 228090,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 0,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1902,
+          "p50": 0.318,
+          "p95": 0.708,
+          "p99": 1.25
+        },
+        "staticRules": 0,
+        "dynamicRules": 1,
+        "plugins": 1,
+        "programs": 1
+      },
+      "after": {
+        "rss": 46374912,
+        "wasmBytes": 60424192,
+        "pid": 15736,
+        "resource": {
+          "rss": 46329856,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662194398,
+          "samples": 720
+        },
+        "calls": 228090,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 1,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1902,
+          "p50": 0.318,
+          "p95": 0.708,
+          "p99": 1.25
+        },
+        "staticRules": 0,
+        "dynamicRules": 1,
+        "plugins": 1,
+        "programs": 1
+      },
+      "error": null
+    },
+    "ffi": {
+      "before": {
+        "rss": 82882560,
+        "wasmBytes": 60424192,
+        "pid": 12244,
+        "resource": {
+          "rss": 82878464,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662195160,
+          "samples": 720
+        },
+        "calls": 228091,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 0,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1902,
+          "p50": 12.78,
+          "p95": 14.138,
+          "p99": 18.001
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "after": {
+        "rss": 82886656,
+        "wasmBytes": 60424192,
+        "pid": 12244,
+        "resource": {
+          "rss": 82878464,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794662195160,
+          "samples": 720
+        },
+        "calls": 228091,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 1,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1902,
+          "p50": 12.78,
+          "p95": 14.138,
+          "p99": 18.001
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "error": null
+    }
+  }
+}

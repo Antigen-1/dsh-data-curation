@@ -157,7 +157,8 @@ v2 当前边界：FFI 走 fd-backed stream + 二进制 TLV，**不再依赖 stdi
 运行时不会据此强制 arity 或返回类型；需要类型契约的调用方必须自行校验。pin
 格式与安全边界见 [docs/PIN-V2.md](docs/PIN-V2.md)，发布包与可复现结论见
 [docs/SCHEME-V2-PACKAGING.md](docs/SCHEME-V2-PACKAGING.md)，性能基线见
-[docs/SCHEME-V2-PERF.md](docs/SCHEME-V2-PERF.md)。生产默认、迁移和发布仍未批准。
+[docs/SCHEME-V2-PERF.md](docs/SCHEME-V2-PERF.md)，多租户 Worker runtime 见
+[docs/TENANT-RUNTIME.md](docs/TENANT-RUNTIME.md)。生产默认、迁移和发布仍未批准。
 
 ## 八阶段
 

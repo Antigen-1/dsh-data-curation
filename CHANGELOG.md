@@ -13,6 +13,8 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+- 多租户 Worker runtime：`TenantManager` 每租户一个 Worker/VM、固定根、串行命令队列、
+  manager 侧命令超时、重启/终止隔离；导出 `TenantManager` 与 `tenantErrorPayload`。
 - 项目级 Scheme v2 插件：固定搜索路径 `rules/scheme/lib` 与 `rules/scheme/programs`，
   library/program 的 pin 条目、treeHash 校验、依赖 DAG 拓扑排序与环拒绝。
 - `SchemeV2Runtime.callPlugin`、`callRule`、`programResult`、`runtime.rules`；program 在

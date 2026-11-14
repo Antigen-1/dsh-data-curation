@@ -98,3 +98,27 @@ security、code、release/runtime 三路独立审阅一致 **NO-GO**。审阅覆
 ## 发布裁决
 
 **NO-GO（生产）。** 第二轮 finding 的可修复项已修复，v2/全量/selfcheck/10 分钟混合 smoke 通过；fix-verification 对应审阅时 content tree `793aec...`，最终候选已 squash 为单个 0.20.0 commit；但第二轮复审未给出 APPROVE，完整 1h 混合负载按 5C 留到发布后，supervisor 仍无 OS 级心跳/RSS 硬上限；10 分钟混合 smoke 的 RSS 仍从 340MB 升到 470MB（末段平台）。0.20.0 可作为候选版本提交审阅，但不得宣称生产完成、不得打 tag、不得发布 npm。
+
+## 多租户 runtime 审阅（2026-11-14）
+
+审阅对象：staged tree `2a83ac50f44ee97294b4175f4997e0d2d558d34d`。三路只读子代理结论：security CONDITIONAL、code CONDITIONAL、release CONDITIONAL；无 APPROVE。
+
+已修复并验证的 findings：
+
+- HIGH restart 窗口：`restart()` 先置 `restarting`，`_drain()` 对 null worker/`postMessage` 异常 fail-closed；restart 有 overlap guard，`close()/terminate()` 等待进行中的 restart。
+- close 握手：先发 `{type:'close'}` 并等待 worker `closed` 回执，超时才 terminate；worker 的 close 等待在途命令。
+- manager 侧命令截止：`commandTimeoutMs`（默认 30000）到点拒绝 `E-TENANT-TIMEOUT`，标记 crashed 并终止 Worker；VM `E-TIMEOUT`/`E-VM-DEAD` 会把租户置为 crashed。
+- 错误码：worker 优先保留 `.code`，否则从消息前缀提取；`callRule` 的 id/version/args 错误带 coded error。
+- API/文档：补 `TenantManager.gc`；错误码表、关闭语义（注销后 `E-TENANT-ID`）、无审计日志、plugin pin 的 `rules/scheme` 前置、resourceLimits 已同步。
+- 租户 id：大小写不敏感去重并拒绝尾点；`maxQueue`/`maxTenants`/`commandTimeoutMs` 校验。
+- 测试：新增 call-during-restart、gc、plugin pin（租户根预置 rules/scheme）、大小写重复、非法 maxQueue、dead-VM 队列拒绝。
+- 验证：tenant 6/6；全量 388 tests / 387 pass / 1 skip / 0 fail（67.5s）；selfcheck 106。
+- fix-verification 代码树：`234306d98d9fa6f05f87e83e8d1cc046890f219b`（不含本记录更新）。
+- 第一轮 fix-verification 发现的 HIGH 队列悬挂已修复：VM `E-TIMEOUT`/`E-VM-DEAD`/`E-VM-CLOSED`/`E-VM-EXIT` 转 crashed 时立即拒绝 active 与全部 queued pending（`E-TENANT-CRASH`），不再等待外部 restart/close。
+
+仍未关闭：
+
+- 三路审阅均未 APPROVE；修复后未再做第三轮独立审阅。
+- supervisor child 早期 IPC 消息丢弃、双 VM 并发设备名隔离/跨 subject forgery 仍只有静态或单 VM 测试。
+- 完整 1h 混合负载仍按 5C 留发布后；manager 侧超时只能保证调用方 settle，不能保证同步阻塞 provider 的外部副作用被撤销。
+- 不宣称多租户生产可用；未提交、未打 tag、未发布。

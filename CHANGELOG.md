@@ -6,15 +6,23 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.20.0] — 2026-11-09 (unreleased candidate)
+## [0.21.0] — 2026-11-14 (unreleased candidate)
 
-0.20.0 是当前候选版本；版本号不是发布，只有打了 tag 才算发布。下一发布版本可 bump 到
-0.20.1、0.21.0 或更高，未打 tag 的 commit/package 都只是候选。
+0.21.0 是当前候选版本；相对未发布的 0.20.0 候选，新增多租户 Worker runtime。
+版本号不是发布，只有打了 tag 才算发布。
 
 ### Added
 
 - 多租户 Worker runtime：`TenantManager` 每租户一个 Worker/VM、固定根、串行命令队列、
   manager 侧命令超时、重启/终止隔离；导出 `TenantManager` 与 `tenantErrorPayload`。
+
+## [0.20.0] — 2026-11-09 (unreleased candidate)
+
+0.20.0 是上一候选版本（未发布、未打 tag）；0.21.0 在其基础上新增多租户 runtime。
+未打 tag 的 commit/package 都只是候选。
+
+### Added
+
 - 项目级 Scheme v2 插件：固定搜索路径 `rules/scheme/lib` 与 `rules/scheme/programs`，
   library/program 的 pin 条目、treeHash 校验、依赖 DAG 拓扑排序与环拒绝。
 - `SchemeV2Runtime.callPlugin`、`callRule`、`programResult`、`runtime.rules`；program 在

@@ -421,5 +421,5 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前候选版本 0.20.0（Scheme v2 opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未发布到 npm。
+- 当前候选版本 0.21.0（多租户 Worker runtime；Scheme v2 opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未发布到 npm。
 - 版本号不是发布：只有打了 tag 才算发布；下一发布版本可 bump 到 0.20.1、0.21.0 或更高，未打 tag 的 commit/package 都只是候选。

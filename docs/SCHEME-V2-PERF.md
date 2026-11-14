@@ -69,7 +69,7 @@ H1（fd-backed stream + 二进制 TLV）后、修复规则过程缓存中的 `(e
 - `SchemeV2Runtime.open(pin, { supervised: true, ffiModules })` 在子进程内预加载/执行 FFI；provider 超时终止子进程，父进程保持存活并可 restart。
 - 已覆盖故障：子进程被 kill 后父进程存活并可 restart；并发 restart 返回 `E-VM-BUSY`；已退出子进程 close 仍可 resolve；子进程初始化失败时 open reject 且 close 可结束；FFI provider abort、reused requestId、malformed frame、host timeout。
 - Wasm 构建固定 `-s MAXIMUM_MEMORY=536870912`（512MiB）；live-set 超限测试通过 `(oom)` 触发 Emscripten abort，`dispatch` 以 `E-VM-ERROR: Aborted()` fail-closed，随后 `close()` 可完成。当前无法在 abort 前区分“可回收耗尽”和“live-set OOM”，只能在容量规划中按高水位预留。
-- `runtime.gc()` 执行 `collect` 并返回 GC 后 RSS/Wasm 字节；Wasm 线性内存不收缩，容量规划按高水位。
+- `runtime.gc()` 执行分代 `collect` 并返回 GC 后 RSS/Wasm 字节；RSS 是 OS working set，不是 Scheme live set。Wasm 线性内存不收缩，容量规划按高水位。需要 live-set 证据时使用 `debugGcStats: true` 的 `gcStats()`（full collect 后 `bytes-allocated`），它默认关闭，只用于诊断，不作为生产 API。
 
 ## 混合负载（supervised，1 小时）
 

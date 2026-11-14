@@ -60,6 +60,20 @@ test('TenantManager runs isolated workers and serializes commands', async (t) =>
   assert.equal(await manager.call('beta', 'rule.example'), 42)
 })
 
+test('TenantManager exposes debug-gated gcStats in worker isolation', async (t) => {
+  const root = projectRoot()
+  const manager = await TenantManager.open({
+    projectRoot: root,
+    debugGcStats: true,
+    tenants: [{ id: 'worker-gc', pin, isolation: 'worker' }],
+  })
+  t.after(() => manager.close())
+  const stats = await manager.gcStats('worker-gc')
+  assert.equal(stats.isolation, 'worker')
+  assert.equal(stats.fullCollect, true)
+  assert.ok(Number.isSafeInteger(stats.liveBytes) && stats.liveBytes > 0)
+})
+
 test('TenantManager runs FFI in the tenant worker and keeps other tenants independent', async (t) => {
   const root = projectRoot()
   const manager = await TenantManager.open({

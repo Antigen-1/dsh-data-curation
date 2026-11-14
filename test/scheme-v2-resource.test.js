@@ -45,6 +45,28 @@ test('gcStats tracks a known live object across full collections', async (t) => 
   )
 })
 
+test('supervised runtime exposes debug-gated gcStats', async (t) => {
+  const runtime = await SchemeV2Runtime.open(pin, {
+    supervised: true,
+    debugGcStats: true,
+    resource: { rssSampleMs: 0 },
+  })
+  t.after(() => runtime.close().catch(() => {}))
+  const stats = await runtime.gcStats()
+  assert.equal(stats.fullCollect, true)
+  assert.ok(stats.liveBytes > 0)
+})
+
+test('bare gcStats is distinguishable from full gcStats', async (t) => {
+  const runtime = await SchemeV2Runtime.open(pin, { debugGcStats: true })
+  t.after(() => runtime.close().catch(() => {}))
+  const bare = await runtime.vm.gcStatsBare()
+  const full = await runtime.gcStats()
+  assert.equal(bare.fullCollect, false)
+  assert.equal(full.fullCollect, true)
+  assert.ok(full.gcCount >= bare.gcCount)
+})
+
 test('parseLinuxRss reads VmRSS in bytes', () => {
   assert.equal(parseLinuxRss('Name:\tnode\nVmRSS:\t  12345 kB\n'), 12345 * 1024)
   assert.throws(() => parseLinuxRss('Name:\tnode\n'), /VmRSS not found/)

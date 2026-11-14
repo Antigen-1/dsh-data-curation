@@ -1,15 +1,24 @@
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 
 const path = process.argv[2]
 if (!path) {
   console.error('usage: node scripts/analyze-scheme-v2-soak.mjs <jsonl>')
   process.exit(2)
 }
-const samples = readFileSync(path, 'utf8')
+const raw = readFileSync(path, 'utf8')
+const samples = raw
   .split(/\r?\n/)
   .filter(Boolean)
   .map((line) => JSON.parse(line))
   .sort((a, b) => a.t - b.t)
+let randomState = createHash('sha256').update(raw).digest().readUInt32LE(0) || 1
+const random = () => {
+  randomState ^= randomState << 13
+  randomState ^= randomState >>> 17
+  randomState ^= randomState << 5
+  return (randomState >>> 0) / 0x100000000
+}
 
 const last = samples.at(-1)
 const first = samples[0]
@@ -40,7 +49,7 @@ const bootstrapUpper = (points, rounds = 1000) => {
   if (points.length < 2) return null
   const slopes = []
   for (let round = 0; round < rounds; round += 1) {
-    const resample = Array.from({ length: points.length }, () => points[Math.floor(Math.random() * points.length)])
+    const resample = Array.from({ length: points.length }, () => points[Math.floor(random() * points.length)])
     const slope = theilSen(resample)
     if (slope !== null) slopes.push(slope)
   }
@@ -48,8 +57,10 @@ const bootstrapUpper = (points, rounds = 1000) => {
 }
 
 const durationMs = last?.t ?? 0
-const errors = samples.reduce((sum, sample) => sum + (sample.errors || 0), 0)
+const errors = last?.errors ?? 0
 const calls = last?.calls ?? 0
+const gcStatsErrors = samples.reduce((sum, sample) => sum + Object.values(sample.rssByRuntime ?? {})
+  .filter((entry) => entry?.gcStatsError != null).length, 0)
 const warmupEnd = 10 * 60 * 1000
 const baselineStart = 10 * 60 * 1000
 const baselineEnd = 30 * 60 * 1000
@@ -73,16 +84,21 @@ for (const name of runtimeNames) {
   const gcCounts = samples
     .map((sample) => sample.rssByRuntime?.[name]?.gcCount)
     .filter(Number.isFinite)
-  const fullCollectOk = samples.every((sample) => {
+  const fullCollectOk = samples.length > 0 && samples.every((sample) => {
     const entry = sample.rssByRuntime?.[name]
-    return !entry || entry.fullCollect !== false
+    return entry?.fullCollect === true
   })
   const baselineMedian = median(baselineLive)
   const finalMedian = median(finalLive)
   const delta = baselineMedian === null || finalMedian === null ? null : finalMedian - baselineMedian
   const slope = theilSen(points)
   const upper = bootstrapUpper(points)
-  const monotonicallyIncreasingGc = gcCounts.every((value, index) => index === 0 || value >= gcCounts[index - 1])
+  const gcCountStrictlyIncreasing = gcCounts.length >= 2 &&
+    gcCounts.every((value, index) => index === 0 || value > gcCounts[index - 1])
+  const gcDurations = samples
+    .map((sample) => sample.rssByRuntime?.[name]?.gcStatsDurationMs)
+    .filter(Number.isFinite)
+  const gcPauseP95Ms = quantile(gcDurations, 0.95)
   perRuntime[name] = {
     samples: points.length,
     baselineSamples: baselineLive.length,
@@ -94,14 +110,18 @@ for (const name of runtimeNames) {
     slopeUpper95KiBPerMin: upper === null ? null : Number((upper / 1024).toFixed(3)),
     gcCountFirst: gcCounts[0] ?? null,
     gcCountLast: gcCounts.at(-1) ?? null,
-    gcCountMonotonic: monotonicallyIncreasingGc,
+    gcCountStrictlyIncreasing,
+    gcPauseP95Ms: gcPauseP95Ms === null ? null : Number(gcPauseP95Ms.toFixed(3)),
     fullCollectOk,
     pass:
+      points.length >= 2 &&
+      baselineLive.length >= 20 &&
+      finalLive.length >= 15 &&
       delta !== null &&
       delta <= 1024 * 1024 &&
       upper !== null &&
       upper / 1024 < 32 &&
-      monotonicallyIncreasingGc &&
+      gcCountStrictlyIncreasing &&
       fullCollectOk,
   }
 }
@@ -123,17 +143,24 @@ for (const name of rssNames) {
   const heapDelta = median(heapValues) === null || median(heapBaseline) === null
     ? null
     : median(heapValues) - median(heapBaseline)
+  const parentBaseline = baseline.map((sample) => sample.parentRss).filter(Number.isFinite)
+  const parentFinal = final.map((sample) => sample.parentRss).filter(Number.isFinite)
+  const parentDelta = median(parentBaseline) === null || median(parentFinal) === null
+    ? null
+    : median(parentFinal) - median(parentBaseline)
+  const wasmValues = final.map((sample) => sample.rssByRuntime?.[name]?.wasmBytes).filter(Number.isFinite)
   rssGuardrail[name] = {
     baselineMedian,
     finalMedian,
     delta,
     liveDelta,
     heapDelta,
+    parentDelta,
+    parentMax: samples.map((sample) => sample.parentRss).filter(Number.isFinite).reduce((max, value) => Math.max(max, value), 0),
+    wasmMax: wasmValues.reduce((max, value) => Math.max(max, value), 0),
     conditional:
-      delta !== null &&
-      delta > 32 * 1024 * 1024 &&
-      (liveDelta === null || Math.abs(liveDelta) <= 1024 * 1024) &&
-      (heapDelta === null || Math.abs(heapDelta) <= 1024 * 1024),
+      (delta !== null && delta > 32 * 1024 * 1024 && (liveDelta === null || Math.abs(liveDelta) <= 1024 * 1024)) ||
+      (parentDelta !== null && parentDelta > 32 * 1024 * 1024),
   }
 }
 
@@ -158,11 +185,19 @@ const failures = []
 if (samples.length < 50) failures.push('fewer than 50 samples')
 if (durationMs < 3600 * 1000 - 120 * 1000) failures.push(`duration ${durationMs}ms is below 1h`)
 if (errors !== 0) failures.push(`${errors} errors`)
+if (gcStatsErrors !== 0) failures.push(`${gcStatsErrors} gcStats errors`)
 if ((last?.restarts ?? 0) !== 0) failures.push(`${last.restarts} restarts`)
 for (const [name, result] of Object.entries(perRuntime)) {
   if (!result.pass) failures.push(`${name} liveBytes criterion failed`)
+  if (result.gcPauseP95Ms !== null && result.gcPauseP95Ms > 100) {
+    failures.push(`${name} gcStats p95 ${result.gcPauseP95Ms}ms exceeds 100ms`)
+  }
 }
 if (Object.keys(perRuntime).length === 0) failures.push('no liveBytes data')
+for (const [name, result] of Object.entries(rssGuardrail)) {
+  if (result.parentMax > 512 * 1024 * 1024) failures.push(`${name} parent RSS exceeds 512MiB`)
+  if (result.wasmMax > 512 * 1024 * 1024) failures.push(`${name} wasm exceeds 512MiB`)
+}
 const conditional = Object.entries(rssGuardrail)
   .filter(([, result]) => result.conditional)
   .map(([name]) => name)
@@ -173,6 +208,9 @@ const report = {
   durationMs,
   calls,
   errors,
+  gcStatsErrors,
+  gcPauseP95Ms: quantile(Object.values(perRuntime).map((entry) => entry.gcPauseP95Ms).filter(Number.isFinite), 0.95),
+  parentRssMax: Math.max(...samples.map((sample) => sample.parentRss ?? 0)),
   warmupEndMs: warmupEnd,
   baselineWindowMs: [baselineStart, baselineEnd],
   finalWindowMs: [Math.max(0, durationMs - 15 * 60 * 1000), durationMs],

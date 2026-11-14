@@ -6,6 +6,27 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.22.1] — 2026-11-14 (unreleased candidate)
+
+0.22.1 在 0.22.0 的资源监督基础上，把长稳泄漏判据从 OS RSS 改为 Chez full-GC 后的
+`liveBytes`；RSS/Wasm 仍作为硬上限与上下文指标。未打 tag 的 commit/package 都只是候选。
+
+### Added
+
+- `debugGcStats`/`gcStats()`：显式启用的诊断接口，执行 full
+  `(collect (collect-maximum-generation))`，返回 `liveBytes`、保留堆、累计分配/回收字节、
+  `gcCount`、`fullCollect` 与分代参数。默认关闭；未启用时返回 `E-DEBUG-DISABLED`。
+- 1h 混合负载 analyzer 按 runtime 检查 baseline/final 样本数、full collect、gcCount 严格递增、
+  liveBytes 斜率上界、GC 暂停与 parent/child RSS、Wasm 上限；bootstrap 使用固定种子。
+- benchmark 记录 `parentRss`、每 runtime 的 `gcStats` 与 final GC，并支持 60 秒窗口。
+
+### Changed
+
+- 0.22.0 的 RSS 末段单调判据不再作为泄漏判据；`liveBytes` 使用 full collect 后的
+  `bytes-allocated`，OS RSS 继续作为 32MiB guardrail 与 512MiB 硬上限。
+- 文档明确 `bytes-deallocated`/`statistics.gc-bytes`/`statistics.bytes` 是 VM 启动以来的
+  累计值，不是最近一次收集的值。
+
 ## [0.22.0] — 2026-11-14 (unreleased candidate)
 
 0.22.0 是当前候选版本；在 0.21.1 基础上增加 OS 级资源监督和进程级租户隔离。

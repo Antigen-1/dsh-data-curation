@@ -3,7 +3,7 @@
   "project": "pin-v2-program-fixture-a",
   "engine": {
     "contract": "chez-wasm-c-10.4.1-v1",
-    "engineArtifactHash": "sha256:c3721ead4d1b9834ddc16723706087a1a186f732ee2f6ce3eb80d6d06d0d252b"
+    "engineArtifactHash": "sha256:3f104d3573c0a8533b910f56fd484349dbc645fec3eac1435e722ed7210e983b"
   },
   "modules": [
     {

@@ -13,6 +13,9 @@ const pluginRoot = `${root}/test/fixtures/scheme-v2/project`
 const programRoot = `${root}/test/fixtures/scheme-v2/program-project`
 const supervised = process.env.DSH_MIXED_SUPERVISED === '1'
 const samplingIntervalMs = Number(process.env.DSH_MIXED_SAMPLE_MS || 60000)
+if (!Number.isFinite(samplingIntervalMs) || samplingIntervalMs < 1000) {
+  throw new Error('DSH_MIXED_SAMPLE_MS must be a finite number >= 1000')
+}
 const baseOptions = supervised
   ? { supervised: true, resource: { rssSampleMs: Number(process.env.DSH_MIXED_RSS_MS || 30000) } }
   : {}
@@ -45,6 +48,7 @@ const errorsByCode = {}
 const samples = []
 let nextSample = started + samplingIntervalMs
 let windowLatencies = []
+let lastCallMs = null
 let finalMetrics = null
 let finalGc = null
 const percentile = (values, p) => values.length === 0 ? null : values[Math.min(values.length - 1, Math.floor(values.length * p))]
@@ -73,6 +77,7 @@ try {
       const code = error.code || 'E-ERROR'
       errorsByCode[code] = (errorsByCode[code] || 0) + 1
     }
+    lastCallMs = Number((performance.now() - callStarted).toFixed(3))
     calls += 1
     windowLatencies.push(performance.now() - callStarted)
     if (performance.now() >= nextSample) {
@@ -86,6 +91,7 @@ try {
           gcStats = await runtime.gcStats(10000)
         } catch (caught) {
           gcStatsError = caught?.code || caught?.message || String(caught)
+          errors += 1
           errorsByCode[gcStatsError] = (errorsByCode[gcStatsError] || 0) + 1
         }
         const gcStatsDurationMs = performance.now() - gcStarted
@@ -123,7 +129,8 @@ try {
         p50Ms: Number((percentile(sorted, 0.5) ?? 0).toFixed(3)),
         p95Ms: Number((percentile(sorted, 0.95) ?? 0).toFixed(3)),
         p99Ms: Number((percentile(sorted, 0.99) ?? 0).toFixed(3)),
-        lastMs: Number((performance.now() - callStarted).toFixed(3)),
+        lastMs: lastCallMs,
+        parentRss: process.memoryUsage().rss,
         rss: rssValues.length > 0 ? Math.max(...rssValues) : null,
         rssByRuntime: byRuntime,
         liveBytesByRuntime: Object.fromEntries(

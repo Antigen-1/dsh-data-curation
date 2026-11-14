@@ -13,6 +13,8 @@ test('gcStats is disabled unless debugGcStats is explicitly enabled', async () =
   })
   try {
     await assert.rejects(runtime.gcStats(5000), (error) => error.code === 'E-DEBUG-DISABLED')
+    assert.equal(await runtime.call('rule.example'), 42)
+    assert.equal(runtime.vm.dead, false)
   } finally {
     await runtime.close()
   }

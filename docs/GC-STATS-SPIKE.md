@@ -48,8 +48,9 @@ baseline-2:     bytes-allocated 16,197,248  current-memory 24,347,256
 `bytes-allocated` moved by +8,003,840 bytes while the vector was live and
 returned to baseline after the drop, after a forced `(collect)`. It is the
 usable live-bytes signal. `current-memory-bytes` is reserved/committed heap,
-not live bytes. `bytes-deallocated` and `statistics.gc-bytes` describe the most
-recent collection. `statistics.bytes` is an interval allocation counter.
+not live bytes. `bytes-deallocated` and `statistics.gc-bytes` are cumulative
+reclaimed bytes since VM startup, not the most recent collection;
+`statistics.bytes` is the cumulative allocated bytes since VM startup.
 
 ## Decision
 
@@ -57,6 +58,10 @@ recent collection. `statistics.bytes` is an interval allocation counter.
 - Keep RSS/Wasm bytes as hard-limit and context metrics, not leak criteria.
 - Add a `pin-gc-stats` diagnostic operation rather than forcing GC on every
   request.
+- Gate the diagnostic behind `debugGcStats: true`. The engine flag is off by
+  default; without it `gcStats()` fails with `E-DEBUG-DISABLED`. Enabling it
+  does not change the engine artifact or the production path. `gcStatsBare()`
+  is an internal test-only comparison and always reports `fullCollect: false`.
 - Replace the old criterion 4 with a live-bytes trend and baseline tolerance.
 - Keep final4 as a failed run under its original criteria; a new 0.22.1 run is
   required.

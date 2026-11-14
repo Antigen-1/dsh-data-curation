@@ -1175,8 +1175,10 @@
                                ",\"registry\":" (number->string (length pin-registry)) "}"))
               (respond-error id "E-PLUGIN-ERROR"))))))
 
-(define (gc-stats-json)
-  (collect (collect-maximum-generation))
+(define (gc-stats-json full?)
+  (if full?
+      (collect (collect-maximum-generation))
+      (collect))
   (let ((s (statistics)))
     (list
       (cons 'liveBytes (bytes-allocated))
@@ -1184,7 +1186,7 @@
       (cons 'allocatedTotal (sstats-bytes s))
       (cons 'reclaimedTotal (sstats-gc-bytes s))
       (cons 'gcCount (sstats-gc-count s))
-      (cons 'fullCollect #t)
+      (cons 'fullCollect full?)
       (cons 'maxGeneration (collect-maximum-generation))
       (cons 'radix (collect-generation-radix)))))
 
@@ -1229,7 +1231,12 @@
            (if (not debug-gc-stats?)
                (respond-error id "E-DEBUG-DISABLED")
                (guard (e [else (respond-error id "E-GC-STATS")])
-                 (respond id #t (json-value (gc-stats-json))))))
+                 (respond id #t (json-value (gc-stats-json #t))))))
+          ((pin-gc-bare)
+           (if (not debug-gc-stats?)
+               (respond-error id "E-DEBUG-DISABLED")
+               (guard (e [else (respond-error id "E-GC-STATS")])
+                 (respond id #t (json-value (gc-stats-json #f))))))
           ((pin-dynamic-call) (pin-dynamic-call id arg))
           ((pin-call) (pin-call id arg))
           ((pin-plugin-call) (pin-plugin-call id arg))

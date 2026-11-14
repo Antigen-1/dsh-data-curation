@@ -138,8 +138,8 @@ Linux 只作为 10 分钟 smoke，不作为 1 小时长稳证据。WSL 在 smoke
 
 ## Parent RSS：V8 页保留，不是 Emscripten 堆
 
-0.22.1 final5 的 parent RSS 从 baseline 中位数 106.7MiB 升到 final 149.5MiB
-（+42.8MiB），但四个 child 的 Wasm 堆恒定为 60.4MB，child RSS 末值反而低于
+0.22.1 final5 的 parent RSS 从 baseline 中位数 106.7MiB 升到 final 148.8MiB
+（+42.1MiB），但四个 child 的 Wasm 堆恒定为 60.4MB，child RSS 末值反而低于
 baseline。parent 是 Node 编排进程，不加载 Wasm；该增长不是 Emscripten 泄漏。
 
 0.22.2 的 benchmark 记录 parent 的 `rss/heapTotal/heapUsed/external/arrayBuffers`。

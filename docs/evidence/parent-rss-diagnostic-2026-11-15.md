@@ -9,7 +9,7 @@ Engine: `sha256:3f104d3573c0a8533b910f56fd484349dbc645fec3eac1435e722ed7210e983b
 ## Question
 
 0.22.1 final5 showed parent RSS baseline median 106.7 MiB → final median
-149.5 MiB (+42.8 MiB), while child liveBytes and wasm were flat. Is this an
+148.8 MiB (+42.1 MiB), while child liveBytes and wasm were flat. Is this an
 Emscripten/Wasm heap leak?
 
 ## Run

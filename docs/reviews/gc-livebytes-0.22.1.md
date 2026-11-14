@@ -63,7 +63,7 @@ final5 completed on code `89a02db`, engine `3f104d...`, Node v24.21.0,
 Windows x64. The analyzer verdict is **CONDITIONAL**: all four runtimes pass
 the full-GC liveBytes criteria (flat/slightly lower live set, strict gcCount,
 fullCollect true, no errors/restarts), but parent RSS rose from a 106.7 MiB
-baseline median to 149.5 MiB final median (+42.8 MiB), exceeding the 32 MiB
+baseline median to 148.8 MiB final median (+42.1 MiB), exceeding the 32 MiB
 conditional guardrail.
 
 Evidence:

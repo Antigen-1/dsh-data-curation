@@ -55,8 +55,8 @@ This table is the source of truth for “GC 后 live 是否增长”; OS RSS is 
 The live set is flat or slightly lower in every runtime, full collection is true, gcCount increases strictly, and there are no errors or restarts. However the **parent/orchestrator RSS** rose:
 
 - parent baseline median (10–30 min): 106.7 MiB
-- parent final median (last 15 min): 149.5 MiB
-- delta: **+42.8 MiB** (> 32 MiB conditional threshold)
+- parent final median (last 15 min): 148.8 MiB
+- delta: **+42.1 MiB** (> 32 MiB conditional threshold)
 - parent max: 169.6 MiB; child RSS values ended lower than baseline.
 
 The plan says a parent/child RSS delta above 32 MiB while liveBytes/heapReserved/wasm are flat is **CONDITIONAL** and must be investigated. It is not a live-set leak and not a hard 512 MiB breach. Do not describe final5 as PASS.

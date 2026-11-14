@@ -102,6 +102,39 @@ and the post-GC values are not lower. The frozen criteria therefore fail
 regardless of the likely benign cause; changing the criteria after the run
 would be masking.
 
+### GC mode
+
+`runtime.gc()` is **not** a Node/V8 GC. The call path is:
+
+```text
+SchemeV2Runtime.gc()
+  -> CvmSupervisor.gc()
+  -> child CvmClient.gc()
+  -> guest (request "gc" pin-gc)
+  -> (collect)
+```
+
+The `collect` at `native/chez/online-vm-c.scm:1212` is Chez Scheme's
+collector. It frees Scheme objects, but it does not call V8 `global.gc()`,
+does not run Node with `--expose-gc`, and does not return freed Wasm pages to
+the OS. The post-GC `gcs: 1` counter is that guest collection.
+
+`wasmBytes` staying at 60,424,192 means the WebAssembly memory size did not
+grow; it does not mean every page was resident from the beginning. Resident
+pages can still increase as the Chez heap touches them, and a Scheme collect
+does not necessarily reduce the process working set.
+
+### Why a monotonic tail is a failure
+
+A monotonic tail is a classic leak signal even when the 30-minute average
+slope is small: a sawtooth with an upward baseline can hide retained objects.
+The criterion was deliberately stricter than the slope alone. It has a known
+limitation here: OS RSS includes Node/V8 heap and resident Wasm pages, so it
+cannot distinguish "retained live data" from "allocator did not return pages".
+The correct next version should measure V8 `heapUsed` and Chez live bytes
+separately, or define an explicit tolerance, rather than relax this run's
+criterion after the fact.
+
 ## Decision
 
 0.22.0 is not a production candidate. Do not tag, do not publish npm, and

@@ -2,7 +2,7 @@
 
 ## 结论
 
-Chez Scheme 10 的官方《User's Guide》没有 `Scall_continuation` 条目。Foreign Interface 章节推荐的是 **在仍然存活的 C 调用帧内**使用 continuation，并在需要非局部退出时用 `with-exit-proc` 重置 C 栈；它不支持“C 调用返回后，再用新的 C 调用恢复旧 continuation”。
+Chez Scheme 10 的官方《User's Guide》没有 `Scall_continuation` 条目；10.4.1 的公开头文件 `boot/pb/scheme.h` 也只声明 `Scall0`/`Scall1`/`Scall2`/`Scall3`/`Scall`，没有 `Scall_continuation`。Foreign Interface 章节推荐的是 **在仍然存活的 C 调用帧内**使用 continuation，并在需要非局部退出时用 `with-exit-proc` 重置 C 栈；它不支持“C 调用返回后，再用新的 C 调用恢复旧 continuation”。
 
 因此本项目的共享 VM 异步多租户方案不成立。采用每租户 Worker/VM（选项 B）；不实现 continuation 调度器，也不把 `Scall_continuation` 作为依赖。
 
@@ -61,6 +61,18 @@ Scheme -> /dev/dsh-out TLV -> Node -> FFI provider -> /dev/dsh-in TLV -> Scheme
 Scheme 在 `read-tlv-frame` 里阻塞等待。整个等待发生在当前 C 调用（`Scall1`）内部，没有返回 C；所以不存在“跨 C 调用恢复”的问题。代价是：一个 VM 在等待 FFI 时不能执行其他租户。
 
 如果要把等待变成“让出 VM、稍后恢复”，就必须从 C 调用返回，这会使 foreign context 变 stale；官方文档没有提供之后恢复它的 API。`with-exit-proc` 只能在一个仍然存活的 C 帧内复位 C 栈，不能解决跨调用恢复。
+
+## C ABI 实证（10.4.1 Wasm）
+
+2026-11-14 的独立 spike 验证了 `Scall`/`Scall1` 的真实行为；完整原始输出见 `experiments/continuation-c-abi/RESULTS.md`。
+
+- 10.4.1 公开头文件只有 `Scall0`/`Scall1`/`Scall2`/`Scall3`/`Scall`，没有 `Scall_continuation`；`/src/ChezScheme/c` 与 `boot` 中也没有该符号。
+- `Scall(cp, argcnt)` 不接收参数列表；调用者必须先用 `Sinitframe(argcnt)`、`Sput_arg(i, x)` 填 frame。`Scall1` 是 `argcnt=1` 的便捷包装。
+- 捕获：`(call/cc (lambda (k) (set! saved k) 11))` 经 `Scall0` 返回 11，`saved` 是 procedure。
+- 同一 C 调用内 nonlocal exit：`(call/cc (lambda (k) (k 33) 99))` 返回 33。
+- 捕获调用返回后，新 C 调用用 `Scall1(saved, 22)` 或 `Scall(saved, 1)` 恢复，均失败：
+  `Exception: attempt to return to stale foreign context`。
+- 因此 `Scall` 不能在“C 调用已返回”后替代 `Scall_continuation`；它只能在一个仍然存活的 foreign context 内调用 continuation。
 
 ## 对多租户架构的裁决
 

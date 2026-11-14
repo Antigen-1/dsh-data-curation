@@ -6,6 +6,32 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-11-14 (unreleased candidate)
+
+0.22.0 是当前候选版本；在 0.21.1 基础上增加 OS 级资源监督和进程级租户隔离。
+未打 tag 的 commit/package 都只是候选。
+
+### Added
+
+- `CvmSupervisor` OS 级资源监督：子进程心跳、RSS 采样（Linux `/proc`、Windows
+  `Get-Process`）、可配置软/硬阈值、`resource-warning`/`resource-kill` 事件；
+  默认 RSS 软/硬阈值 384/512MiB，Wasm 软/硬阈值 448/512MiB。
+- 资源 kill 后自动退避重启：默认 100/500/2000/5000ms，10 分钟最多 5 次；
+  超过上限发 `resource-restart-limit`，不再无限重启。
+- 心跳检查要求连续多次过期才终止，避免父事件循环一次短暂停顿误杀健康 incarnation。
+- `TenantManager` 默认 `process` 隔离：每租户一个 `CvmSupervisor` OS 子进程；
+  `worker` 隔离保留为显式兼容选项。
+- 混合负载 1 小时 soak 证据（Windows x64）：4 个 supervised runtime，70% 静态规则、
+  20% plugin、10% program 与 FFI；120 个 30 秒窗口、2,305,087 calls、0 error、0 restart，
+  p95 1.01×、p99 1.007×，RSS 无单调增长。Linux x64 补 10 分钟 smoke（1,162,307 calls、
+  0 error、0 restart）；不把 Linux 10 分钟当作 1 小时平台期证据。
+
+### Changed
+
+- 平台策略：运行时只要求 Node >= 24，不再按 OS/CPU 拒绝安装；Windows x64 为验证
+  基线，Linux x64 已跑通，macOS 为实验性平台。
+- 多租户文档从“Worker/VM”更新为“默认 OS 子进程；worker 兼容”。
+
 ## [0.21.1] — 2026-11-14 (unreleased candidate)
 
 ### Changed
@@ -47,7 +73,7 @@ versions follow [SemVer](https://semver.org/).
 
 ### Changed
 
-- v2 pin 的模块/规则/插件名改为 R6RS version list，如 `(dsh plugin demo (1 0 0))`；
+- v2 pin 的模块/规则/插件名改为 R6RS library version list（库版本，不是运行时版本），如 `(dsh plugin demo (1 0 0))`；
   符号版本 `v1` 拒绝为 `E-PIN-V2-PRE-RELEASE-NAME`。旧字符串 plugin 条目拒绝。
 - `pluginEnvironmentHash` 参与 ruleHash；0.20.0 的 fixture 由当前 engine 重新生成。跨 0.19.0 的 pin hash 兼容性未作为 0.20.0 的保证。
 - 构建源迁入 tracked `native/chez/`，不再依赖 `experiments/`。

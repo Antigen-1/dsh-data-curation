@@ -9,6 +9,7 @@ import { TenantManager } from '../lib/rules/index.js'
 const pin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-a.json', import.meta.url)), 'utf8'))
 const ffiPin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-ffi-a.json', import.meta.url)), 'utf8'))
 const pluginPin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-plugin-a.json', import.meta.url)), 'utf8'))
+const programPin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-program-a.json', import.meta.url)), 'utf8'))
 const ffiMathUrl = new URL('./fixtures/scheme-v2/ffi/math.mjs', import.meta.url).href
 
 function projectRoot () {
@@ -109,9 +110,22 @@ test('TenantManager rejects calls during restart and exposes gc', async (t) => {
   )
 })
 
+test('TenantManager defaults to an OS process per tenant', async (t) => {
+  const root = projectRoot()
+  const manager = await TenantManager.open({ projectRoot: root, tenants: [{ id: 'process', pin }] })
+  t.after(() => manager.close())
+  const runtime = manager.get('process')
+  assert.equal(runtime.constructor.name, 'ProcessTenantRuntime')
+  assert.ok(Number.isInteger(runtime.pid))
+  assert.equal(await manager.call('process', 'rule.example'), 42)
+  const metrics = await manager.metrics('process')
+  assert.equal(metrics.isolation, 'process')
+  assert.equal(metrics.pid, runtime.pid)
+})
+
 test('TenantManager rejects the queue when a tenant VM dies', async (t) => {
   const root = projectRoot()
-  const manager = await TenantManager.open({ projectRoot: root, tenants: [{ id: 'dead', pin }] })
+  const manager = await TenantManager.open({ projectRoot: root, tenants: [{ id: 'dead', pin, isolation: 'worker' }] })
   t.after(() => manager.close())
 
   const runtime = manager.get('dead')
@@ -146,4 +160,29 @@ test('TenantManager opens a plugin pin when the tenant root has project rules', 
   })
   t.after(() => manager.close())
   assert.equal(await manager.call('plugins', 'rule.example'), 42)
+})
+
+test('TenantManager returns synchronous program results and terminate does not resurrect', async (t) => {
+  const root = projectRoot()
+  const tenantRoot = join(root, 'tenants', 'programs')
+  cpSync(
+    fileURLToPath(new URL('./fixtures/scheme-v2/program-project/rules', import.meta.url)),
+    join(tenantRoot, 'rules'),
+    { recursive: true },
+  )
+  const manager = await TenantManager.open({
+    projectRoot: root,
+    tenants: [{ id: 'programs', pin: programPin }],
+  })
+  t.after(() => manager.close())
+
+  assert.deepEqual(await manager.programResult('programs', 'bootstrap', [1]), ['strict', 42])
+
+  const runtime = manager.get('programs')
+  await manager.terminate('programs')
+  assert.equal(runtime.status, 'crashed')
+  const restarts = runtime.restartTimes?.length ?? 0
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  assert.equal(runtime.status, 'crashed')
+  assert.equal(runtime.restartTimes?.length ?? 0, restarts)
 })

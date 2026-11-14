@@ -1,0 +1,124 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { SchemeV2Runtime } from '../lib/rules/index.js'
+import { parseLinuxRss } from '../lib/rules/scheme/v2/resource-sampler.js'
+
+const pin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-a.json', import.meta.url)), 'utf8'))
+
+test('parseLinuxRss reads VmRSS in bytes', () => {
+  assert.equal(parseLinuxRss('Name:\tnode\nVmRSS:\t  12345 kB\n'), 12345 * 1024)
+  assert.throws(() => parseLinuxRss('Name:\tnode\n'), /VmRSS not found/)
+})
+
+test('supervised runtime emits a soft RSS warning without killing', async (t) => {
+  const events = []
+  const runtime = await SchemeV2Runtime.open(pin, {
+    supervised: true,
+    resource: { rssSampleMs: 20, rssSoftBytes: 1, rssHardBytes: 1_000_000, heartbeatIntervalMs: 50 },
+    rssSampler: async () => 2,
+    onEvent: (event) => events.push(event),
+  })
+  t.after(() => runtime.close())
+  await new Promise((resolve) => setTimeout(resolve, 120))
+  assert.equal(await runtime.call('rule.example'), 42)
+  assert.ok(events.some((event) => event.event === 'resource-warning'))
+  const stats = runtime.vm.resourceStats()
+  assert.equal(stats.rss, 2)
+  assert.ok(stats.lastHeartbeatAt)
+})
+
+test('supervised runtime survives a transient parent event-loop stall', async (t) => {
+  const runtime = await SchemeV2Runtime.open(pin, {
+    supervised: true,
+    resource: { rssSampleMs: 0, heartbeatIntervalMs: 50, heartbeatMisses: 3 },
+  })
+  t.after(() => runtime.close().catch(() => {}))
+  assert.equal(await runtime.call('rule.example'), 42)
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250)
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  assert.equal(runtime.vm.dead, false)
+  assert.equal(await runtime.call('rule.example'), 42)
+})
+
+test('supervised runtime auto-restarts after a hard resource kill', async (t) => {
+  let rss = 1
+  const events = []
+  const runtime = await SchemeV2Runtime.open(pin, {
+    supervised: true,
+    autoRestart: true,
+    restartBackoffMs: [20],
+    maxRestarts: 2,
+    resource: { rssSampleMs: 20, rssSoftBytes: 1, rssHardBytes: 2, heartbeatIntervalMs: 50 },
+    rssSampler: async () => rss,
+    onEvent: (event) => {
+      events.push(event)
+      if (event.event === 'resource-kill' && event.reason === 'E-RESOURCE-RSS') rss = 1
+    },
+  })
+  t.after(() => runtime.close().catch(() => {}))
+  assert.equal(await runtime.call('rule.example'), 42)
+  rss = 3
+  for (let index = 0; index < 80 && runtime.restarts === 0; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+  assert.equal(runtime.restarts, 1)
+  assert.equal(runtime.closed, false)
+  assert.equal(await runtime.call('rule.example'), 42)
+  assert.ok(events.some((event) => event.event === 'restart-scheduled'))
+})
+
+test('supervised runtime rejects unsafe resource limits', async () => {
+  await assert.rejects(
+    SchemeV2Runtime.open(pin, { supervised: true, resource: { heartbeatMisses: 0 } }),
+    (error) => error.code === 'E-RESOURCE-CONFIG',
+  )
+  await assert.rejects(
+    SchemeV2Runtime.open(pin, { supervised: true, resource: { rssSoftBytes: 10, rssHardBytes: 1 } }),
+    (error) => error.code === 'E-RESOURCE-CONFIG',
+  )
+})
+
+test('supervised runtime stops restarting after the restart limit', async (t) => {
+  const events = []
+  let rss = 1
+  const runtime = await SchemeV2Runtime.open(pin, {
+    supervised: true,
+    autoRestart: true,
+    restartBackoffMs: [20],
+    maxRestarts: 1,
+    resource: { rssSampleMs: 20, rssSoftBytes: 1, rssHardBytes: 2, heartbeatIntervalMs: 50 },
+    rssSampler: async () => rss,
+    onEvent: (event) => events.push(event),
+  })
+  t.after(() => runtime.close().catch(() => {}))
+  assert.equal(await runtime.call('rule.example'), 42)
+  rss = 3
+  for (let index = 0; index < 120 && !events.some((event) => event.event === 'resource-restart-limit'); index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+  assert.ok(events.some((event) => event.event === 'resource-restart-limit'))
+  assert.equal(runtime.vm.dead, true)
+})
+
+test('supervised runtime kills the child when RSS exceeds the hard limit', async (t) => {
+  const events = []
+  let rss = 1
+  const runtime = await SchemeV2Runtime.open(pin, {
+    supervised: true,
+    autoRestart: false,
+    resource: { rssSampleMs: 20, rssSoftBytes: 1, rssHardBytes: 2, heartbeatIntervalMs: 50 },
+    rssSampler: async () => rss,
+    onEvent: (event) => events.push(event),
+  })
+  t.after(() => runtime.close().catch(() => {}))
+  assert.equal(await runtime.call('rule.example'), 42)
+  rss = 3
+  for (let index = 0; index < 50 && !runtime.vm.dead; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  }
+  assert.equal(runtime.vm.dead, true)
+  assert.ok(events.some((event) => event.event === 'resource-kill' && event.reason === 'E-RESOURCE-RSS'))
+  await assert.rejects(runtime.call('rule.example'), (error) => error.code === 'E-VM-DEAD' || error.code === 'E-RESOURCE-RSS')
+})

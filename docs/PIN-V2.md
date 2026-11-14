@@ -68,6 +68,10 @@ Library 必须是 R6RS library，名字与 pin 完全一致：
   (define (answer) (double 21)))
 ```
 
+`(1 0 0)`、`(6)` 都是 **library 自身的版本列表**，不是 R6RS 运行时版本，也不是“兼容 R6RS”的标记。
+当前 v2 契约要求 import 的版本列表与 pin/定义完全一致，不实现 R6RS 的版本前缀匹配；标准库的 `(6)` 只是
+R6RS 标准库的版本号。
+
 Program 是 top-level program，首个 form 必须是 `(import ...)`，不能有 `export`：
 
 ```scheme

@@ -4,21 +4,22 @@
 
 ## 1. 模型
 
-一个 Node.js 管理进程持有多个租户；每个租户是一个独立的 Worker 线程，Worker 内运行一个独立 Scheme VM。
+一个 Node.js 管理进程持有多个租户；默认每个租户是一个独立的 OS 子进程（`ProcessTenantRuntime` + `CvmSupervisor`），子进程内运行一个独立 Scheme VM。`isolation: 'worker'` 保留为显式兼容模式。
 
 ```text
 TenantManager (Node main thread)
-  ├─ TenantRuntime alpha
-  │    └─ Worker ── SchemeV2Runtime ── VM
+  ├─ ProcessTenantRuntime alpha
+  │    └─ OS child ── CvmSupervisor ── SchemeV2Runtime ── VM
   │         ├─ project root: <projectRoot>/tenants/alpha
-  │         ├─ FFI modules (Worker 内 import)
+  │         ├─ FFI modules (child 内 import)
+  │         ├─ OS RSS sampling + heartbeat
   │         └─ bounded command queue (one in flight)
-  ├─ TenantRuntime beta
-  │    └─ Worker ── SchemeV2Runtime ── VM
+  ├─ ProcessTenantRuntime beta
+  │    └─ OS child ── ... ── VM
   └─ ...
 ```
 
-这不是共享 VM 的 environment 分区。`environment` 只隔离 Scheme 绑定可见性，不隔离资源、故障或宿主内存；选项 B 用 Worker/VM 提供更强的隔离。
+这不是共享 VM 的 environment 分区。`environment` 只隔离 Scheme 绑定可见性，不隔离资源、故障或宿主内存；默认的进程隔离提供 OS 级故障和 RSS 监督，Worker 模式只提供线程/VM 隔离。
 
 ### 1.1 continuation 结论
 
@@ -41,10 +42,16 @@ const manager = await TenantManager.open({
       id: 'alpha',
       pin,                 // 已解析的 dsh-pin/v2 对象
       ffiModules,          // 可选：{ math: 'file:///abs/ffi/math.mjs' }
+      isolation: 'process',// 可选，默认 process；worker 为显式兼容模式
       timeoutMs: 5000,     // 可选，规则/命令超时
       ffiTimeoutMs: 2000,  // 可选，FFI provider 超时
-      supervised: true,    // 可选，VM 是否在租户 Worker 内再 fork 子进程
-      resourceLimits: { maxOldGenerationSizeMb: 256 }, // 可选，Worker 堆限制
+      supervised: true,    // 可选，process 模式下默认 true
+      resource: {           // 可选，OS 资源监督（子进程）
+        rssSampleMs: 5000,
+        rssSoftBytes: 384 * 1024 * 1024,
+        rssHardBytes: 512 * 1024 * 1024,
+      },
+      resourceLimits: { maxOldGenerationSizeMb: 256 }, // worker 模式的堆限制
     },
   ],
 })
@@ -61,7 +68,7 @@ await manager.callPlugin('alpha', 'demo', [1, 0, 0], 'answer', [])
 await manager.programResult('alpha', 'bootstrap', [1, 0, 0])
 await manager.metrics('alpha')
 await manager.gc('alpha', 5000)
-await manager.restart('alpha')       // 同一个租户，新的 VM/Worker
+await manager.restart('alpha')       // 同一个租户，新的 VM/实例
 await manager.terminate('alpha')     // 模拟崩溃；随后必须 restart
 await manager.closeTenant('alpha')   // 注销并关闭
 await manager.close()                // 关闭全部
@@ -79,42 +86,42 @@ await manager.close()                // 关闭全部
 | `E-TENANT-CLOSED` | 租户正在关闭 |
 | `E-TENANT-BUSY` | 同租户队列满，或已有 restart 在进行 |
 | `E-TENANT-RESTART` | restart 窗口内收到命令 |
-| `E-TENANT-CRASH` | Worker 崩溃/被终止/命令超时后终止 |
+| `E-TENANT-CRASH` | 实例崩溃/被终止/命令超时后终止 |
 | `E-TENANT-TIMEOUT` | manager 侧命令截止时间到 |
-| `E-TENANT-OPEN` / `E-TENANT-OPEN-TIMEOUT` | Worker/VM 初始化失败 |
-| `E-TENANT-COMMAND` / `E-TENANT-WORKER` | 命令无法发送 / Worker 未编码错误 |
+| `E-TENANT-OPEN` / `E-TENANT-OPEN-TIMEOUT` | 实例/VM 初始化失败 |
+| `E-TENANT-COMMAND` / `E-TENANT-WORKER` | 命令无法发送 / 实例未编码错误 |
 
-VM/规则/FFI 的底层错误码（`E-RULE-*`、`E-FFI-*`、`E-PLUGIN-*`）在可提取时由 Worker 回传（优先 `.code`，否则从消息前缀提取）；无法提取时回退到 `E-TENANT-WORKER`。
+VM/规则/FFI 的底层错误码（`E-RULE-*`、`E-FFI-*`、`E-PLUGIN-*`）在可提取时由实例回传（优先 `.code`，否则从消息前缀提取）；无法提取时回退到 `E-TENANT-WORKER`。
 
 ## 3. 隔离与资源边界
 
 ### 3.1 已提供
 
-- **VM/环境隔离**：每租户独立 `SchemeV2Runtime`，不共享 `dynamic-rules`、`rule-options`、FFI 授权表。
+- **进程/VM 隔离**：默认每租户独立 OS 子进程与 `SchemeV2Runtime`，不共享 `dynamic-rules`、`rule-options`、FFI 授权表；子进程崩溃不影响其他租户。
 - **文件根隔离**：每租户独立 `tenants/<id>`；pin 的固定搜索路径相对该根解析。
-- **命令串行**：每个 Worker 同一时刻只执行一个命令；后续命令进有界队列，满则 `E-TENANT-BUSY`。
-- **故障隔离**：关闭、崩溃、`terminate()` 只影响该租户；其他 Worker 继续运行。
-- **重启**：`restart()` 终止旧 Worker 并重新打开 pin/program；不残留旧动态规则。
-- **FFI 授权**：pin 的 `ffi` 采用 `{id, subjects}`，Worker 内按 subject/target 校验；provider 在该租户 Worker 内执行。
-- **超时**：manager 侧 `commandTimeoutMs` 到点会把租户标记为 crashed 并终止 Worker；VM 内部超时仍可能先返回 `E-TIMEOUT`，该租户随后同样不可继续调用，需 `restart()`。
+- **命令串行**：每个租户同一时刻只执行一个命令；后续命令进有界队列，满则 `E-TENANT-BUSY`。
+- **故障隔离**：关闭、崩溃、`terminate()` 只影响该租户；其他租户继续运行。
+- **重启**：`restart()` 终止旧实例并重新打开 pin/program；不残留旧动态规则。
+- **FFI 授权**：pin 的 `ffi` 采用 `{id, subjects}`，Worker/子进程内按 subject/target 校验；provider 在该租户的子进程内执行。
+- **超时**：manager 侧 `commandTimeoutMs` 到点会把租户标记为 crashed 并终止子进程；VM 内部超时仍可能先返回 `E-TIMEOUT`，该租户随后同样不可继续调用，需 `restart()`。
+- **OS 资源监督**：默认每 5s 采样子进程 RSS；软阈值发 `resource-warning`，硬阈值以 `E-RESOURCE-RSS` 终止 incarnation。心跳缺失会以 `E-RESOURCE-HEARTBEAT` 终止；终止后按退避自动重启，默认 10 分钟最多 5 次，超过发 `resource-restart-limit`。
 
 ### 3.2 不提供
 
-- **OS 级隔离**：Worker 线程共享宿主进程内存；不可信租户必须使用独立子进程/容器（选项 C）。
-- **CPU/内存硬配额**：`resourceLimits` 只约束 Worker 堆，不是 OS RSS 上限；没有 cgroup/Job Object。
+- **CPU 硬配额**：RSS 监督是进程存活检查，不是 cgroup/Job Object 式 CPU 配额。
 - **跨租户调用**：`manager` 只按 tenantId 路由，未注册的 tenant 直接拒绝；没有共享句柄表。
 - **共享 VM 的异步调度**：见 continuation 结论。
 - **Node 对象句柄**：当前 FFI 值是 JSON 数据，不把 Node 对象作为能力暴露给 Scheme。
-- **生产 SLA**：1h 混合负载是发布后验证；当前只有 10 分钟 smoke。
+- **长期生产 SLA**：1h 混合负载是当前候选的发布证据，不等于对所有负载的 SLA 承诺。
 
 ## 4. 威胁模型
 
-当前模型是 **单租户可信规则** 的扩展：多个租户共享一个 Node 进程，但规则来源仍应可信。
+当前模型是 **单租户可信规则** 的扩展：多个租户共享一个 Node 管理进程，但默认各自运行在独立 OS 子进程中；规则来源仍应可信。
 
 - Scheme 层没有任意 JS 路径：禁 `(chezscheme)`/`interaction-environment`；`(dsh safe eval (6))` 只允许 R6RS 标准库；无 libffi/`foreign-procedure` 可用路径；FFI 只能通过 `/dev` TLV channel。
-- 因此 FFI target/subject 的权威校验点在 Worker JS 层；随机设备名只是传输层标识，不是认证。
-- Chez/Emscripten 的内存安全漏洞导致的 Wasm escape 仍是残余风险；不能宣称 OS 隔离。
-- 不可信租户（多组织、多用户、可上传规则）必须使用独立进程/容器，并加 OS 级配额；本实现不满足该场景。
+- 因此 FFI target/subject 的权威校验点在承载 VM 的 JS 子进程内；随机设备名只是传输层标识，不是认证。
+- Chez/Emscripten 的内存安全漏洞导致的 Wasm escape 仍是残余风险；不能宣称容器级隔离。
+- 不可信租户（多组织、多用户、可上传规则）必须再叠加容器、OS 用户与 cgroup/Job Object；本实现不满足该场景。
 
 ## 5. 运维
 
@@ -126,7 +133,7 @@ VM/规则/FFI 的底层错误码（`E-RULE-*`、`E-FFI-*`、`E-PLUGIN-*`）在�
 
 ## 6. 验证
 
-- `test/scheme-v2-tenant.test.js`：两租户独立调用、队列满、关闭隔离、restart/terminate、FFI 租户、非法 id、插件根、restart 窗口、gc。
-- 全量：Windows 388 tests / 387 pass / 1 skip（symlink 权限）；Linux x64 + Node 24 388/388。
-- selfcheck：106 个发布文件。
-- 独立审阅与 fix-verification 已完成，最终审阅记录见 `docs/reviews/scheme-v2-plugins-0.20.0.md` 后续租户段落。
+- `test/scheme-v2-tenant.test.js`：两租户独立调用、队列满、关闭隔离、restart/terminate、FFI 租户、非法 id、插件根、restart 窗口、gc、programResult。
+- 全量：Windows 397 tests / 396 pass / 1 skip（symlink 权限）；Linux x64 + Node 24 10 分钟 supervised smoke 通过。
+- selfcheck：108 个发布文件。
+- 独立审阅记录见 `docs/reviews/scheme-v2-plugins-0.20.0.md` 的 0.22.0 段落；当前审阅状态为 CONDITIONAL，fix-verification 完成前不得宣称 APPROVE。

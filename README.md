@@ -151,14 +151,17 @@ program，在 open 时按 pin 顺序执行一次，可 import library 并通过
 `callRule` 调用 program 注册的规则，`programResult` 取 program 最后表达式的值。
 
 v2 当前边界：FFI 走 fd-backed stream + 二进制 TLV，**不再依赖 stdin/stdout**；Wasm
-线性内存上限 512MiB，但没有 OS 级 RSS 硬上限，timeout 会丢弃当前 incarnation；
-`supervised: true` 也支持 `ffiModules`，provider 在子进程内执行，超时会终止该 incarnation，
-父进程保持存活并可 restart。`signature` 是纳入
+线性内存上限 512MiB。非 supervised 模式没有 OS 级 RSS 上限；`supervised: true` 默认每 5s
+采样子进程 RSS，超过可配置的软阈值发 `resource-warning`，超过硬阈值以 `E-RESOURCE-RSS`
+终止 incarnation；`scheme v2` 会在 `resource-kill` 后按 100/500/2000/5000ms 退避重启，
+默认 10 分钟最多 5 次，超过发 `resource-restart-limit`。父进程保持存活。`supervised: true` 也支持 `ffiModules`，
+provider 在子进程内执行，超时会终止该 incarnation。`signature` 是纳入
 `ruleHash` 的完整性元数据，
 运行时不会据此强制 arity 或返回类型；需要类型契约的调用方必须自行校验。pin
 格式与安全边界见 [docs/PIN-V2.md](docs/PIN-V2.md)，发布包与可复现结论见
 [docs/SCHEME-V2-PACKAGING.md](docs/SCHEME-V2-PACKAGING.md)，性能基线见
-[docs/SCHEME-V2-PERF.md](docs/SCHEME-V2-PERF.md)，多租户 Worker runtime 见
+[docs/SCHEME-V2-PERF.md](docs/SCHEME-V2-PERF.md)，多租户 runtime（默认 OS 子进程，
+Worker 兼容）见
 [docs/TENANT-RUNTIME.md](docs/TENANT-RUNTIME.md)。生产默认、迁移和发布仍未批准。
 
 ## 八阶段
@@ -422,5 +425,6 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前候选版本 0.21.1（多租户 Worker runtime；Scheme v2 opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未正式发布。
-- 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选，本次 0.21.1 不是正式发布。
+- 当前候选版本 0.22.0（OS 级资源监督与 1 小时混合负载证据；Scheme v2 opt-in 运行时、
+  项目插件、fd+TLV FFI、P3/P4/P6）；尚未正式发布。
+- 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选，本次 0.22.0 不是正式发布。

@@ -71,22 +71,73 @@ H1（fd-backed stream + 二进制 TLV）后、修复规则过程缓存中的 `(e
 - Wasm 构建固定 `-s MAXIMUM_MEMORY=536870912`（512MiB）；live-set 超限测试通过 `(oom)` 触发 Emscripten abort，`dispatch` 以 `E-VM-ERROR: Aborted()` fail-closed，随后 `close()` 可完成。当前无法在 abort 前区分“可回收耗尽”和“live-set OOM”，只能在容量规划中按高水位预留。
 - `runtime.gc()` 执行 `collect` 并返回 GC 后 RSS/Wasm 字节；Wasm 线性内存不收缩，容量规划按高水位。
 
-## 混合负载 smoke（H1.5 后）
+## 混合负载（supervised，1 小时）
 
-`node scripts/bench-scheme-v2-mixed.mjs` 同时打开 static/plugin/program/ffi 四个 runtime，按 70%/20%/10% 轮转，并在每 10 次调用中插入一次 FFI。发布前 10 分钟结果：
+`node scripts/bench-scheme-v2-mixed.mjs` 在 `DSH_MIXED_SUPERVISED=1` 下同时打开
+static/plugin/program/ffi 四个 `CvmSupervisor` 子进程，按 70%/20%/10% 轮转，并在每
+10 次调用中插入一次 FFI。各 runtime 默认启用 1s 心跳和 5s RSS 采样；本轮默认软/硬
+阈值未触发。
+
+最终证据（Windows x64、Node 24、PID 31208）：
 
 ```json
-{"durationMs":600050,"calls":387037,"staticCalls":270928,"pluginCalls":77406,"programCalls":38703,"ffiCalls":38704,"errors":0,"samples":20}
+{
+  "samples": 120,
+  "durationMs": 3600012,
+  "calls": 2305087,
+  "errors": 0,
+  "p95Ratio": 1.01,
+  "p99Ratio": 1.007,
+  "rssSlopeMiBPerMin": -0.059,
+  "rssMax": 155643904,
+  "rssLast": 81362944,
+  "heartbeatAgeMaxMs": 1008,
+  "restarts": 0,
+  "wasmBytes": 60424192
+}
 ```
 
-RSS 从 358MB 升至 420MB 后 GC 回落至 174MB，末段 243MB；Wasm 恒定 60.4MB。`lastMs` 2.34–17.06ms，无持续恶化。该脚本只记录窗口内最后一批耗时，不是 p95 分位；完整混合 1h 为发布后验证。
+分项：static 1,613,563 / plugin 461,016 / program 230,508 / FFI 230,509 次。
+p95 早段 12.93ms、末段 13.06ms（1.01×）；p99 13.93ms → 14.03ms（1.007×）。
+RSS 峰值 148.4MiB、末段 77.6MiB，30 分钟斜率 -0.059MiB/min，没有单调增长；
+Wasm 恒定 60.4MiB；心跳最大 1008ms；无 restart、无 error。
+
+第一次 1 小时预跑在约 21 分钟时 static/plugin/ffi 同时失联，根因是单次父事件循环
+停顿让所有 child 的心跳同时看起来过期，属误杀；旧数据已作废。修复为连续
+`heartbeatMisses` 次检查过期才 kill 后重跑，得到上述结果。
+
+## 混合负载（supervised，Linux 10 分钟 smoke）
+
+Linux x64 + Node 24 上运行同一脚本（4 个 supervised runtime，10 分钟）：
+
+```json
+{
+  "samples": 20,
+  "durationMs": 600020,
+  "calls": 1162307,
+  "errors": 0,
+  "p95Ratio": 1.023,
+  "p99Ratio": 1.031,
+  "rssSlopeMiBPerMin": 3.785,
+  "rssMax": 242429952,
+  "restarts": 0,
+  "heartbeatAgeMaxMs": 1005,
+  "wasmBytes": 60424192
+}
+```
+
+分项：static 813,617 / plugin 232,460 / program 116,230 / FFI 116,231；0 error、
+0 restart。p95 2.70ms → 2.77ms（1.023×），p99 2.98ms → 3.07ms（1.031×）。
+RSS 从 187.5MiB 升至 231.2MiB，10 分钟斜率 +3.785MiB/min，尚未证明平台期；
+Linux 只作为 10 分钟 smoke，不作为 1 小时长稳证据。WSL 在 smoke 后关闭命令返回
+`Wsl/E_ACCESSDENIED`，本次没有依赖后续 WSL 状态。
 
 ## 解读与边界
 
-- 1 小时长稳已完成：34,621,517 次、0 error、p50 0.068–0.107ms、Wasm 恒定 60.4MB；RSS 随 GC 波动但不单调增长。
+- 1 小时单 VM 串行长稳：34,621,517 次、0 error、p50 0.068–0.107ms、Wasm 恒定 60.4MB；RSS 随 GC 波动但不单调增长。
 - GC 后 RSS/Wasm 字节基本不下降；Emscripten 线性内存不收缩，容量规划必须按高水位而不是 GC 后 live set 估算。
 - `runtime.metrics()` 暴露 `calls/errors/gcs/staticRules/dynamicRules/plugins/programs/restarts/errorCodes`、`latencyMs` 30 秒窗口与 `rss/wasmBytes`；按周期采样 p95 开销 0.33%，不要每次调用都读。
-- 单 VM 串行调用；supervisor 重启、FFI 超时和 provider 拒绝已有测试，但未测并发队列或大规模 FFI 流量。
+- 1 小时混合负载只覆盖 Windows x64 + Node 24、4 个 supervised runtime、串行命令队列；Linux 只做 ≥10min smoke。这不是多租户并发队列或大规模 FFI 流量的 SLA。
 - 这些数据只用于容量起点，不构成生产 SLA。
 
 ## 待补

@@ -1,0 +1,159 @@
+{
+  "path": "experiments/scheme-v2-mixed-1h-livebytes-final5.jsonl",
+  "samples": 59,
+  "durationMs": 3541390,
+  "calls": 2249827,
+  "errors": 0,
+  "gcStatsErrors": 0,
+  "gcPauseP95Ms": 3.563,
+  "parentRssMax": 177840128,
+  "warmupEndMs": 600000,
+  "baselineWindowMs": [
+    600000,
+    1800000
+  ],
+  "finalWindowMs": [
+    2641390,
+    3541390
+  ],
+  "first": {
+    "t": 60039,
+    "rss": 144838656,
+    "p95Ms": 12.778,
+    "p99Ms": 13.903
+  },
+  "last": {
+    "t": 3541390,
+    "rss": 80773120,
+    "wasmBytes": 60424192,
+    "p95Ms": 13.231,
+    "p99Ms": 14.214
+  },
+  "p95Ratio": 1.008,
+  "p99Ratio": 1.011,
+  "rssSlopeMiBPerMin": 0.112,
+  "rssMax": 150306816,
+  "rssLast": 80773120,
+  "restarts": 0,
+  "heartbeatAgeMaxMs": 998,
+  "perRuntime": {
+    "static": {
+      "samples": 30,
+      "baselineSamples": 20,
+      "finalSamples": 15,
+      "baselineMedian": 17013352,
+      "finalMedian": 17001952,
+      "delta": -11400,
+      "slopeKiBPerMin": -0.379,
+      "slopeUpper95KiBPerMin": 0.208,
+      "gcCountFirst": 26,
+      "gcCountLast": 664,
+      "gcCountStrictlyIncreasing": true,
+      "gcPauseP95Ms": 3.034,
+      "fullCollectOk": true,
+      "pass": true
+    },
+    "plugin": {
+      "samples": 30,
+      "baselineSamples": 20,
+      "finalSamples": 15,
+      "baselineMedian": 17012912,
+      "finalMedian": 17011712,
+      "delta": -1200,
+      "slopeKiBPerMin": -0.453,
+      "slopeUpper95KiBPerMin": 0.286,
+      "gcCountFirst": 19,
+      "gcCountLast": 193,
+      "gcCountStrictlyIncreasing": true,
+      "gcPauseP95Ms": 3.563,
+      "fullCollectOk": true,
+      "pass": true
+    },
+    "program": {
+      "samples": 30,
+      "baselineSamples": 20,
+      "finalSamples": 15,
+      "baselineMedian": 17022008,
+      "finalMedian": 17019600,
+      "delta": -2408,
+      "slopeKiBPerMin": -0.234,
+      "slopeUpper95KiBPerMin": 0.456,
+      "gcCountFirst": 18,
+      "gcCountLast": 192,
+      "gcCountStrictlyIncreasing": true,
+      "gcPauseP95Ms": 2.673,
+      "fullCollectOk": true,
+      "pass": true
+    },
+    "ffi": {
+      "samples": 30,
+      "baselineSamples": 20,
+      "finalSamples": 15,
+      "baselineMedian": 17016280,
+      "finalMedian": 17010992,
+      "delta": -5288,
+      "slopeKiBPerMin": -0.218,
+      "slopeUpper95KiBPerMin": 0.695,
+      "gcCountFirst": 22,
+      "gcCountLast": 428,
+      "gcCountStrictlyIncreasing": true,
+      "gcPauseP95Ms": 2.45,
+      "fullCollectOk": true,
+      "pass": true
+    }
+  },
+  "rssGuardrail": {
+    "static": {
+      "baselineMedian": 100698112,
+      "finalMedian": 68554752,
+      "delta": -32143360,
+      "liveDelta": -11400,
+      "heapDelta": 0,
+      "parentDelta": 44132352,
+      "parentMax": 177840128,
+      "wasmMax": 60424192,
+      "conditional": true
+    },
+    "plugin": {
+      "baselineMedian": 87500800,
+      "finalMedian": 56098816,
+      "delta": -31401984,
+      "liveDelta": -1200,
+      "heapDelta": 0,
+      "parentDelta": 44132352,
+      "parentMax": 177840128,
+      "wasmMax": 60424192,
+      "conditional": true
+    },
+    "program": {
+      "baselineMedian": 84248576,
+      "finalMedian": 41832448,
+      "delta": -42416128,
+      "liveDelta": -2408,
+      "heapDelta": 0,
+      "parentDelta": 44132352,
+      "parentMax": 177840128,
+      "wasmMax": 60424192,
+      "conditional": true
+    },
+    "ffi": {
+      "baselineMedian": 92147712,
+      "finalMedian": 80265216,
+      "delta": -11882496,
+      "liveDelta": -5288,
+      "heapDelta": -2129976,
+      "parentDelta": 44132352,
+      "parentMax": 177840128,
+      "wasmMax": 60424192,
+      "conditional": true
+    }
+  },
+  "verdict": "CONDITIONAL",
+  "failures": [],
+  "conditional": [
+    "static",
+    "plugin",
+    "program",
+    "ffi"
+  ]
+}

@@ -1,0 +1,315 @@
+{
+  "durationMs": 3600124,
+  "supervised": true,
+  "samplingIntervalMs": 60000,
+  "calls": 2287047,
+  "staticCalls": 1600935,
+  "pluginCalls": 457408,
+  "programCalls": 228704,
+  "ffiCalls": 228705,
+  "errors": 0,
+  "errorsByCode": {},
+  "events": [],
+  "samples": 59,
+  "finalMetrics": {
+    "rss": 74252288,
+    "wasmBytes": 60424192,
+    "pid": 24968,
+    "resource": {
+      "rss": 74182656,
+      "wasmBytes": 60424192,
+      "lastHeartbeatAt": 1794673000859,
+      "samples": 720
+    },
+    "calls": 1600935,
+    "errors": 0,
+    "errorCodes": {},
+    "restarts": 0,
+    "gcs": 60,
+    "latencyMs": {
+      "windowMs": 30000,
+      "count": 10000,
+      "p50": 0.142,
+      "p95": 0.383,
+      "p99": 0.983
+    },
+    "staticRules": 1,
+    "dynamicRules": 0,
+    "plugins": 0,
+    "programs": 0
+  },
+  "finalGc": {
+    "static": {
+      "before": {
+        "rss": 74252288,
+        "wasmBytes": 60424192,
+        "pid": 24968,
+        "resource": {
+          "rss": 74182656,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000859,
+          "samples": 720
+        },
+        "calls": 1600935,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 59,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 10000,
+          "p50": 0.142,
+          "p95": 0.383,
+          "p99": 0.983
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "stats": {
+        "liveBytes": 16994992,
+        "heapReservedBytes": 28607208,
+        "allocatedTotal": 5185449008,
+        "reclaimedTotal": 5184632992,
+        "gcCount": 674,
+        "fullCollect": true,
+        "maxGeneration": 4,
+        "radix": 4,
+        "pid": 24968
+      },
+      "after": {
+        "rss": 74252288,
+        "wasmBytes": 60424192,
+        "pid": 24968,
+        "resource": {
+          "rss": 74182656,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000859,
+          "samples": 720
+        },
+        "calls": 1600935,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 60,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 10000,
+          "p50": 0.142,
+          "p95": 0.383,
+          "p99": 0.983
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "error": null
+    },
+    "plugin": {
+      "before": {
+        "rss": 61640704,
+        "wasmBytes": 60424192,
+        "pid": 4072,
+        "resource": {
+          "rss": 61579264,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000813,
+          "samples": 720
+        },
+        "calls": 457408,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 59,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 3808,
+          "p50": 0.284,
+          "p95": 0.979,
+          "p99": 2.038
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 2,
+        "programs": 0
+      },
+      "stats": {
+        "liveBytes": 17010752,
+        "heapReservedBytes": 30737184,
+        "allocatedTotal": 1572011872,
+        "reclaimedTotal": 1571180096,
+        "gcCount": 196,
+        "fullCollect": true,
+        "maxGeneration": 4,
+        "radix": 4,
+        "pid": 4072
+      },
+      "after": {
+        "rss": 61943808,
+        "wasmBytes": 60424192,
+        "pid": 4072,
+        "resource": {
+          "rss": 61579264,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000813,
+          "samples": 720
+        },
+        "calls": 457408,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 60,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 3808,
+          "p50": 0.284,
+          "p95": 0.979,
+          "p99": 2.038
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 2,
+        "programs": 0
+      },
+      "error": null
+    },
+    "program": {
+      "before": {
+        "rss": 45457408,
+        "wasmBytes": 60424192,
+        "pid": 29008,
+        "resource": {
+          "rss": 45375488,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000362,
+          "samples": 720
+        },
+        "calls": 228704,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 59,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1904,
+          "p50": 0.319,
+          "p95": 0.489,
+          "p99": 0.936
+        },
+        "staticRules": 0,
+        "dynamicRules": 3,
+        "plugins": 1,
+        "programs": 1
+      },
+      "stats": {
+        "liveBytes": 17000880,
+        "heapReservedBytes": 26477232,
+        "allocatedTotal": 1203900912,
+        "reclaimedTotal": 1203079008,
+        "gcCount": 195,
+        "fullCollect": true,
+        "maxGeneration": 4,
+        "radix": 4,
+        "pid": 29008
+      },
+      "after": {
+        "rss": 45502464,
+        "wasmBytes": 60424192,
+        "pid": 29008,
+        "resource": {
+          "rss": 45375488,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000362,
+          "samples": 720
+        },
+        "calls": 228704,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 60,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1904,
+          "p50": 0.319,
+          "p95": 0.489,
+          "p99": 0.936
+        },
+        "staticRules": 0,
+        "dynamicRules": 3,
+        "plugins": 1,
+        "programs": 1
+      },
+      "error": null
+    },
+    "ffi": {
+      "before": {
+        "rss": 81354752,
+        "wasmBytes": 60424192,
+        "pid": 5764,
+        "resource": {
+          "rss": 81354752,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000362,
+          "samples": 720
+        },
+        "calls": 228705,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 59,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1905,
+          "p50": 12.995,
+          "p95": 14.351,
+          "p99": 23.922
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "stats": {
+        "liveBytes": 17039680,
+        "heapReservedBytes": 26477232,
+        "allocatedTotal": 3518521360,
+        "reclaimedTotal": 3517660656,
+        "gcCount": 435,
+        "fullCollect": true,
+        "maxGeneration": 4,
+        "radix": 4,
+        "pid": 5764
+      },
+      "after": {
+        "rss": 81354752,
+        "wasmBytes": 60424192,
+        "pid": 5764,
+        "resource": {
+          "rss": 81354752,
+          "wasmBytes": 60424192,
+          "lastHeartbeatAt": 1794673000362,
+          "samples": 720
+        },
+        "calls": 228705,
+        "errors": 0,
+        "errorCodes": {},
+        "restarts": 0,
+        "gcs": 60,
+        "latencyMs": {
+          "windowMs": 30000,
+          "count": 1905,
+          "p50": 12.995,
+          "p95": 14.351,
+          "p99": 23.922
+        },
+        "staticRules": 1,
+        "dynamicRules": 0,
+        "plugins": 0,
+        "programs": 0
+      },
+      "error": null
+    }
+  }
+}

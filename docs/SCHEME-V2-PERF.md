@@ -78,29 +78,33 @@ static/plugin/program/ffi 四个 `CvmSupervisor` 子进程，按 70%/20%/10% 轮
 10 次调用中插入一次 FFI。各 runtime 默认启用 1s 心跳和 5s RSS 采样；本轮默认软/硬
 阈值未触发。
 
-最终证据（Windows x64、Node 24、PID 31208）：
+最终证据（Windows x64、Node 24、commit `ae5aa93`、PID 11308）：
 
 ```json
 {
   "samples": 120,
-  "durationMs": 3600012,
-  "calls": 2305087,
+  "durationMs": 3600010,
+  "calls": 2200847,
   "errors": 0,
-  "p95Ratio": 1.01,
-  "p99Ratio": 1.007,
-  "rssSlopeMiBPerMin": -0.059,
-  "rssMax": 155643904,
-  "rssLast": 81362944,
-  "heartbeatAgeMaxMs": 1008,
+  "p95Ratio": 0.879,
+  "p99Ratio": 1.186,
+  "rssSlopeMiBPerMin": 0.843,
+  "rssMax": 147922944,
+  "rssLast": 89960448,
+  "heartbeatAgeMaxMs": 1000,
   "restarts": 0,
   "wasmBytes": 60424192
 }
 ```
 
-分项：static 1,613,563 / plugin 461,016 / program 230,508 / FFI 230,509 次。
-p95 早段 12.93ms、末段 13.06ms（1.01×）；p99 13.93ms → 14.03ms（1.007×）。
-RSS 峰值 148.4MiB、末段 77.6MiB，30 分钟斜率 -0.059MiB/min，没有单调增长；
-Wasm 恒定 60.4MiB；心跳最大 1008ms；无 restart、无 error。
+分项：static 1,540,595 / plugin 440,168 / program 220,084 / FFI 220,085 次。
+p95 早段 13.62ms、末段 11.97ms（0.879×）；p99 14.29ms → 16.95ms（1.186×）。
+RSS 峰值 141.1MiB、末段 85.8MiB，30 分钟斜率 +0.843MiB/min；最后 30 分钟有
+5 次回落，不是单调上升。Wasm 恒定 57.6MiB；心跳最大 1000ms；无 restart、无 error。
+结束后 GC 一次：RSS 65.5MiB，低于 GC 前，也低于峰值。
+
+证据文件：`docs/evidence/os-supervision-1h-2026-11-14.jsonl` 与
+`docs/evidence/os-supervision-1h-2026-11-14-summary.json`。
 
 第一次 1 小时预跑在约 21 分钟时 static/plugin/ffi 同时失联，根因是单次父事件循环
 停顿让所有 child 的心跳同时看起来过期，属误杀；旧数据已作废。修复为连续

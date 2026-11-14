@@ -179,12 +179,14 @@ test('TenantManager returns synchronous program results and terminate does not r
   assert.deepEqual(await manager.programResult('programs', 'bootstrap', [1]), ['strict', 42])
 
   const runtime = manager.get('programs')
+  const supervisor = runtime.runtime.vm
   await manager.terminate('programs')
   assert.equal(runtime.status, 'crashed')
-  const restarts = runtime.restartTimes?.length ?? 0
+  const restarts = runtime.runtime?.restartTimes?.length ?? 0
   await new Promise((resolve) => setTimeout(resolve, 300))
   assert.equal(runtime.status, 'crashed')
-  assert.equal(runtime.restartTimes?.length ?? 0, restarts)
+  assert.equal(supervisor.dead, true)
+  assert.equal(runtime.runtime?.restartTimes?.length ?? 0, restarts)
 })
 
 test('TenantManager rejects a tenant that cannot open in time', async () => {

@@ -84,6 +84,24 @@ All four runtimes were individually collected; none returned to or below
 the pre-GC value. The deltas are small, but the frozen criterion is strict:
 `after <= before`. The run therefore fails.
 
+### Diagnosis of the tail growth
+
+The growth is not confined to one runtime. The last ten 30-second windows:
+
+```text
+static   57.8 -> 72.0 MB
+plugin   56.2 -> 62.4 MB
+program  40.4 -> 46.3 MB
+ffi      78.3 -> 82.9 MB
+```
+
+All four children grew together, which is consistent with per-process V8/Chez
+heap re-expansion after the drop at t≈51 min, not with a single leaking rule or
+plugin. The 30-minute slope (+0.189 MiB/min) passes, but the tail is monotonic
+and the post-GC values are not lower. The frozen criteria therefore fail
+regardless of the likely benign cause; changing the criteria after the run
+would be masking.
+
 ## Decision
 
 0.22.0 is not a production candidate. Do not tag, do not publish npm, and

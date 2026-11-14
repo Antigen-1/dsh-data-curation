@@ -156,6 +156,35 @@ parent heap delta 判 conditional；否则回退到 raw parent RSS。raw parent 
 始终保留 512MiB 硬上限。旧 final5 没有 heapUsed 字段，仍按原 raw RSS 判据
 保持 CONDITIONAL，不追溯改判。
 
+## 0.22.2 final6：full-GC liveBytes PASS
+
+final6 使用 0.22.2 代码（commit `d989293`）、同一 engine `3f104d...`，
+Windows x64 / Node v24.21.0，`--expose-gc` + `DSH_MIXED_PARENT_GC=1`，
+60s 采样运行 3,600,110ms。analyzer 判 **PASS**。
+
+| runtime | baseline liveBytes | final liveBytes | delta | slope upper95 |
+|---|---:|---:|---:|---:|
+| static | 17,000,752 | 17,015,024 | +14,272 | 0.657 KiB/min |
+| plugin | 17,016,872 | 17,015,072 | -1,800 | 0.770 KiB/min |
+| program | 17,017,384 | 17,019,968 | +2,584 | 0.525 KiB/min |
+| ffi | 17,016,880 | 17,015,328 | -1,552 | 0.629 KiB/min |
+
+四个 runtime 均 `fullCollect=true`，`gcCount` 严格递增，GC pause p95 2.105ms；
+2,241,547 次（最后样本）/2,278,533 次（最终汇总），0 error、0 restart。
+
+parent heap 归一化：59 个 `parentGc` 样本，`parentHeapDelta=+177,324B`
+（约 0.17MiB），未触发 32MiB conditional；parent RSS max 177,045,504B，
+Wasm 恒定 60,424,192B。59 个样本的最后时间戳为 3,541,526ms，进程总时长
+3,600,110ms；analyzer 的 120s 尾部容差覆盖该采样间隙。
+
+证据：
+
+- `docs/evidence/os-supervision-1h-2026-11-15-final6.md`
+- `docs/evidence/os-supervision-1h-2026-11-15-final6.jsonl`
+- `docs/evidence/os-supervision-1h-2026-11-15-final6-analysis.json`
+- `docs/evidence/os-supervision-1h-2026-11-15-final6-summary.json`
+
+
 ## 解读与边界
 
 - 1 小时单 VM 串行长稳：34,621,517 次、0 error、p50 0.068–0.107ms、Wasm 恒定 60.4MB；RSS 随 GC 波动但不单调增长。

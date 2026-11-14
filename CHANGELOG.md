@@ -16,6 +16,12 @@ versions follow [SemVer](https://semver.org/).
 否则回退到 raw parent RSS 判据。raw parent RSS 始终保留 512MiB 硬上限
 与上下文；final5 没有 heapUsed 样本，不追溯改判。
 
+final6 用 0.22.2 代码、同一 engine `3f104d...` 在 Windows x64 / Node 24 上完成
+1h supervised mixed soak：59 样本、进程 3,600,110ms、0 error、0 restart；
+四个 runtime 的 full-GC liveBytes 首末变化在 -1.8KB 到 +14.3KB 之间，
+parent heap delta +0.17MiB，GC pause p95 2.105ms。analyzer 判 **PASS**。
+final5 仍保留为 0.22.1 的 CONDITIONAL 历史结果。
+
 ### Added
 
 - parent memory breakdown 与 `parentGc` 采样字段。

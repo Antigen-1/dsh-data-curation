@@ -52,3 +52,22 @@ The reviewer re-ran the analyzer on committed final5:
 
 No product code was changed by the review. Only the final5 median figures in
 docs were corrected from 149.5MiB/+42.8MiB to 148.8MiB/+42.1MiB.
+
+## final6 release evidence
+
+The reviewed 0.22.2 path was then exercised by one final Windows x64
+supervised soak (`final6`, commit `d989293`, engine `3f104d...`):
+
+- analyzer verdict: **PASS**
+- 59 samples, process duration 3,600,110ms, 2,241,547 calls at the last
+  sample (2,278,533 final), 0 error, 0 restart
+- liveBytes flat for all four runtimes: static +14,272B, plugin -1,800B,
+  program +2,584B, ffi -1,552B; slope upper95 < 0.8KiB/min
+- GC pause p95: 2.105ms; fullCollect true; gcCount strictly increasing
+- parent heap normalized: 59 samples, +177,324B (≈0.17MiB), no 32MiB
+  conditional; parent RSS max 177,045,504B; wasm 60,424,192B
+- final5 remains the historical CONDITIONAL 0.22.1 result
+
+Evidence: `docs/evidence/os-supervision-1h-2026-11-15-final6.md` and its
+JSONL/analysis/summary siblings.
+

@@ -126,7 +126,7 @@ VM/规则/FFI 的底层错误码（`E-RULE-*`、`E-FFI-*`、`E-PLUGIN-*`）在�
 ## 5. 运维
 
 - `close()`/`closeTenant()` 幂等；关闭后租户从 manager 注销，再调用返回 `E-TENANT-ID`。`close()` 先发 `{type:'close'}` 并等待 Worker 的 `closed` 回执，超时才 terminate。
-- `terminate()` 立即把租户标记为 crashed，拒绝排队/在途命令，然后终止 Worker；之后必须 `restart()`。
+- `terminate()` 先把租户标记为 terminating/crashed，停止自动重启并等待进行中的 restart，然后终止 OS 子进程；之后必须 `restart()`。
 - `metrics()` 返回该租户 VM 的 calls/errors/gcs/延迟窗口/内存；不会聚合其他租户。
 - 日志：当前 manager/worker 不输出审计日志；不要把日志作为可用的可观测性承诺。
 - 平台：要求 Node >= 24；不再按 OS/CPU 拒绝。当前验证基线是 Windows x64，Linux/macOS 为实验性平台。
@@ -136,4 +136,4 @@ VM/规则/FFI 的底层错误码（`E-RULE-*`、`E-FFI-*`、`E-PLUGIN-*`）在�
 - `test/scheme-v2-tenant.test.js`：两租户独立调用、队列满、关闭隔离、restart/terminate、FFI 租户、非法 id、插件根、restart 窗口、gc、programResult。
 - 全量：Windows 397 tests / 396 pass / 1 skip（symlink 权限）；Linux x64 + Node 24 10 分钟 supervised smoke 通过。
 - selfcheck：108 个发布文件。
-- 独立审阅记录见 `docs/reviews/scheme-v2-plugins-0.20.0.md` 的 0.22.0 段落；当前审阅状态为 CONDITIONAL，fix-verification 完成前不得宣称 APPROVE。
+- 独立审阅记录见 `docs/reviews/os-supervision-0.22.0.md`；当前审阅状态为 CONDITIONAL，fix-verification 完成前不得宣称 APPROVE。

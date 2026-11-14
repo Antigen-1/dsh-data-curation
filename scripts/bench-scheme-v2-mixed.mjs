@@ -44,6 +44,7 @@ const samples = []
 let nextSample = started + 30000
 let windowLatencies = []
 let finalMetrics = null
+let finalGc = null
 const percentile = (values, p) => values.length === 0 ? null : values[Math.min(values.length - 1, Math.floor(values.length * p))]
 
 try {
@@ -118,7 +119,18 @@ try {
     }
   }
 } finally {
-  try { await runtimes.static.gc(5000) } catch {}
+  const gcResults = {}
+  for (const [name, runtime] of Object.entries(runtimes)) {
+    const before = runtime.metrics()
+    let error = null
+    try {
+      await runtime.gc(5000)
+    } catch (caught) {
+      error = caught?.message ?? String(caught)
+    }
+    gcResults[name] = { before, after: runtime.metrics(), error }
+  }
+  finalGc = gcResults
   finalMetrics = runtimes.static.metrics()
   for (const runtime of Object.values(runtimes)) await runtime.close()
 }
@@ -136,5 +148,6 @@ const summary = {
   events,
   samples: samples.filter((sample) => sample.latencySamples !== undefined).length,
   finalMetrics,
+  finalGc,
 }
 console.log(JSON.stringify(summary, null, 2))

@@ -186,3 +186,13 @@ test('TenantManager returns synchronous program results and terminate does not r
   assert.equal(runtime.status, 'crashed')
   assert.equal(runtime.restartTimes?.length ?? 0, restarts)
 })
+
+test('TenantManager rejects a tenant that cannot open in time', async () => {
+  await assert.rejects(
+    TenantManager.open({
+      projectRoot: projectRoot(),
+      tenants: [{ id: 'slow', pin, openTimeoutMs: 0 }],
+    }),
+    (error) => error.code === 'E-TENANT-OPEN-TIMEOUT',
+  )
+})

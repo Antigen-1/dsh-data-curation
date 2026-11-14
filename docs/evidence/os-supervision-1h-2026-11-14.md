@@ -19,7 +19,7 @@ Candidate code: `ae5aa937374565d6420e1707f2126fcfae907d2f` (`fix: harden supervi
 ## Command
 
 ```powershell
-$env:PATH = 'C:\Users\29436\AppData\Local\Programs\DeepSeek Harness\resources\runtime\primary-runtime\dependencies\node\bin;' + $env:PATH
+$env:PATH = '<directory containing Node 24>;' + $env:PATH
 $env:DSH_MIXED_MS = '3600000'
 $env:DSH_MIXED_SUPERVISED = '1'
 $env:DSH_MIXED_RSS_MS = '5000'

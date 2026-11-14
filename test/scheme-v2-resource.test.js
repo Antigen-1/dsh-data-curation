@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { SchemeV2Runtime } from '../lib/rules/index.js'
-import { parseLinuxRss } from '../lib/rules/scheme/v2/resource-sampler.js'
+import { evaluateHeartbeat } from '../lib/rules/scheme/v2/supervisor.js'
+import { parseLinuxRss, createRssSampler } from '../lib/rules/scheme/v2/resource-sampler.js'
 
 const pin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-a.json', import.meta.url)), 'utf8'))
 
@@ -121,4 +122,73 @@ test('supervised runtime kills the child when RSS exceeds the hard limit', async
   assert.equal(runtime.vm.dead, true)
   assert.ok(events.some((event) => event.event === 'resource-kill' && event.reason === 'E-RESOURCE-RSS'))
   await assert.rejects(runtime.call('rule.example'), (error) => error.code === 'E-VM-DEAD' || error.code === 'E-RESOURCE-RSS')
+})
+
+test('heartbeat misses kill only after the configured consecutive strikes', () => {
+  const first = evaluateHeartbeat({
+    lastAt: 1000,
+    strikes: 0,
+    intervalMs: 10,
+    misses: 2,
+    now: 2000,
+  })
+  assert.equal(first.kill, false)
+  assert.equal(first.strikes, 1)
+  const second = evaluateHeartbeat({
+    lastAt: 1000,
+    strikes: first.strikes,
+    intervalMs: 10,
+    misses: 2,
+    now: 2000,
+  })
+  assert.equal(second.kill, true)
+  assert.equal(second.strikes, 2)
+  const active = evaluateHeartbeat({
+    active: true,
+    lastAt: 1000,
+    strikes: 1,
+    intervalMs: 10,
+    misses: 2,
+    now: 2000,
+  })
+  assert.equal(active.kill, false)
+  assert.equal(active.strikes, 0)
+})
+
+test('Windows RSS sampler uses a bounded PowerShell call', async () => {
+  const calls = []
+  const sampler = createRssSampler({
+    platform: 'win32',
+    exec: (file, args, options, callback) => {
+      calls.push({ file, args, options })
+      callback(null, '12345\n', '')
+    },
+  })
+  assert.equal(await sampler(42), 12345)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].file, 'powershell.exe')
+  assert.equal(calls[0].args.at(-1), '(Get-Process -Id 42).WorkingSet64')
+  assert.equal(calls[0].options.timeout, 2000)
+  assert.equal(calls[0].options.killSignal, 'SIGKILL')
+})
+
+test('supervised runtime kills the child when Wasm memory exceeds the hard limit', async (t) => {
+  const events = []
+  const runtime = await SchemeV2Runtime.open(pin, {
+    supervised: true,
+    autoRestart: false,
+    resource: {
+      rssSampleMs: 0,
+      heartbeatIntervalMs: 20,
+    },
+    onEvent: (event) => events.push(event),
+  })
+  t.after(() => runtime.close().catch(() => {}))
+  runtime.vm.resource.wasmSoftBytes = 1
+  runtime.vm.resource.wasmHardBytes = 1
+  for (let index = 0; index < 100 && !runtime.vm.dead; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  }
+  assert.equal(runtime.vm.dead, true)
+  assert.ok(events.some((event) => event.event === 'resource-kill' && event.reason === 'E-RESOURCE-WASM'))
 })

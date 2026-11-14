@@ -12,6 +12,7 @@ const ffiMath = new URL('../test/fixtures/scheme-v2/ffi/math.mjs', import.meta.u
 const pluginRoot = `${root}/test/fixtures/scheme-v2/project`
 const programRoot = `${root}/test/fixtures/scheme-v2/program-project`
 const supervised = process.env.DSH_MIXED_SUPERVISED === '1'
+const samplingIntervalMs = Number(process.env.DSH_MIXED_SAMPLE_MS || 60000)
 const baseOptions = supervised
   ? { supervised: true, resource: { rssSampleMs: Number(process.env.DSH_MIXED_RSS_MS || 30000) } }
   : {}
@@ -19,6 +20,7 @@ const events = []
 const runtimeOptions = (name, extra = {}) => ({
   ...baseOptions,
   ...extra,
+  debugGcStats: true,
   onEvent: (event) => {
     if (event.event !== 'heartbeat' && events.length < 50) events.push({ runtime: name, ...event })
   },
@@ -41,7 +43,7 @@ let ffiCalls = 0
 let errors = 0
 const errorsByCode = {}
 const samples = []
-let nextSample = started + 30000
+let nextSample = started + samplingIntervalMs
 let windowLatencies = []
 let finalMetrics = null
 let finalGc = null
@@ -77,6 +79,16 @@ try {
       const byRuntime = {}
       for (const [name, runtime] of Object.entries(runtimes)) {
         const metrics = runtime.metrics()
+        let gcStats = null
+        let gcStatsError = null
+        const gcStarted = performance.now()
+        try {
+          gcStats = await runtime.gcStats(10000)
+        } catch (caught) {
+          gcStatsError = caught?.code || caught?.message || String(caught)
+          errorsByCode[gcStatsError] = (errorsByCode[gcStatsError] || 0) + 1
+        }
+        const gcStatsDurationMs = performance.now() - gcStarted
         byRuntime[name] = {
           rss: metrics.resource?.rss ?? metrics.rss,
           wasmBytes: metrics.wasmBytes ?? null,
@@ -85,6 +97,14 @@ try {
           heartbeatAgeMs: metrics.resource?.lastHeartbeatAt
             ? Date.now() - metrics.resource.lastHeartbeatAt
             : null,
+          liveBytes: gcStats?.liveBytes ?? null,
+          heapReservedBytes: gcStats?.heapReservedBytes ?? null,
+          allocatedTotal: gcStats?.allocatedTotal ?? null,
+          reclaimedTotal: gcStats?.reclaimedTotal ?? null,
+          gcCount: gcStats?.gcCount ?? null,
+          fullCollect: gcStats?.fullCollect ?? null,
+          gcStatsDurationMs: Number(gcStatsDurationMs.toFixed(3)),
+          gcStatsError,
         }
       }
       const rssValues = Object.values(byRuntime).map((entry) => entry.rss).filter(Number.isFinite)
@@ -106,6 +126,9 @@ try {
         lastMs: Number((performance.now() - callStarted).toFixed(3)),
         rss: rssValues.length > 0 ? Math.max(...rssValues) : null,
         rssByRuntime: byRuntime,
+        liveBytesByRuntime: Object.fromEntries(
+          Object.entries(byRuntime).map(([name, entry]) => [name, entry.liveBytes]),
+        ),
         wasmBytes: Math.max(...Object.values(byRuntime).map((entry) => entry.wasmBytes ?? 0)),
         restarts: Object.values(byRuntime).reduce((sum, entry) => sum + (entry.restarts ?? 0), 0),
         heartbeatAgeMs: Math.max(
@@ -115,20 +138,21 @@ try {
       windowLatencies = []
       samples.push(sample)
       appendFileSync(outPath, `${JSON.stringify(sample)}\n`)
-      nextSample += 30000
+      nextSample = performance.now() + samplingIntervalMs
     }
   }
 } finally {
   const gcResults = {}
   for (const [name, runtime] of Object.entries(runtimes)) {
     const before = runtime.metrics()
+    let stats = null
     let error = null
     try {
-      await runtime.gc(5000)
+      stats = await runtime.gcStats(10000)
     } catch (caught) {
-      error = caught?.message ?? String(caught)
+      error = caught?.code || caught?.message || String(caught)
     }
-    gcResults[name] = { before, after: runtime.metrics(), error }
+    gcResults[name] = { before, stats, after: runtime.metrics(), error }
   }
   finalGc = gcResults
   finalMetrics = runtimes.static.metrics()
@@ -138,6 +162,7 @@ try {
 const summary = {
   durationMs: Math.round(performance.now() - started),
   supervised,
+  samplingIntervalMs,
   calls,
   staticCalls,
   pluginCalls,

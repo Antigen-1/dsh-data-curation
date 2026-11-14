@@ -3,7 +3,7 @@
   "project": "pin-v2-program-fixture-a",
   "engine": {
     "contract": "chez-wasm-c-10.4.1-v1",
-    "engineArtifactHash": "sha256:8ec8aa06a20f2c0a3ea512ac39a9f1f787eca75d68dfe0481dadd040029f8c4b"
+    "engineArtifactHash": "sha256:c3721ead4d1b9834ddc16723706087a1a186f732ee2f6ce3eb80d6d06d0d252b"
   },
   "modules": [
     {
@@ -33,7 +33,7 @@
       ],
       "kind": "program",
       "path": "programs/010-bootstrap.scm",
-      "treeHash": "sha256:a97bd2ddfd5d555e884fc380d611e6778db7272756dc4b791267ce913f72b6ea",
+      "treeHash": "sha256:a1811e07ddc8f195502badba1b9ddd81e9b7b3a638fa60c6a3480b6031feb401",
       "capabilities": []
     }
   ],

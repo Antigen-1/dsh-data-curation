@@ -26,8 +26,11 @@ const program = [
   '(import (rnrs base (6))',
   '        (only (dsh lib math (1 0 0)) double)',
   '        (dsh rules (6)))',
+  "(set-rule-option! 'gc 'keep #f)",
   "(set-rule-option! 'total 'mode \"strict\")",
   "(register-rule! 'total '(1 0 0) (lambda (x) (double x)))",
+  "(register-rule! 'gc-hold '(1 0 0) (lambda () (set-rule-option! 'gc 'keep (make-vector 1000000 1)) 1))",
+  "(register-rule! 'gc-drop '(1 0 0) (lambda () (set-rule-option! 'gc 'keep #f) 1))",
   "(list (rule-option 'total 'mode) 42)",
   '',
 ].join('\n')

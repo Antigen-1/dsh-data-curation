@@ -353,6 +353,7 @@
 ;; Chez internals through its exports.
 (define dynamic-rules '())
 (define rule-options '())
+(define debug-gc-stats? #f)
 (define current-program-subject "")
 (define current-program-ordinal 0)
 
@@ -1174,6 +1175,19 @@
                                ",\"registry\":" (number->string (length pin-registry)) "}"))
               (respond-error id "E-PLUGIN-ERROR"))))))
 
+(define (gc-stats-json)
+  (collect (collect-maximum-generation))
+  (let ((s (statistics)))
+    (list
+      (cons 'liveBytes (bytes-allocated))
+      (cons 'heapReservedBytes (current-memory-bytes))
+      (cons 'allocatedTotal (sstats-bytes s))
+      (cons 'reclaimedTotal (sstats-gc-bytes s))
+      (cons 'gcCount (sstats-gc-count s))
+      (cons 'fullCollect #t)
+      (cons 'maxGeneration (collect-maximum-generation))
+      (cons 'radix (collect-generation-radix)))))
+
 (define (handle req)
   (if (not (and (pair? req) (eq? (car req) 'request) (>= (length req) 3)))
       (respond "?" #f "\"bad request\"")
@@ -1210,6 +1224,12 @@
           ((pin-load) (pin-load id arg))
           ((pin-run-programs) (pin-run-programs id))
           ((pin-gc) (collect) (respond id #t "{\"collected\":true}"))
+          ((debug-gc-stats) (set! debug-gc-stats? #t) (respond id #t "{\"debug\":true}"))
+          ((pin-gc-stats)
+           (if (not debug-gc-stats?)
+               (respond-error id "E-DEBUG-DISABLED")
+               (guard (e [else (respond-error id "E-GC-STATS")])
+                 (respond id #t (json-value (gc-stats-json))))))
           ((pin-dynamic-call) (pin-dynamic-call id arg))
           ((pin-call) (pin-call id arg))
           ((pin-plugin-call) (pin-plugin-call id arg))

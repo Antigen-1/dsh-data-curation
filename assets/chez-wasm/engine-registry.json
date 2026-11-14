@@ -3,11 +3,11 @@
   "engines": {
     "chez-wasm-c-10.4.1-v1": {
       "assetsDir": "10.4.1-c",
-      "engineArtifactHash": "sha256:8ec8aa06a20f2c0a3ea512ac39a9f1f787eca75d68dfe0481dadd040029f8c4b",
+      "engineArtifactHash": "sha256:c3721ead4d1b9834ddc16723706087a1a186f732ee2f6ce3eb80d6d06d0d252b",
       "closure": [
         {
           "path": "scheme-c.js",
-          "sha256": "64aaecda2c6051a6dedd88a8992ac2bb3e2951b227b9d8925bb62a3981512b42",
+          "sha256": "0f1466dd0ca5ec9d8ff66ba1edf32803186123e8ef8f66a1c5116a99dfb52710",
           "size": 100027
         },
         {
@@ -17,8 +17,8 @@
         },
         {
           "path": "scheme-c.data",
-          "sha256": "a50164905073018857e51b44b0a5490bf70ad4615bc85b0e422a8e56219fe8f0",
-          "size": 3233188
+          "sha256": "bac6629aa34d9d3411582e103387d4521d911526826cc02af5bc912174b1811f",
+          "size": 3234024
         },
         {
           "path": "online-vm-abi.json",
@@ -27,7 +27,7 @@
         }
       ],
       "dataArchive": {
-        "remotePackageSize": 3233188,
+        "remotePackageSize": 3234024,
         "files": [
           {
             "filename": "/petite.boot",
@@ -46,21 +46,21 @@
           {
             "filename": "/online-vm-c.scm",
             "start": 3142946,
-            "end": 3197071,
-            "sha256": "9f3cc88bb3f69dd34adbb512c382e013f7a2a588e74c431d0c35fb4548eb74a3",
-            "size": 54125
+            "end": 3197907,
+            "sha256": "1b54cc2b1147ff0c7bf5605b98785bdb28d4d30ea72be4c1b77a4457c81e429b",
+            "size": 54961
           },
           {
             "filename": "/plugin-loader.scm",
-            "start": 3197071,
-            "end": 3216617,
+            "start": 3197907,
+            "end": 3217453,
             "sha256": "a8760f0eec976392714995f3c01a7edb2c8e4caebd90c47238eb1d50b56b2dd5",
             "size": 19546
           },
           {
             "filename": "/source-tree-reader.scm",
-            "start": 3216617,
-            "end": 3233188,
+            "start": 3217453,
+            "end": 3234024,
             "sha256": "bcdfe2c609ce0031f6c947043d28e56a37dff0772bd3e1ac7a1bfd5dd5b83b7f",
             "size": 16571
           }

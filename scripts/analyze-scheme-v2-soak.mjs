@@ -9,21 +9,140 @@ const samples = readFileSync(path, 'utf8')
   .split(/\r?\n/)
   .filter(Boolean)
   .map((line) => JSON.parse(line))
+  .sort((a, b) => a.t - b.t)
 
-const errors = samples.reduce((sum, sample) => sum + (sample.errors || 0), 0)
-const calls = samples.length > 0 ? samples[samples.length - 1].calls : 0
-const last = samples[samples.length - 1]
+const last = samples.at(-1)
 const first = samples[0]
-const tenMinutes = 10 * 60 * 1000
-const early = samples.filter((sample) => sample.t >= 5 * 60 * 1000 && sample.t < 15 * 60 * 1000)
-const late = samples.filter((sample) => sample.t >= last.t - tenMinutes)
 const mean = (values) => values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length)
-const earlyP95 = mean(early.map((sample) => sample.p95Ms))
-const lateP95 = mean(late.map((sample) => sample.p95Ms))
-const earlyP99 = mean(early.map((sample) => sample.p99Ms))
-const lateP99 = mean(late.map((sample) => sample.p99Ms))
+const median = (values) => {
+  if (values.length === 0) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle]
+}
+const quantile = (values, q) => {
+  if (values.length === 0) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * q) - 1))]
+}
+const theilSen = (points) => {
+  if (points.length < 2) return null
+  const slopes = []
+  for (let i = 0; i < points.length; i += 1) {
+    for (let j = i + 1; j < points.length; j += 1) {
+      const dt = (points[j].t - points[i].t) / 60000
+      if (dt !== 0) slopes.push((points[j].value - points[i].value) / dt)
+    }
+  }
+  return slopes.length === 0 ? null : median(slopes)
+}
+const bootstrapUpper = (points, rounds = 1000) => {
+  if (points.length < 2) return null
+  const slopes = []
+  for (let round = 0; round < rounds; round += 1) {
+    const resample = Array.from({ length: points.length }, () => points[Math.floor(Math.random() * points.length)])
+    const slope = theilSen(resample)
+    if (slope !== null) slopes.push(slope)
+  }
+  return slopes.length === 0 ? null : quantile(slopes, 0.95)
+}
 
-const lastThirty = samples.filter((sample) => sample.t >= last.t - 30 * 60 * 1000)
+const durationMs = last?.t ?? 0
+const errors = samples.reduce((sum, sample) => sum + (sample.errors || 0), 0)
+const calls = last?.calls ?? 0
+const warmupEnd = 10 * 60 * 1000
+const baselineStart = 10 * 60 * 1000
+const baselineEnd = 30 * 60 * 1000
+const baseline = samples.filter((sample) => sample.t >= baselineStart && sample.t < baselineEnd)
+const final = samples.filter((sample) => sample.t >= durationMs - 15 * 60 * 1000)
+const lastThirty = samples.filter((sample) => sample.t >= durationMs - 30 * 60 * 1000)
+const runtimeNames = [...new Set(samples.flatMap((sample) => Object.keys(sample.liveBytesByRuntime ?? {})))]
+const rssNames = [...new Set(samples.flatMap((sample) => Object.keys(sample.rssByRuntime ?? {})))]
+
+const perRuntime = {}
+for (const name of runtimeNames) {
+  const points = lastThirty
+    .map((sample) => ({ t: sample.t, value: sample.liveBytesByRuntime?.[name] }))
+    .filter((point) => Number.isFinite(point.value))
+  const baselineLive = baseline
+    .map((sample) => sample.liveBytesByRuntime?.[name])
+    .filter(Number.isFinite)
+  const finalLive = final
+    .map((sample) => sample.liveBytesByRuntime?.[name])
+    .filter(Number.isFinite)
+  const gcCounts = samples
+    .map((sample) => sample.rssByRuntime?.[name]?.gcCount)
+    .filter(Number.isFinite)
+  const fullCollectOk = samples.every((sample) => {
+    const entry = sample.rssByRuntime?.[name]
+    return !entry || entry.fullCollect !== false
+  })
+  const baselineMedian = median(baselineLive)
+  const finalMedian = median(finalLive)
+  const delta = baselineMedian === null || finalMedian === null ? null : finalMedian - baselineMedian
+  const slope = theilSen(points)
+  const upper = bootstrapUpper(points)
+  const monotonicallyIncreasingGc = gcCounts.every((value, index) => index === 0 || value >= gcCounts[index - 1])
+  perRuntime[name] = {
+    samples: points.length,
+    baselineSamples: baselineLive.length,
+    finalSamples: finalLive.length,
+    baselineMedian,
+    finalMedian,
+    delta,
+    slopeKiBPerMin: slope === null ? null : Number((slope / 1024).toFixed(3)),
+    slopeUpper95KiBPerMin: upper === null ? null : Number((upper / 1024).toFixed(3)),
+    gcCountFirst: gcCounts[0] ?? null,
+    gcCountLast: gcCounts.at(-1) ?? null,
+    gcCountMonotonic: monotonicallyIncreasingGc,
+    fullCollectOk,
+    pass:
+      delta !== null &&
+      delta <= 1024 * 1024 &&
+      upper !== null &&
+      upper / 1024 < 32 &&
+      monotonicallyIncreasingGc &&
+      fullCollectOk,
+  }
+}
+
+const rssGuardrail = {}
+for (const name of rssNames) {
+  const baselineRss = baseline
+    .map((sample) => sample.rssByRuntime?.[name]?.rss)
+    .filter(Number.isFinite)
+  const finalRss = final
+    .map((sample) => sample.rssByRuntime?.[name]?.rss)
+    .filter(Number.isFinite)
+  const baselineMedian = median(baselineRss)
+  const finalMedian = median(finalRss)
+  const delta = baselineMedian === null || finalMedian === null ? null : finalMedian - baselineMedian
+  const liveDelta = perRuntime[name]?.delta ?? null
+  const heapValues = final.map((sample) => sample.rssByRuntime?.[name]?.heapReservedBytes).filter(Number.isFinite)
+  const heapBaseline = baseline.map((sample) => sample.rssByRuntime?.[name]?.heapReservedBytes).filter(Number.isFinite)
+  const heapDelta = median(heapValues) === null || median(heapBaseline) === null
+    ? null
+    : median(heapValues) - median(heapBaseline)
+  rssGuardrail[name] = {
+    baselineMedian,
+    finalMedian,
+    delta,
+    liveDelta,
+    heapDelta,
+    conditional:
+      delta !== null &&
+      delta > 32 * 1024 * 1024 &&
+      (liveDelta === null || Math.abs(liveDelta) <= 1024 * 1024) &&
+      (heapDelta === null || Math.abs(heapDelta) <= 1024 * 1024),
+  }
+}
+
+const early = samples.filter((sample) => sample.t >= 5 * 60 * 1000 && sample.t < 15 * 60 * 1000)
+const late = final
+const earlyP95 = mean(early.map((sample) => sample.p95Ms).filter(Number.isFinite))
+const lateP95 = mean(late.map((sample) => sample.p95Ms).filter(Number.isFinite))
+const earlyP99 = mean(early.map((sample) => sample.p99Ms).filter(Number.isFinite))
+const lateP99 = mean(late.map((sample) => sample.p99Ms).filter(Number.isFinite))
 const rssSlope = (() => {
   if (lastThirty.length < 2) return null
   const xs = lastThirty.map((sample) => sample.t / 60000)
@@ -35,24 +154,41 @@ const rssSlope = (() => {
   return denominator === 0 ? 0 : numerator / denominator
 })()
 
+const failures = []
+if (samples.length < 50) failures.push('fewer than 50 samples')
+if (durationMs < 3600 * 1000 - 120 * 1000) failures.push(`duration ${durationMs}ms is below 1h`)
+if (errors !== 0) failures.push(`${errors} errors`)
+if ((last?.restarts ?? 0) !== 0) failures.push(`${last.restarts} restarts`)
+for (const [name, result] of Object.entries(perRuntime)) {
+  if (!result.pass) failures.push(`${name} liveBytes criterion failed`)
+}
+if (Object.keys(perRuntime).length === 0) failures.push('no liveBytes data')
+const conditional = Object.entries(rssGuardrail)
+  .filter(([, result]) => result.conditional)
+  .map(([name]) => name)
+
 const report = {
   path,
   samples: samples.length,
-  durationMs: last?.t ?? 0,
+  durationMs,
   calls,
   errors,
+  warmupEndMs: warmupEnd,
+  baselineWindowMs: [baselineStart, baselineEnd],
+  finalWindowMs: [Math.max(0, durationMs - 15 * 60 * 1000), durationMs],
   first: first ? { t: first.t, rss: first.rss, p95Ms: first.p95Ms, p99Ms: first.p99Ms } : null,
   last: last ? { t: last.t, rss: last.rss, wasmBytes: last.wasmBytes, p95Ms: last.p95Ms, p99Ms: last.p99Ms } : null,
-  earlyP95,
-  lateP95,
   p95Ratio: earlyP95 > 0 ? Number((lateP95 / earlyP95).toFixed(3)) : null,
-  earlyP99,
-  lateP99,
   p99Ratio: earlyP99 > 0 ? Number((lateP99 / earlyP99).toFixed(3)) : null,
   rssSlopeMiBPerMin: rssSlope === null ? null : Number(rssSlope.toFixed(3)),
   rssMax: Math.max(...samples.map((sample) => sample.rss ?? 0)),
   rssLast: last?.rss ?? null,
   restarts: Math.max(...samples.map((sample) => sample.restarts ?? 0)),
   heartbeatAgeMaxMs: Math.max(...samples.map((sample) => sample.heartbeatAgeMs ?? 0)),
+  perRuntime,
+  rssGuardrail,
+  verdict: failures.length > 0 ? 'FAIL' : conditional.length > 0 ? 'CONDITIONAL' : 'PASS',
+  failures,
+  conditional,
 }
 console.log(JSON.stringify(report, null, 2))

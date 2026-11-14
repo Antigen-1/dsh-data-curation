@@ -53,11 +53,13 @@ test('SchemeV2Runtime executes programs and registers dynamic rules', async () =
       result: ['strict', 42],
     }])
     assert.deepEqual(runtime.programResult('bootstrap', [1]), ['strict', 42])
-    assert.equal(runtime.rules.length, 1)
-    assert.equal(runtime.rules[0].id, 'total')
-    assert.deepEqual(runtime.rules[0].version, [1, 0, 0])
-    assert.equal(runtime.rules[0].source, 'program')
-    assert.match(runtime.rules[0].subject, /^[0-9a-f]{64}$/)
+    assert.equal(runtime.rules.length, 3)
+    assert.deepEqual(runtime.rules.map((rule) => rule.id).sort(), ['gc-drop', 'gc-hold', 'total'])
+    const totalRule = runtime.rules.find((rule) => rule.id === 'total')
+    assert.equal(totalRule.id, 'total')
+    assert.deepEqual(totalRule.version, [1, 0, 0])
+    assert.equal(totalRule.source, 'program')
+    assert.match(totalRule.subject, /^[0-9a-f]{64}$/)
     assert.equal(await runtime.callRule('total', [1, 0, 0], [21]), 42)
     await assert.rejects(
       runtime.callPlugin('bootstrap', [1], 'entry'),

@@ -21,6 +21,7 @@ test('TenantManager runs isolated workers and serializes commands', async (t) =>
   const manager = await TenantManager.open({
     projectRoot: root,
     maxQueue: 0,
+    debugGcStats: true,
     tenants: [
       { id: 'alpha', pin },
       { id: 'beta', pin },
@@ -36,6 +37,11 @@ test('TenantManager runs isolated workers and serializes commands', async (t) =>
   assert.equal(await manager.call('beta', 'rule.example'), 42)
   assert.equal((await manager.metrics('alpha')).calls >= 1, true)
   assert.equal((await manager.metrics('beta')).calls >= 1, true)
+  const gcStats = await manager.gcStats('alpha')
+  assert.equal(gcStats.isolation, 'process')
+  assert.equal(gcStats.fullCollect, true)
+  assert.ok(Number.isSafeInteger(gcStats.liveBytes) && gcStats.liveBytes > 0)
+  assert.ok(Number.isSafeInteger(gcStats.pid) && gcStats.pid > 0)
 
   const first = manager.call('alpha', 'rule.example')
   await assert.rejects(manager.call('alpha', 'rule.example'), (error) => error.code === 'E-TENANT-BUSY')

@@ -7,6 +7,43 @@ import { evaluateHeartbeat } from '../lib/rules/scheme/v2/supervisor.js'
 import { parseLinuxRss, createRssSampler } from '../lib/rules/scheme/v2/resource-sampler.js'
 
 const pin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-a.json', import.meta.url)), 'utf8'))
+const programPin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-program-a.json', import.meta.url)), 'utf8'))
+const programRoot = fileURLToPath(new URL('./fixtures/scheme-v2/program-project', import.meta.url))
+
+test('gcStats reports full-collect live bytes and advances gcCount', async (t) => {
+  const runtime = await SchemeV2Runtime.open(pin, { debugGcStats: true })
+  t.after(() => runtime.close().catch(() => {}))
+  const first = await runtime.gcStats()
+  assert.equal(first.fullCollect, true)
+  assert.equal(first.maxGeneration, 4)
+  assert.equal(first.radix, 4)
+  for (const key of ['liveBytes', 'heapReservedBytes', 'allocatedTotal', 'reclaimedTotal', 'gcCount']) {
+    assert.equal(Number.isSafeInteger(first[key]), true, key)
+    assert.ok(first[key] >= 0, key)
+  }
+  assert.equal(await runtime.call('rule.example'), 42)
+  const second = await runtime.gcStats()
+  assert.ok(second.gcCount > first.gcCount)
+  assert.ok(second.liveBytes > 0)
+})
+
+test('gcStats tracks a known live object across full collections', async (t) => {
+  const runtime = await SchemeV2Runtime.open(programPin, { projectRoot: programRoot, debugGcStats: true })
+  t.after(() => runtime.close().catch(() => {}))
+  const before = await runtime.gcStats()
+  assert.equal(await runtime.callRule('gc-hold', [1, 0, 0]), 1)
+  const held = await runtime.gcStats()
+  assert.ok(
+    held.liveBytes - before.liveBytes > 4 * 1024 * 1024,
+    `expected liveBytes to grow by at least 4 MiB, before=${before.liveBytes} held=${held.liveBytes}`,
+  )
+  assert.equal(await runtime.callRule('gc-drop', [1, 0, 0]), 1)
+  const dropped = await runtime.gcStats()
+  assert.ok(
+    dropped.liveBytes - before.liveBytes < 2 * 1024 * 1024,
+    `expected liveBytes to return near baseline, before=${before.liveBytes} dropped=${dropped.liveBytes}`,
+  )
+})
 
 test('parseLinuxRss reads VmRSS in bytes', () => {
   assert.equal(parseLinuxRss('Name:\tnode\nVmRSS:\t  12345 kB\n'), 12345 * 1024)

@@ -43,9 +43,10 @@
   被引用的外部脚本，换个地方解开就能继续核对漂移。
 
 用的是 Node 内置 `node:sqlite`：**不引第三方依赖**。该模块自 Node 23.4 起无需
-flag，因此本包要求 **Node >= 24**（`engines` 已声明）。包级平台门禁为
-**Windows x64**（`os: ["win32"]`、`cpu: ["x64"]`），Scheme v2 运行时另在
-`SchemeV2Runtime.open` 做同样的运行期检查，不匹配抛 `E-UNSUPPORTED-PLATFORM`。
+flag，因此本包要求 **Node >= 24**（`engines` 已声明；默认只警告、不阻止安装）。包没有 OS/CPU 安装门禁；
+Scheme v2 的 Wasm 引擎与 JS glue 不绑定特定平台。`SchemeV2Runtime.open` 仍会检查 Node major >=24，
+不满足抛 `E-UNSUPPORTED-PLATFORM`。当前验证基线是 **Windows x64 + Node 24**；Linux x64 + Node 24
+已跑通全量测试，macOS 尚未验证，遇到问题请附平台信息报告。
 
 ## 两层 pin（v5）
 
@@ -421,5 +422,5 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前候选版本 0.21.0（多租户 Worker runtime；Scheme v2 opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未发布到 npm。
-- 版本号不是发布：只有打了 tag 才算发布；下一发布版本可 bump 到 0.20.1、0.21.0 或更高，未打 tag 的 commit/package 都只是候选。
+- 当前候选版本 0.21.1（多租户 Worker runtime；Scheme v2 opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未正式发布。
+- 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选，本次 0.21.1 不是正式发布。

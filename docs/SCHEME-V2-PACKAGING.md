@@ -1,12 +1,14 @@
-# Scheme v2 发布包边界（0.20.0 候选）
+# Scheme v2 发布包边界
 
-0.20.0 指当前候选包；候选版本号可自由 bump，只有打 tag 才算发布。本文的包/闭包结论对候选和最终 tag 同样适用。
+0.21.1 指当前候选包；候选版本号可自由 bump，只有 annotated tag 才算正式发布。本次 0.21.1 是候选，不是正式发布。本文的包/闭包结论对候选和最终版本同样适用。
 
 ## 平台
 
-- 运行时承诺：`win32-x64`，bundled Node.js 24（`package.json` 的 `os`/`cpu` 门禁）。
+- 运行时要求：Node.js 24 或更新（`engines.node`）。
+- 引擎形态：wasm32 + JS glue；没有 native addon，也没有 Win32 API 调用，因此不绑定 CPU 架构或操作系统。
+- 当前发布验证基线：`win32-x64` + Node.js 24。
+- Linux x64 + Node.js 24 已跑通全量测试（388/388）；macOS 尚未验证；Windows x64 + Node.js 24 仍是验证基线。包不再用 `os`/`cpu` 阻止安装，运行时也不再按平台直接拒绝。
 - 构建工具链：Emscripten 3.1.6、Chez Scheme 10.4.1。
-- 不承诺 Linux/macOS；跨平台留到后续阶段，不能把当前 Win32 通过当作跨平台证据。
 
 ## 发布闭包
 
@@ -27,7 +29,7 @@
 - Chez Scheme 10.4.1：Apache-2.0，副本 `LICENSES/Apache-2.0.txt`。
 - Emscripten 3.1.6 生成的 glue/runtime：MIT/UIUC，副本 `LICENSES/MIT.txt`，上游 LICENSE 链接见 `NOTICE`。
 - lz4：BSD-2-Clause，副本 `LICENSES/BSD-2-Clause.txt`。
-- Node.js 不随包分发，由宿主提供；平台门禁要求 Node >=24。
+- Node.js 不随包分发，由宿主提供；运行时要求 Node >=24（`engines.node` 是声明，默认不阻止安装；Scheme v2 `open` 时仍会检查并抛 `E-UNSUPPORTED-PLATFORM`）。
 
 二进制分发同样触发这些许可的 notice/source-offer 义务；不能因为“没有分发源码”而省略。
 
@@ -41,7 +43,7 @@
   - `node scripts/make-scheme-v2-plugin-fixture.mjs`
   - `node scripts/make-scheme-v2-program-fixture.mjs`
   - `node scripts/make-scheme-v2-program-static-fixture.mjs`
-- 若后续要求 bit-reproducible 发布，需要先修复 Emscripten glue 的路径/顺序差异，或改为只发布 wasm/data、由审核过的固定 glue 加载；0.20.0 不宣称已做到。
+- 若后续要求 bit-reproducible 发布，需要先修复 Emscripten glue 的路径/顺序差异，或改为只发布 wasm/data、由审核过的固定 glue 加载；0.21.1 不宣称已做到。
 
 ## 自检
 

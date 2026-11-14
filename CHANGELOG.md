@@ -6,10 +6,17 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.21.1] — 2026-11-14 (unreleased candidate)
+
+### Changed
+
+- 移除 `package.json` 的 `os: ["win32"]` / `cpu: ["x64"]` 安装门禁，以及 Scheme v2
+  运行时的 win32-x64 检查；只保留 Node >= 24。当前验证基线仍是 Windows x64，
+  Linux/macOS 为实验性平台。
+
 ## [0.21.0] — 2026-11-14 (unreleased candidate)
 
-0.21.0 是当前候选版本；相对未发布的 0.20.0 候选，新增多租户 Worker runtime。
-版本号不是发布，只有打了 tag 才算发布。
+0.21.0 是首个带多租户 Worker runtime 的候选版本；相对 0.20.0 候选，新增 `TenantManager`。
 
 ### Added
 
@@ -35,7 +42,7 @@ versions follow [SemVer](https://semver.org/).
 - `CvmSupervisor`：可选 `supervised: true`，支持 kill/restart、超时和崩溃恢复；FFI 与
   `ffiModules` 在子进程内执行，provider 超时终止该子进程。
 - `runtime.gc()` / `runtime.metrics()`：GC 触发、RSS/Wasm 字节与调用/错误/规则计数。
-- 发布包 P4：`NOTICE`、`LICENSES/`、平台门禁、engine 闭包与可复现性结论；
+- 发布包 P4：`NOTICE`、`LICENSES/`、平台边界、engine 闭包与可复现性结论；
   `docs/PIN-V2.md`、`docs/SCHEME-V2-PACKAGING.md`、`docs/SCHEME-V2-PERF.md`。
 
 ### Changed

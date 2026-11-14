@@ -122,11 +122,11 @@ VM/规则/FFI 的底层错误码（`E-RULE-*`、`E-FFI-*`、`E-PLUGIN-*`）在�
 - `terminate()` 立即把租户标记为 crashed，拒绝排队/在途命令，然后终止 Worker；之后必须 `restart()`。
 - `metrics()` 返回该租户 VM 的 calls/errors/gcs/延迟窗口/内存；不会聚合其他租户。
 - 日志：当前 manager/worker 不输出审计日志；不要把日志作为可用的可观测性承诺。
-- 平台：当前候选仅 Windows x64 + Node >= 24；其他平台在 `SchemeV2Runtime.open` 入口拒绝。
+- 平台：要求 Node >= 24；不再按 OS/CPU 拒绝。当前验证基线是 Windows x64，Linux/macOS 为实验性平台。
 
 ## 6. 验证
 
 - `test/scheme-v2-tenant.test.js`：两租户独立调用、队列满、关闭隔离、restart/terminate、FFI 租户、非法 id、插件根、restart 窗口、gc。
-- 全量：387 tests / 386 pass / 1 skip（Windows symlink 权限）。
+- 全量：Windows 388 tests / 387 pass / 1 skip（symlink 权限）；Linux x64 + Node 24 388/388。
 - selfcheck：106 个发布文件。
-- 独立审阅已完成一轮；findings 已修复，fix-verification 待记录最终 tree/commit。
+- 独立审阅与 fix-verification 已完成，最终审阅记录见 `docs/reviews/scheme-v2-plugins-0.20.0.md` 后续租户段落。

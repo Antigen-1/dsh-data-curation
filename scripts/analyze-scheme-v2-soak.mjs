@@ -145,9 +145,20 @@ for (const name of rssNames) {
     : median(heapValues) - median(heapBaseline)
   const parentBaseline = baseline.map((sample) => sample.parentRss).filter(Number.isFinite)
   const parentFinal = final.map((sample) => sample.parentRss).filter(Number.isFinite)
-  const parentDelta = median(parentBaseline) === null || median(parentFinal) === null
+  const parentRssDelta = median(parentBaseline) === null || median(parentFinal) === null
     ? null
     : median(parentFinal) - median(parentBaseline)
+  const parentHeapBaseline = baseline
+    .map((sample) => sample.parentMemory?.heapUsed)
+    .filter(Number.isFinite)
+  const parentHeapFinal = final
+    .map((sample) => sample.parentMemory?.heapUsed)
+    .filter(Number.isFinite)
+  const parentHeapDelta = median(parentHeapBaseline) === null || median(parentHeapFinal) === null
+    ? null
+    : median(parentHeapFinal) - median(parentHeapBaseline)
+  const parentGcSamples = samples.filter((sample) => sample.parentGc === true).length
+  const parentHeapNormalized = parentGcSamples > 0 && parentHeapDelta !== null
   const wasmValues = final.map((sample) => sample.rssByRuntime?.[name]?.wasmBytes).filter(Number.isFinite)
   rssGuardrail[name] = {
     baselineMedian,
@@ -155,12 +166,17 @@ for (const name of rssNames) {
     delta,
     liveDelta,
     heapDelta,
-    parentDelta,
+    parentRssDelta,
+    parentHeapDelta,
+    parentGcSamples,
+    parentHeapNormalized,
     parentMax: samples.map((sample) => sample.parentRss).filter(Number.isFinite).reduce((max, value) => Math.max(max, value), 0),
     wasmMax: wasmValues.reduce((max, value) => Math.max(max, value), 0),
     conditional:
       (delta !== null && delta > 32 * 1024 * 1024 && (liveDelta === null || Math.abs(liveDelta) <= 1024 * 1024)) ||
-      (parentDelta !== null && parentDelta > 32 * 1024 * 1024),
+      (parentHeapNormalized
+        ? parentHeapDelta > 32 * 1024 * 1024
+        : parentRssDelta !== null && parentRssDelta > 32 * 1024 * 1024),
   }
 }
 
@@ -211,6 +227,8 @@ const report = {
   gcStatsErrors,
   gcPauseP95Ms: quantile(Object.values(perRuntime).map((entry) => entry.gcPauseP95Ms).filter(Number.isFinite), 0.95),
   parentRssMax: Math.max(...samples.map((sample) => sample.parentRss ?? 0)),
+  parentHeapUsedMax: Math.max(...samples.map((sample) => sample.parentMemory?.heapUsed ?? 0)),
+  parentGcSamples: samples.filter((sample) => sample.parentGc === true).length,
   warmupEndMs: warmupEnd,
   baselineWindowMs: [baselineStart, baselineEnd],
   finalWindowMs: [Math.max(0, durationMs - 15 * 60 * 1000), durationMs],

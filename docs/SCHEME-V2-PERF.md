@@ -136,6 +136,26 @@ RSS 从 187.5MiB 升至 231.2MiB，10 分钟斜率 +3.785MiB/min，尚未证明�
 Linux 只作为 10 分钟 smoke，不作为 1 小时长稳证据。WSL 在 smoke 后关闭命令返回
 `Wsl/E_ACCESSDENIED`，本次没有依赖后续 WSL 状态。
 
+## Parent RSS：V8 页保留，不是 Emscripten 堆
+
+0.22.1 final5 的 parent RSS 从 baseline 中位数 106.7MiB 升到 final 149.5MiB
+（+42.8MiB），但四个 child 的 Wasm 堆恒定为 60.4MB，child RSS 末值反而低于
+baseline。parent 是 Node 编排进程，不加载 Wasm；该增长不是 Emscripten 泄漏。
+
+0.22.2 的 benchmark 记录 parent 的 `rss/heapTotal/heapUsed/external/arrayBuffers`。
+2 分钟 supervised 诊断（`--expose-gc` + `DSH_MIXED_PARENT_GC=1`，20s 采样）：
+
+```json
+{"parentRssMB":[59.0,66.9,68.6,80.0,57.3],"heapUsedMB":[8.4,9.0,9.4,9.8,9.8],"externalMB":[2.6,2.6,2.6,2.6,2.6]}
+```
+
+heapUsed 稳定在 8.4–9.8MiB，heapTotal 随 V8 扩容/回收波动，强制 GC 后 RSS
+回落到 57.3MiB。结论：raw RSS 是 Node/V8 页保留的上下文指标，不是 live heap
+泄漏判据。0.22.2 analyzer 仅在存在 GC-normalized parent heap 样本时按
+parent heap delta 判 conditional；否则回退到 raw parent RSS。raw parent RSS
+始终保留 512MiB 硬上限。旧 final5 没有 heapUsed 字段，仍按原 raw RSS 判据
+保持 CONDITIONAL，不追溯改判。
+
 ## 解读与边界
 
 - 1 小时单 VM 串行长稳：34,621,517 次、0 error、p50 0.068–0.107ms、Wasm 恒定 60.4MB；RSS 随 GC 波动但不单调增长。

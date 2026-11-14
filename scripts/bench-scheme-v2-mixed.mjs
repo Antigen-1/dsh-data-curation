@@ -52,6 +52,17 @@ let lastCallMs = null
 let finalMetrics = null
 let finalGc = null
 const percentile = (values, p) => values.length === 0 ? null : values[Math.min(values.length - 1, Math.floor(values.length * p))]
+const parentMemory = () => {
+  const usage = process.memoryUsage()
+  return {
+    rss: usage.rss,
+    heapTotal: usage.heapTotal,
+    heapUsed: usage.heapUsed,
+    external: usage.external,
+    arrayBuffers: usage.arrayBuffers,
+  }
+}
+const parentGc = process.env.DSH_MIXED_PARENT_GC === '1' && typeof global.gc === 'function'
 
 try {
   while (performance.now() - started < durationMs) {
@@ -115,6 +126,8 @@ try {
       }
       const rssValues = Object.values(byRuntime).map((entry) => entry.rss).filter(Number.isFinite)
       const sorted = [...windowLatencies].sort((a, b) => a - b)
+      if (parentGc) global.gc()
+      const parent = parentMemory()
       const sample = {
         t: Math.round(performance.now() - started),
         calls,
@@ -130,7 +143,9 @@ try {
         p95Ms: Number((percentile(sorted, 0.95) ?? 0).toFixed(3)),
         p99Ms: Number((percentile(sorted, 0.99) ?? 0).toFixed(3)),
         lastMs: lastCallMs,
-        parentRss: process.memoryUsage().rss,
+        parentRss: parent.rss,
+        parentMemory: parent,
+        parentGc,
         rss: rssValues.length > 0 ? Math.max(...rssValues) : null,
         rssByRuntime: byRuntime,
         liveBytesByRuntime: Object.fromEntries(

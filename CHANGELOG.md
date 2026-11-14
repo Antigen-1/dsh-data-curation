@@ -6,6 +6,29 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.22.2] — 2026-11-15 (unreleased candidate)
+
+0.22.2 修正 0.22.1 final5 的 parent RSS 判定口径：parent RSS 是 Node/V8
+页保留，不是 Emscripten/Wasm 堆增长。benchmark 现在记录 parent 的
+`rss/heapTotal/heapUsed/external/arrayBuffers`，并可用 `--expose-gc` +
+`DSH_MIXED_PARENT_GC=1` 做 GC 归一化诊断。analyzer 仅在存在强制 GC
+的 parent heap 样本时用 parent heap delta 作为 32MiB conditional 判据；
+否则回退到 raw parent RSS 判据。raw parent RSS 始终保留 512MiB 硬上限
+与上下文；final5 没有 heapUsed 样本，不追溯改判。
+
+### Added
+
+- parent memory breakdown 与 `parentGc` 采样字段。
+- parent RSS 诊断：2 分钟 supervised run 中 heapUsed 8.4→9.8MiB，raw RSS
+  59→57.3MiB（强制 GC 后回落），确认 raw RSS 波动来自 V8 页保留而非 live
+  heap 泄漏。
+
+### Changed
+
+- analyzer 增加 `parentHeapDelta`、`parentRssDelta`、`parentHeapUsedMax`、
+  `parentGcSamples`、`parentHeapNormalized`；raw RSS 仅在无 GC-normalized
+  heap 样本时触发 conditional。
+
 ## [0.22.1] — 2026-11-14 (unreleased candidate)
 
 0.22.1 在 0.22.0 的资源监督基础上，把长稳泄漏判据从 OS RSS 改为 Chez full-GC 后的

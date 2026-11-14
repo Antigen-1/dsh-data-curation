@@ -115,10 +115,12 @@ security、code、release/runtime 三路独立审阅一致 **NO-GO**。审阅覆
 - 验证：tenant 6/6；全量 388 tests / 387 pass / 1 skip / 0 fail（67.5s）；selfcheck 106。
 - fix-verification 代码树：`234306d98d9fa6f05f87e83e8d1cc046890f219b`（不含本记录更新）。
 - 第一轮 fix-verification 发现的 HIGH 队列悬挂已修复：VM `E-TIMEOUT`/`E-VM-DEAD`/`E-VM-CLOSED`/`E-VM-EXIT` 转 crashed 时立即拒绝 active 与全部 queued pending（`E-TENANT-CRASH`），不再等待外部 restart/close。
+- 第二轮只读 fix-verification：**APPROVE**（无 open HIGH/MEDIUM）；审阅 tree `5d78308be8d88cf66466469289418c15046cf942`；实现提交 `09a085c573a2b9bad655d95d57cb9d6661480b7b`。
 
 仍未关闭：
 
-- 三路审阅均未 APPROVE；修复后未再做第三轮独立审阅。
+- 只读 fix-verification 是 APPROVE，但它不是原三路审阅的签字；原始 security/code/release 结论仍是 CONDITIONAL。
+- 剩余 LOW：terminate 在 restart 期间等待、并发 close 非严格幂等、restart opening 阶段返回 `E-TENANT-OPEN`、缺少 rules/scheme 时 raw ENOENT、部分 death code 与 LOW 修复无专项测试；文档计数还有少量漂移。
 - supervisor child 早期 IPC 消息丢弃、双 VM 并发设备名隔离/跨 subject forgery 仍只有静态或单 VM 测试。
 - 完整 1h 混合负载仍按 5C 留发布后；manager 侧超时只能保证调用方 settle，不能保证同步阻塞 provider 的外部副作用被撤销。
-- 不宣称多租户生产可用；未提交、未打 tag、未发布。
+- 不宣称多租户生产可用；未打 tag、未发布。

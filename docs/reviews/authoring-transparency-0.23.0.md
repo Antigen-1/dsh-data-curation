@@ -2,7 +2,7 @@
 
 - 版本：0.23.0（候选，未打 tag、未发布 npm）
 - 范围：`b51bc08`（0.23.0 作者化与透明度实现）及修复 `940ecd7`、`0d4371a`
-- 验证：`node --test test/*.test.js` → 412 tests / 411 pass / 1 skip / 0 fail；
+- 验证：`node --test test/*.test.js` → 413 tests / 412 pass / 1 skip / 0 fail；
   `node scripts/selfcheck.mjs` → 136 个发布文件通过。
 
 ## 独立实现审阅

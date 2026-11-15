@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { PIN_VERSION, mergeTable, pinHash, validatePin } from '../lib/pin.js'
 import example from '../templates/pin.example.json' with { type: 'json' }
+import multitable from '../templates/scheme-v2/multitable-pin.json' with { type: 'json' }
 
 const base = () => ({
   version: 5,
@@ -102,4 +103,12 @@ test('pinHash 与表顺序无关、与 undefined 键无关', () => {
   const a = validatePin(base()).pin
   const shuffled = { ...base(), tables: [...base().tables].reverse(), ignored: undefined }
   assert.equal(pinHash(a), pinHash(validatePin(shuffled).pin))
+})
+
+test('多表模板保持可签署且每张表有独立交付键', () => {
+  const check = validatePin(multitable)
+  assert.equal(check.ok, true, JSON.stringify(check.problems))
+  assert.equal(check.pin.version, PIN_VERSION)
+  assert.deepEqual(check.pin.tables.map((t) => t.table), ['detail', 'summary'])
+  assert.deepEqual(check.pin.tables.map((t) => t.key), ['record_id', 'record_id'])
 })

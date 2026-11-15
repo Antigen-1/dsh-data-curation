@@ -46,7 +46,8 @@
 flag，因此本包要求 **Node >= 24**（`engines` 已声明；默认只警告、不阻止安装）。包没有 OS/CPU 安装门禁；
 Scheme v2 的 Wasm 引擎与 JS glue 不绑定特定平台。`SchemeV2Runtime.open` 仍会检查 Node major >=24，
 不满足抛 `E-UNSUPPORTED-PLATFORM`。当前验证基线是 **Windows x64 + Node 24**；Linux x64 + Node 24
-已跑通全量测试，macOS 尚未验证，遇到问题请附平台信息报告。
+已跑通全量测试；Linux aarch64 有使用者报告可正常工作（本仓库未复跑）；macOS 尚未验证，
+遇到问题请附平台信息报告。
 
 ## 两层 pin（v5）
 

@@ -21,9 +21,12 @@ diagnosed without guessing which “v2” is in play.
 ## Platform support
 
 - Supported: Node.js 24 or newer. The package no longer restricts `os`/`cpu`.
+- The Scheme v2 engine and JS glue contain no platform-dependent code (no native
+  addon, no Win32-only API).
 - Tested: Windows x64 and Linux x64 (Node 24).
-- Experimental: macOS and other Node-24 platforms; the Wasm engine has no
-  native addon or Win32-only API, but the 1-hour evidence is Windows-only.
+- Reported working: Linux aarch64 (user report; not re-run in this repository).
+- macOS and other Node-24 platforms are experimental; the 1-hour evidence is
+  Windows-only. They are not blocked at install or runtime.
 - The runtime refuses only an old Node version (`E-UNSUPPORTED-PLATFORM`).
 
 `engines.node` is a declaration for package managers; the runtime check is the

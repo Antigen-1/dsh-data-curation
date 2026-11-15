@@ -2,7 +2,7 @@
   "version": 5,
   "project": {
     "name": "多表交付示例",
-    "description": "演示两张表共享 defaults、逐表覆盖 gates，并给单表挂 verifyCmd。"
+    "description": "演示两张表共享 defaults、逐表覆盖 gates；verifyCmd 需替换为项目自己的检查命令。"
   },
   "defaults": {
     "channels": [
@@ -26,8 +26,7 @@
         { "name": "measured_value", "type": "number", "allowEmpty": true }
       ],
       "gates": {
-        "minAcceptedRatio": 1,
-        "verifyCmd": "node tools/check-summary.mjs"
+        "minAcceptedRatio": 1
       }
     },
     {

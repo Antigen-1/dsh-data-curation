@@ -62,7 +62,7 @@ const pin = await buildSchemeV2Pin({
   project: { name: 'demo' },
   modules: [{ id: 'math', version: [1, 0, 0], source: '(library ...)' }],
   rules: [{ id: 'rule.example', version: [1, 0, 0], source: '(library ...)' }],
-  plugins: [{ id: 'demo', version: [1, 0, 0], kind: 'library', source: '(library ...)' }],
+  plugins: [{ id: 'demo', version: [1, 0, 0], kind: 'library', source: '(library ...)', exports: ['demo'] }],
   ffi: [],
 })
 ```

@@ -136,6 +136,11 @@ test('全部公开 curation_* 工具的真实成功路径都可执行并渲染',
       const rulesSource = '(register-rule! "scheme.audit" "1" (lambda (input) (object "checks" (list))) (object "role" "verify"))'
       const checked = await run('curation_pin', { pin, rulesSource, dryRun: true })
       assert.equal(checked.value.dryRun, true)
+      const conflict = await byName.get('curation_pin').execute({
+        cwd: root, pin: { ...pin, rules: {} }, rulesSource, dryRun: true,
+      })
+      assert.equal(conflict.ok, false)
+      assert.match(conflict.error, /不能与 pin\.rules 同时提供/)
     })
     await t.test('curation_scheme_v2_validate', async () => {
       const source = '(library (dsh rule rule.tool (1 0 0)) (export entry) (import (rnrs base (6))) (define (entry x) x))'

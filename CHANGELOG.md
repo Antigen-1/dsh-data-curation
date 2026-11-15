@@ -29,7 +29,7 @@ versions follow [SemVer](https://semver.org/).
 
 - Windows x64 / Node 24：`node --test test/*.test.js`，412 tests，
   411 pass、1 skip（当前账户无 symlink 权限）、0 fail。
-- `node scripts/selfcheck.mjs`：135 个发布文件通过。
+- `node scripts/selfcheck.mjs`：136 个发布文件通过。
 - 新 engine `781f7aa4...` 已重建；六个 v2 fixture 与
   `assets/chez-wasm/engine-registry.json` 已同步。
 - 新增 `curation_scheme_v2_validate` 与 `rulesSource` 的真实工具路径测试；

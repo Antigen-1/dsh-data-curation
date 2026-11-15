@@ -15,6 +15,9 @@ A “v1” pin-rule DSL is the optional `pin.rules` block in v5, not an older pi
 schema. A `dsh-pin/v2` pin is a separate opt-in format and is never migrated
 from v5 automatically.
 
+`curation_status` reports these axes under `versions` so a project can be
+diagnosed without guessing which “v2” is in play.
+
 ## Platform support
 
 - Supported: Node.js 24 or newer. The package no longer restricts `os`/`cpu`.

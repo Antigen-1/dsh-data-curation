@@ -429,7 +429,7 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前候选版本 0.23.0（v2 pin builder/hash、结构化错误、独立 v2 校验、rulesSource、覆盖明细与进阶模板；Scheme v2
-  opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未正式发布。
-- 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选，本次 0.23.0 不是正式发布。
+- 当前发布版本 0.23.0（v2 pin builder/hash、结构化错误、独立 v2 校验、rulesSource、覆盖明细与进阶模板；Scheme v2
+  opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；发布标记为 annotated tag `v0.23.0`。
+- 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选。
 - `gcStats()` 需要显式 `debugGcStats: true`；默认关闭，只用于诊断，不改变生产路径。

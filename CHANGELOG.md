@@ -6,7 +6,7 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.23.0] — 2026-11-15 (unreleased candidate)
+## [0.23.0] — 2026-11-15
 
 ### Added
 
@@ -30,6 +30,9 @@ versions follow [SemVer](https://semver.org/).
 - Windows x64 / Node 24：`node --test test/*.test.js`，413 tests，
   412 pass、1 skip（当前账户无 symlink 权限）、0 fail。
 - `node scripts/selfcheck.mjs`：136 个发布文件通过。
+- 发布 tarball：3,215,264 bytes，SHA-256
+  `C8DF9241CC669F50DCB421C38A63BDF9901A7037058D1300DD9FDE28F994F50F`；
+  解包后 selfcheck 136 个文件通过。
 - 新 engine `781f7aa4...` 已重建；六个 v2 fixture 与
   `assets/chez-wasm/engine-registry.json` 已同步。
 - 新增 `curation_scheme_v2_validate` 与 `rulesSource` 的真实工具路径测试；

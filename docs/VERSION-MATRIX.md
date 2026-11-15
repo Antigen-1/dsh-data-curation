@@ -9,7 +9,7 @@ contract and do not move together.
 | Contract | `4` | `lib/contract.js` `CONTRACT_VERSION` | table field/normalization/evidence contract |
 | State DB schema | `6` | `lib/db.js` `STATE_SCHEMA_VERSION` | `.curation/project.sqlite` migrations |
 | Scheme runtime | `v2` | `dsh-pin/v2` | explicit opt-in `SchemeV2Runtime` pin |
-| Package | `0.23.0` | `package.json` | npm/tarball version, independent of the four contracts |
+| Package | `0.23.1` | `package.json` | npm/tarball version, independent of the four contracts |
 
 A “v1” pin-rule DSL is the optional `pin.rules` block in v5, not an older pin
 schema. A `dsh-pin/v2` pin is a separate opt-in format and is never migrated

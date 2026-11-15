@@ -208,8 +208,9 @@ test('全部公开 curation_* 工具的真实成功路径都可执行并渲染',
       const { value } = await run('curation_status')
       assert.ok(value.manifest)
       assert.ok(value.pin)
+      const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
       assert.deepEqual(value.versions, {
-        package: '0.23.0', pin: 5, contract: 4, stateSchema: 6, schemeRules: 'v2',
+        package: pkg.version, pin: 5, contract: 4, stateSchema: 6, schemeRules: 'v2',
       })
     })
     await t.test('curation_query', async () => {

@@ -10,7 +10,7 @@ For runtime plugins, create a project root with:
 
 ```text
 rules/scheme/lib/dsh/plugin/<id>/<version>.sls
-rules/scheme/programs/*.scm
+rules/scheme/programs/<id>/<version>.scm
 ```
 
 Then build the pin with `buildSchemeV2Pin({ plugins: [...] })` and open it with

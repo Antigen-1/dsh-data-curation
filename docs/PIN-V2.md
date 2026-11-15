@@ -151,6 +151,8 @@ await runtime.callRule('total', [1, 0, 0], [21])
 
 `call` 只用于 pin 里的静态规则；`callRule` 只用于 program 用 `register-rule!` 注册的动态规则。对静态规则误用 `callRule` 会报 `E-RULE-NOT-LOADED`，消息会提示改用 `call(id, args)`。
 
+上面的 pin 示例里的 `signature` 是可选字段；`buildSchemeV2Pin` 在调用方未提供时不会写入，也不会猜测 arity。
+
 ```js
 runtime.programResult('bootstrap', [1, 0, 0])
 runtime.rules      // 数组；静态 source:'static'，动态 source:'program'

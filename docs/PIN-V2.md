@@ -100,7 +100,7 @@ bytevector 0x0A | u32(length) | bytes
 ## 固定搜索路径
 
 - library：`<project>/rules/scheme/lib/dsh/<kind>/<id>/<version>.sls`，其中 `<version>` 是点号连接（`[1,0,0]` → `1.0.0`）。
-- program：`<project>/rules/scheme/programs/*.scm`。
+- program：`<project>/rules/scheme/programs/<id>/<version>.scm`；`buildSchemeV2Pin` 未显式给 `path` 时使用该默认，版本是点号连接（`[1,0,0]` → `1.0.0`）。
 - 运行时只挂载 pin 列出的文件到 MEMFS 的 `/project/rules/scheme/...`；不开放任意搜索路径配置。
 - 每个文件必须是常规文件，拒绝 symlink、`..` 越界和未列入 pin 的文件；UTF-8 非法或含 NUL 直接失败。
 
@@ -147,6 +147,11 @@ await runtime.call('rule.example', [1, 2])           // 位置参数形式
 await runtime.call('rule.example', { procedure: 'entry', args: [1, 2] })
 await runtime.callPlugin('demo', [1, 0, 0], 'answer', [])
 await runtime.callRule('total', [1, 0, 0], [21])
+```
+
+`call` 只用于 pin 里的静态规则；`callRule` 只用于 program 用 `register-rule!` 注册的动态规则。对静态规则误用 `callRule` 会报 `E-RULE-NOT-LOADED`，消息会提示改用 `call(id, args)`。
+
+```js
 runtime.programResult('bootstrap', [1, 0, 0])
 runtime.rules      // 数组；静态 source:'static'，动态 source:'program'
 runtime.metrics() // calls/errors/gcs/rss/wasmBytes/...
@@ -165,4 +170,4 @@ await runtime.close()
 - `supervised: true` 也支持 FFI；`ffiModules` 在 supervisor 子进程内预加载/执行，provider 超时会终止该子进程，父进程保持存活并可 restart。
 - MEMFS 的 `/project` 只读，`/out` 有配额；输出有上限。
 - 没有 OS 级 RSS 硬上限；Wasm 线性内存上限为 512MiB（构建期 `MAXIMUM_MEMORY`），超限分配会失败而不是无限增长；Wasm/Node Worker 不是 OS 安全边界；单租户可信项目。
-- `signature` 只是纳入 hash 的完整性元数据，不强制 arity 或返回类型。
+- `signature` 只是纳入 hash 的完整性元数据，不强制 arity 或返回类型。`buildSchemeV2Pin` 在调用方未提供 `signature` 时不写入默认 arity；只有显式给出 `{inputs, output, variadic?}` 时才写入 pin。不要用空 `inputs` 猜测真实参数表。

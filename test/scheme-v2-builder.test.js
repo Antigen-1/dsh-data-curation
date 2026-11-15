@@ -56,6 +56,10 @@ test('buildSchemeV2Pin hashes sources and produces a runnable pin', async () => 
   const runtime = await SchemeV2Runtime.open(pin)
   try {
     assert.equal(await runtime.call('builder.rule'), 2)
+    await assert.rejects(
+      runtime.callRule('builder.rule', [1, 0, 0], []),
+      (error) => error.code === 'E-RULE-NOT-LOADED' && /call\(id, args\)/.test(error.message),
+    )
   } finally {
     await runtime.close()
   }
@@ -75,6 +79,33 @@ test('buildSchemeV2Pin rejects malformed signatures before emitting a pin', asyn
   )
 })
 
+test('buildSchemeV2Pin uses the documented default program path', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-builder-program-'))
+  const source = ['(import (rnrs base (6)))', '42', ''].join('\n')
+  try {
+    const pin = await buildSchemeV2Pin({
+      project: 'builder-program-test',
+      plugins: [{
+        id: 'builder-program',
+        version: [1, 0, 0],
+        kind: 'program',
+        source,
+      }],
+    })
+    assert.equal(pin.plugins[0].path, 'programs/builder-program/1.0.0.scm')
+    const programPath = join(root, 'rules', 'scheme', pin.plugins[0].path)
+    await mkdir(join(programPath, '..'), { recursive: true })
+    await writeFile(programPath, source, 'utf8')
+    const runtime = await SchemeV2Runtime.open(pin, { projectRoot: root })
+    try {
+      assert.equal(await runtime.programResult('builder-program', [1, 0, 0]), 42)
+    } finally {
+      await runtime.close()
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
 test('buildSchemeV2Pin includes plugins in pin verification and runtime loading', async () => {
   const root = await mkdtemp(join(tmpdir(), 'dsh-builder-plugin-'))
   const pluginPath = join(root, 'rules', 'scheme', 'lib', 'dsh', 'plugin', 'builder-plugin', '1.0.0.sls')
@@ -93,6 +124,7 @@ test('buildSchemeV2Pin includes plugins in pin verification and runtime loading'
       }],
     })
     assert.match(pin.plugins[0].treeHash, /^sha256:[0-9a-f]{64}$/)
+    assert.equal('signature' in pin.rules[0], false)
     const runtime = await SchemeV2Runtime.open(pin, { projectRoot: root })
     try {
       assert.equal(await runtime.call('builder.plugin-rule'), 42)

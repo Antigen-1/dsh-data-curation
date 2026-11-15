@@ -6,6 +6,16 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `buildSchemeV2Pin` 的 program 默认路径改为文档约定的
+  `programs/<id>/<version>.scm`，不再使用未文档化的
+  `programs/dsh/plugin/<id>/<version>.scm`。
+- `callRule` 误用于静态 pin 规则时，`E-RULE-NOT-LOADED` 消息会提示改用
+  `call(id, args)`。
+- 未提供 `signature` 时，builder 不再伪造 `inputs: []` arity；pin 省略该字段，
+  loader 以 `#f` 校验。`docs/PIN-V2.md` 同步说明。
+
 ## [0.23.0] — 2026-11-15
 
 ### Added

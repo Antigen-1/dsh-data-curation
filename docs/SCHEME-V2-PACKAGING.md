@@ -7,11 +7,14 @@
 - 运行时要求：Node.js 24 或更新（`engines.node`）。
 - 引擎形态：wasm32 + JS glue；没有 native addon，也没有 Win32 API 调用，因此不绑定 CPU 架构或操作系统。
 - 当前发布验证基线：`win32-x64` + Node.js 24。
-- Scheme v2 不含平台相关代码：Wasm 引擎、JS glue 与包内工具均不依赖 Win32 API 或
-  原生 addon。已在 Windows x64 与 Linux x64（Node.js 24）实测；有使用者在
-  Linux aarch64 上报告可正常工作。包不用 `os`/`cpu` 阻止安装，运行时也不按平台
-  直接拒绝。Windows 的 1h 混合负载与 Linux 的 10min smoke 证据见
-  `docs/SCHEME-V2-PERF.md`；macOS 与其他架构暂无本仓库实测，按实验性平台对待。
+- Scheme v2 核心（Wasm 引擎、JS glue 与包内工具）不含平台相关代码：
+  不依赖 Win32 API，也不依赖原生 addon。可选的 RSS 采样器在 Linux 读取
+  `/proc`、在 Windows 调用 PowerShell，其他平台静默跳过，仅影响内存遥测，
+  不影响加载、执行或安装。已在 Windows x64 与 Linux x64（Node.js 24）实测；
+  有使用者在 Linux aarch64 上报告可正常工作。包不用 `os`/`cpu` 阻止安装，
+  运行时也不按平台直接拒绝。Windows 的 1h 混合负载与 Linux 的 10min smoke
+  证据见 `docs/SCHEME-V2-PERF.md`；macOS 与其他架构暂无本仓库实测，
+  按实验性平台对待。
 - 构建工具链：Emscripten 3.1.6、Chez Scheme 10.4.1。
 
 ## 发布闭包

@@ -1,7 +1,8 @@
 # dsh-data-curation 0.23.0 审阅与修复记录
 
 - 版本：0.23.0（候选，未打 tag、未发布 npm）
-- 范围：`b51bc08`（0.23.0 作者化与透明度实现）及修复 `940ecd7`、`0d4371a`
+- 范围：`b51bc08`（0.23.0 作者化与透明度实现）及后续
+  `940ecd7`、`0d4371a`、`6ae1ffb`、`45814b4`、`512cabe`。
 - 验证：`node --test test/*.test.js` → 413 tests / 412 pass / 1 skip / 0 fail；
   `node scripts/selfcheck.mjs` → 136 个发布文件通过。
 
@@ -59,5 +60,5 @@ open/call，而非仅元数据。
 ## 残余
 
 - coverage 与 request-id 测试仍偏弱。
-- 多表模板没有回归测试。
+- Linux aarch64 只有使用者报告，未在本仓库复跑。
 - 0.23.0 未打 tag、未发布 npm；本地 DSH 安装仍为已发布的 0.22.2。

@@ -22,7 +22,9 @@ diagnosed without guessing which “v2” is in play.
 
 - Supported: Node.js 24 or newer. The package no longer restricts `os`/`cpu`.
 - The Scheme v2 engine and JS glue contain no platform-dependent code (no native
-  addon, no Win32-only API).
+  addon, no Win32-only API). The optional RSS sampler branches by platform:
+  Linux reads `/proc`, Windows invokes PowerShell, other platforms skip
+  telemetry. Skipping telemetry does not block load, execution, or install.
 - Tested: Windows x64 and Linux x64 (Node 24).
 - Reported working: Linux aarch64 (user report; not re-run in this repository).
 - macOS and other Node-24 platforms are experimental; the 1-hour evidence is

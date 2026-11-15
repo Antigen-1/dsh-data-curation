@@ -3,7 +3,7 @@
   "project": "pin-v2-ffi-fixture-a",
   "engine": {
     "contract": "chez-wasm-c-10.4.1-v1",
-    "engineArtifactHash": "sha256:3f104d3573c0a8533b910f56fd484349dbc645fec3eac1435e722ed7210e983b"
+    "engineArtifactHash": "sha256:781f7aa4215c1f649ec64b3282694d307f1557d7ddeb1a4f211ba27c4ee56ced"
   },
   "modules": [
     {

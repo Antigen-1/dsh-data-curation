@@ -50,6 +50,53 @@
 
 版本是**非空、非负安全整数数组**；符号 `v1` 会被拒绝为 `E-PIN-V2-PRE-RELEASE-NAME`。库名必须是 `(dsh lib <id> (<version>...))`、`(dsh plugin <id> (<version>...))` 或 `(dsh rule <id> (<version>...))`；`name` 的版本必须与 `version` 数组一致。
 
+## 生成 pin 与 treeHash
+
+公开入口：
+
+```js
+import { buildSchemeV2Pin, hashSchemeSource } from 'dsh-data-curation/rules'
+
+const treeHash = await hashSchemeSource('(library ...)')
+const pin = await buildSchemeV2Pin({
+  project: { name: 'demo' },
+  modules: [{ id: 'math', version: [1, 0, 0], source: '(library ...)' }],
+  rules: [{ id: 'rule.example', version: [1, 0, 0], source: '(library ...)' }],
+  plugins: [{ id: 'demo', version: [1, 0, 0], kind: 'library', source: '(library ...)' }],
+  ffi: [],
+})
+```
+
+`hashSchemeSource(source)` 返回 `sha256:<hex>`；`buildSchemeV2Pin(input)` 计算所有 treeHash、填充 `sourceBase64`，再走 `pinEngine` 校验。`treeHash` 的规范身份是**规范化 datum 树**，不是原始源码字符串；空白、注释和换行不参与哈希。
+
+treeHash 的完整规范（`native/chez/source-tree-reader.scm`）：
+
+```text
+sha256("dsh/source-tree/v2\0" || canonical-source)
+canonical-source = 0x10 | u32(form-count) | datum*
+```
+
+所有整数均大端；`u32` 是 4 字节无符号；`datum` 编码：
+
+```text
+list       0x01 | u32(count) | datum*
+symbol     0x02 | u32(utf8-byte-length) | utf8
+string     0x03 | u32(utf8-byte-length) | utf8
+integer    0x04 | sign(0 非负 / 1 负) | u32(decimal-ascii-length) | decimal-ascii
+rational   0x05 | integer(numerator) | integer(denominator)
+real       0x06 | 8-byte IEEE-754 double, little-endian
+boolean    0x07 | 0 或 1
+char       0x08 | u32(scalar-value)
+vector     0x09 | u32(count) | datum*
+bytevector 0x0A | u32(length) | bytes
+```
+
+空 list 是 `0x01 | u32(0)`；proper list 逐元素编码，dotted list、循环 datum 和未支持类型会被拒绝。treeHash 的十六进制结果不带 `sha256:`，写入 pin 时加前缀。
+
+## 独立校验 pin
+
+`curation_scheme_v2_validate({ cwd, pin })` 是 metadata-only 校验：检查顶层结构、engine hash、rule/plugin 的 treeHash、bundle/environment hash 和固定路径下的插件源，但不执行 library/program 初始化。它适合在 `SchemeV2Runtime.open` 前定位错误；成功时返回 engine、rules、plugins、programs、ffi 计数。
+
 ## 固定搜索路径
 
 - library：`<project>/rules/scheme/lib/dsh/<kind>/<id>/<version>.sls`，其中 `<version>` 是点号连接（`[1,0,0]` → `1.0.0`）。

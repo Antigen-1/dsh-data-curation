@@ -29,6 +29,23 @@ await runRule(ruleSource, [41]) // 便捷写法，每次重新编译
 `compileRule` 在编译期完成全部静态检查，返回冻结对象；`invoke(args)` 只接受位置参数，
 规则内部没有全局变量、模块、文件或网络。
 
+## 从 Scheme 源码生成 pin.rules
+
+`curation_pin` 的 `rulesSource` 参数接受 Scheme 源码，并在签署前通过
+`loadSchemeRules(source)` 编译成 `pin.rules` JSON AST：
+
+```js
+await curation_pin({
+  cwd: '/project',
+  pin,
+  rulesSource: await readFile('templates/scheme-v2/rules-source.scm', 'utf8'),
+})
+```
+
+`rulesSource` 必须与 `pin` 对象一起使用；`draftPath` 不能与它组合。示例见
+`templates/scheme-v2/rules-source.scm`。
+
+
 规则可以声明输入/输出签名，编译器会把它纳入内容哈希，并在调用边界检查：
 
 ```js

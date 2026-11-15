@@ -6,6 +6,35 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-11-15 (unreleased candidate)
+
+### Added
+
+- 公开 `hashSchemeSource(source)` 与 `buildSchemeV2Pin(input)`，可从源码生成
+  `dsh-pin/v2` pin，无需复制测试夹具生成器。
+- `curation_scheme_v2_validate`：metadata-only 校验 v2 pin，不执行
+  library/program 初始化。
+- `curation_pin` 的 `rulesSource`：把 Scheme 规则源码编译进 `pin.rules`。
+- `docs/VERSION-MATRIX.md` 与 `templates/scheme-v2/` 进阶示例。
+
+### Changed
+
+- v2 `treeHash` 的完整 canonical 编码写入 `docs/PIN-V2.md`。
+- v2 错误保留请求 id，并附加 `details`（pluginId/path/expected/actual、
+  ruleId/field 等）；不再固定返回 `"?"`。
+- 验收覆盖拆出 `notAttempted` 与 `undecided`；PASS 分母不变。
+- `package.json` 不再限制 `os`/`cpu`，运行时只要求 Node >= 24。
+
+### Verification
+
+- Windows x64 / Node 24：`node --test test/*.test.js`，410 tests，
+  409 pass、1 skip（当前账户无 symlink 权限）、0 fail。
+- `node scripts/selfcheck.mjs`：135 个发布文件通过。
+- 新 engine `781f7aa4...` 已重建；六个 v2 fixture 与
+  `assets/chez-wasm/engine-registry.json` 已同步。
+- 新增 `curation_scheme_v2_validate` 与 `rulesSource` 的真实工具路径测试；
+  builder 生成的 pin 可直接 `SchemeV2Runtime.open` 并调用规则。
+
 ## [0.22.2] — 2026-11-15 (unreleased candidate)
 
 0.22.2 修正 0.22.1 final5 的 parent RSS 判定口径：parent RSS 是 Node/V8

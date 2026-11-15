@@ -9,6 +9,7 @@ import { registerHooks } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { doApply, doCompare, doInit, doNote, doPin, doSubmit } from '../lib/core.js'
+import { buildSchemeV2Pin } from '../lib/rules/scheme/v2/builder.js'
 import { doPinDraft, doRecordsImport } from '../lib/intake.js'
 import { QUERY_KINDS } from '../lib/query.js'
 import { normalizeToolOutput, registerTools } from '../lib/tools.js'
@@ -75,7 +76,7 @@ const submission = (record, measuredValue = '1.5cm') => ({
 
 test('每个工具的失败结果都被渲染成非空 content block 数组', async () => {
   const defs = await collectTools()
-  assert.equal(defs.length, 19)
+  assert.equal(defs.length, 20)
   for (const def of defs) {
     const text = blocksOf(def, { ok: false, error: 'boom' }).map((b) => b.text).join('\n')
     assert.match(text, /boom/, `${def.name}: 失败原因要显示出来`)
@@ -131,6 +132,20 @@ test('全部公开 curation_* 工具的真实成功路径都可执行并渲染',
       const { value } = await run('curation_pin', { draftPath })
       assert.equal(value.version, 5)
       assert.equal(value.records, 1)
+      const pin = JSON.parse(await readFile(join(root, '.curation', 'pin.json'), 'utf8'))
+      const rulesSource = '(register-rule! "scheme.audit" "1" (lambda (input) (object "checks" (list))) (object "role" "verify"))'
+      const checked = await run('curation_pin', { pin, rulesSource, dryRun: true })
+      assert.equal(checked.value.dryRun, true)
+    })
+    await t.test('curation_scheme_v2_validate', async () => {
+      const source = '(library (dsh rule rule.tool (1 0 0)) (export entry) (import (rnrs base (6))) (define (entry x) x))'
+      const pin = await buildSchemeV2Pin({
+        project: { name: 'tool-test' },
+        rules: [{ id: 'rule.tool', version: [1, 0, 0], source }],
+      })
+      const { value } = await run('curation_scheme_v2_validate', { pin })
+      assert.equal(value.rules.length, 1)
+      assert.equal(value.plugins, 0)
     })
     await t.test('curation_submit', async () => {
       const { value } = await run('curation_submit', {
@@ -166,6 +181,9 @@ test('全部公开 curation_* 工具的真实成功路径都可执行并渲染',
     await t.test('curation_verify', async () => {
       const { value } = await run('curation_verify')
       assert.equal(value.status, 'PASS', JSON.stringify(value.checks))
+      assert.equal(value.coverage.decided, value.coverage.total)
+      assert.equal(value.coverage.notAttempted, 0)
+      assert.equal(value.coverage.undecided, 0)
     })
     await t.test('curation_export', async () => {
       const { value } = await run('curation_export', { format: 'csv' })

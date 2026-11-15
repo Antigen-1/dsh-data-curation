@@ -1,0 +1,45 @@
+{
+  "version": 5,
+  "project": {
+    "name": "多表交付示例",
+    "description": "演示两张表共享 defaults、逐表覆盖 gates，并给单表挂 verifyCmd。"
+  },
+  "defaults": {
+    "channels": [
+      { "name": "text", "method": "PDF 文本层" },
+      { "name": "vision", "method": "逐页读图" }
+    ],
+    "normalization": { "mode": "safe" },
+    "evidence": { "required": true },
+    "gates": { "minAcceptedRatio": 0.95 },
+    "adjudication": { "compare": { "builtin": "exact" }, "select": { "builtin": "first-valid" } }
+  },
+  "tables": [
+    {
+      "table": "summary",
+      "key": "record_id",
+      "purpose": "汇总交付表",
+      "status": "active",
+      "records": { "kind": "list", "values": ["CASE-0001", "CASE-0002"] },
+      "fields": [
+        { "name": "location", "type": "text" },
+        { "name": "measured_value", "type": "number", "allowEmpty": true }
+      ],
+      "gates": {
+        "minAcceptedRatio": 1,
+        "verifyCmd": "node tools/check-summary.mjs"
+      }
+    },
+    {
+      "table": "detail",
+      "key": "record_id",
+      "purpose": "逐项明细表",
+      "status": "active",
+      "records": { "kind": "list", "values": ["CASE-0001", "CASE-0002"] },
+      "fields": [
+        { "name": "item", "type": "text" },
+        { "name": "amount", "type": "number" }
+      ]
+    }
+  ]
+}

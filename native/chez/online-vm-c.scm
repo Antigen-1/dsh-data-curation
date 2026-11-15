@@ -82,10 +82,65 @@
     ((list? v) (string-append "[" (json-join v) "]"))
     (else (error 'json-value "unsupported JSON value"))))
 
-(define (respond-error id code)
-  (string-append
-    "{\"id\":\"" (json-escape id) "\",\"ok\":false,\"error\":{\"code\":\""
-    (json-escape code) "\"}}"))
+(define (json-safe-detail value)
+  (cond
+    ((or (number? value) (string? value) (boolean? value)) value)
+    ((eq? value 'dsh-null) value)
+    ((eq? value 'dsh-empty-object) value)
+    ((symbol? value) (symbol->string value))
+    ((vector? value) (map json-safe-detail (vector->list value)))
+    ((all-pairs? value)
+     (map (lambda (entry)
+            (cons (json-safe-detail (car entry))
+                  (json-safe-detail (cdr entry))))
+          value))
+    ((list? value) (map json-safe-detail value))
+    (else (format "~s" value))))
+
+(define (normalize-detail-object value)
+  (map (lambda (entry)
+         (cons (json-safe-detail (car entry))
+               (json-safe-detail (cdr entry))))
+       value))
+
+(define (error-detail-object details)
+  (cond
+    ((null? details) #f)
+    ((and (null? (cdr details)) (all-pairs? (car details)))
+     (normalize-detail-object (car details)))
+    ((null? (cdr details)) (list (cons "detail" (json-safe-detail (car details)))))
+    (else (list (cons "detail" (map json-safe-detail details))))))
+
+(define (respond-error id code . details)
+  (let ((detail (error-detail-object details)))
+    (string-append
+      "{\"id\":\"" (json-escape id) "\",\"ok\":false,\"error\":{\"code\":\""
+      (json-escape code) "\""
+      (if detail
+          (string-append ",\"details\":" (json-value detail))
+          "")
+      "}}")))
+
+(define (request-id payload)
+  (guard (e (#t "?"))
+    (let ((req (read (open-input-string payload))))
+      (if (and (pair? req) (eq? (car req) 'request)
+               (>= (length req) 2) (string? (cadr req)))
+          (cadr req)
+          "?"))))
+
+(define (respond-condition id e)
+  (if (plugin-error? e)
+      (apply respond-error id (symbol->string (plugin-error-code e))
+             (plugin-error-details e))
+      (respond id #f
+        (string-append "\""
+          (json-escape
+            (if (condition? e)
+                (format "~a / ~a / ~s" (condition-message e)
+                        (condition-who e) (condition-irritants e))
+                (format "~a" e)))
+          "\""))))
 
 (define (respond-suspended id rid kind rule target args)
   (string-append
@@ -564,19 +619,32 @@
              (exports (list-ref plugin 6))
              (source (list-ref plugin 7)))
         (unless (or (string=? kind "library") (string=? kind "program"))
-          (plugin-error 'E-PIN-PLUGIN-KIND id))
+          (plugin-error 'E-PIN-PLUGIN-KIND
+            (list (cons "pluginId" id) (cons "path" path)
+                  (cons "expected" "library|program") (cons "actual" kind))))
         (unless (string=? tree (tree-hash source))
-          (plugin-error 'E-PIN-PLUGIN-TREE id))
+          (plugin-error 'E-PIN-PLUGIN-TREE
+            (list (cons "pluginId" id) (cons "path" path)
+                  (cons "expected" tree) (cons "actual" (tree-hash source)))))
         (when (string=? kind "library")
           (let ((desc (parse-library source)))
             (unless (eq? (desc-kind desc) 'plugin)
-              (plugin-error 'E-PIN-PLUGIN-KIND id))
+              (plugin-error 'E-PIN-PLUGIN-KIND
+                (list (cons "pluginId" id) (cons "path" path)
+                      (cons "expected" "plugin library") (cons "actual" (symbol->string (desc-kind desc))))))
             (unless (equal? id (symbol->string (desc-id desc)))
-              (plugin-error 'E-PIN-PLUGIN-ID id))
+              (plugin-error 'E-PIN-PLUGIN-ID
+                (list (cons "pluginId" id) (cons "path" path)
+                      (cons "expected" id) (cons "actual" (symbol->string (desc-id desc))))))
             (unless (equal? version (desc-version desc))
-              (plugin-error 'E-PIN-PLUGIN-VERSION id))
+              (plugin-error 'E-PIN-PLUGIN-VERSION
+                (list (cons "pluginId" id) (cons "path" path)
+                      (cons "expected" (library-version-string version))
+                      (cons "actual" (library-version-string (desc-version desc))))))
             (unless (equal? exports (desc-exports desc))
-              (plugin-error 'E-PIN-PLUGIN-EXPORTS id))))
+              (plugin-error 'E-PIN-PLUGIN-EXPORTS
+                (list (cons "pluginId" id) (cons "path" path)
+                      (cons "expected" exports) (cons "actual" (desc-exports desc)))))))
         (list 'plugin id version kind path tree exports))))
 
 (define (parse-program source)
@@ -1117,9 +1185,15 @@
         (for-each
           (lambda (r d)
             (unless (equal? (list-ref r 1) (symbol->string (desc-id d)))
-              (plugin-error 'E-PIN-RULE-ID (list-ref r 1)))
+              (plugin-error 'E-PIN-RULE-ID
+                (list (cons "ruleId" (list-ref r 1))
+                      (cons "expected" (list-ref r 1))
+                      (cons "actual" (symbol->string (desc-id d))))))
             (unless (equal? (list-ref r 2) (desc-version d))
-              (plugin-error 'E-PIN-RULE-VERSION (list-ref r 1)))
+              (plugin-error 'E-PIN-RULE-VERSION
+                (list (cons "ruleId" (list-ref r 1))
+                      (cons "expected" (library-version-string (list-ref r 2)))
+                      (cons "actual" (library-version-string (desc-version d))))))
             (let* ((rule-id (list-ref r 1))
                    (version (list-ref r 2))
                    (source (list-ref r 3))
@@ -1132,15 +1206,25 @@
                    (values (pin-values rule-id version source
                              module-descs plugins ffi signature)))
               (unless (string=? tree (list-ref values 0))
-                (plugin-error 'E-PIN-MISMATCH-TREE rule-id))
+                (plugin-error 'E-PIN-MISMATCH-TREE
+                  (list (cons "ruleId" rule-id) (cons "field" "treeHash")
+                        (cons "expected" tree) (cons "actual" (list-ref values 0)))))
               (unless (string=? bundle (list-ref values 1))
-                (plugin-error 'E-PIN-MISMATCH-BUNDLE rule-id))
+                (plugin-error 'E-PIN-MISMATCH-BUNDLE
+                  (list (cons "ruleId" rule-id) (cons "field" "bundleHash")
+                        (cons "expected" bundle) (cons "actual" (list-ref values 1)))))
               (unless (string=? plugin-env (list-ref values 2))
-                (plugin-error 'E-PIN-MISMATCH-PLUGIN rule-id))
+                (plugin-error 'E-PIN-MISMATCH-PLUGIN
+                  (list (cons "ruleId" rule-id) (cons "field" "pluginEnvironmentHash")
+                        (cons "expected" plugin-env) (cons "actual" (list-ref values 2)))))
               (unless (string=? ffi-env (list-ref values 3))
-                (plugin-error 'E-PIN-MISMATCH-FFI rule-id))
+                (plugin-error 'E-PIN-MISMATCH-FFI
+                  (list (cons "ruleId" rule-id) (cons "field" "ffiEnvironmentHash")
+                        (cons "expected" ffi-env) (cons "actual" (list-ref values 3)))))
               (unless (string=? rule (list-ref values 4))
-                (plugin-error 'E-PIN-MISMATCH-RULE rule-id))))
+                (plugin-error 'E-PIN-MISMATCH-RULE
+                  (list (cons "ruleId" rule-id) (cons "field" "ruleHash")
+                        (cons "expected" rule) (cons "actual" (list-ref values 4)))))))
           rules rule-descs)
         ;; Publish only after all checks: a later failure leaves the old registry.
         (set! pin-registry
@@ -1255,17 +1339,14 @@
   (read (open-input-string payload)))
 
 (define (dsh-dispatch payload)
-  (string->utf8
-    (call/cc
-      (lambda (escape)
-        (with-exception-handler
-          (lambda (e)
-            (escape
-              (if (plugin-error? e)
-                  (respond-error "?" (symbol->string (plugin-error-code e)))
-                  (respond "?" #f (string-append "\"" (json-escape (if (condition? e) (format "~a / ~a / ~s" (condition-message e) (condition-who e) (condition-irritants e)) (format "~a" e))) "\"")))))
-          (lambda ()
-            (escape (handle (parse-request payload)))))))))
+  (let ((id (request-id payload)))
+    (string->utf8
+      (call/cc
+        (lambda (escape)
+          (with-exception-handler
+            (lambda (e) (escape (respond-condition id e)))
+            (lambda ()
+              (escape (handle (parse-request payload))))))))))
 
 (define (handle-resume req)
   (if (not (and (pair? req) (eq? (car req) 'resume) (>= (length req) 3)))

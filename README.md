@@ -116,7 +116,8 @@ const loaded = await loadSchemeRules(`
 Scheme `(register-rule! id version procedure [options])` 返回规则 id；JS
 `registerRule(...)` 返回同一个 registry，支持链式脚本。完整 R6RS 子集边界、组合子、FFI、注册原子性和 worker 隔离见
 [docs/RULES.md](docs/RULES.md#scheme-前端r6rs-子集)，可运行模板见
-[templates/scheme-decision.scm](templates/scheme-decision.scm)。
+[templates/scheme-decision.scm](templates/scheme-decision.scm)，多表/FFI/builder 示例见
+[templates/scheme-v2](templates/scheme-v2)。
 
 ### Scheme v2 显式 opt-in
 
@@ -158,7 +159,8 @@ v2 当前边界：FFI 走 fd-backed stream + 二进制 TLV，**不再依赖 stdi
 provider 在子进程内执行，超时会终止该 incarnation。`signature` 是纳入
 `ruleHash` 的完整性元数据，
 运行时不会据此强制 arity 或返回类型；需要类型契约的调用方必须自行校验。pin
-格式与安全边界见 [docs/PIN-V2.md](docs/PIN-V2.md)，发布包与可复现结论见
+格式与安全边界见 [docs/PIN-V2.md](docs/PIN-V2.md)，版本/平台矩阵见
+[docs/VERSION-MATRIX.md](docs/VERSION-MATRIX.md)，发布包与可复现结论见
 [docs/SCHEME-V2-PACKAGING.md](docs/SCHEME-V2-PACKAGING.md)，性能基线见
 [docs/SCHEME-V2-PERF.md](docs/SCHEME-V2-PERF.md)，多租户 runtime（默认 OS 子进程，
 Worker 兼容）见
@@ -189,7 +191,8 @@ Worker 兼容）见
 | 工具 | 作用 | 主要参数 |
 | --- | --- | --- |
 | `curation_init` | 建立项目、记录源基线、预告表 | `sources`、`tables`、`force` |
-| `curation_pin` | 签署/校验项目 pin | `pin` 或 `draftPath`、`dryRun`、`force`、`reason`、`ffi` |
+| `curation_pin` | 签署/校验项目 pin | `pin` 或 `draftPath`、`dryRun`、`force`、`reason`、`ffi`、`rulesSource` |
+| `curation_scheme_v2_validate` | 独立校验 `dsh-pin/v2`（不执行 library/program） | `pin`、`projectRoot` |
 | `curation_records_import` | 从 CSV/JSONL 导入记录键与字段样本 | `path`、`key`、`table`、`preview` |
 | `curation_identity` | 改号 / 排除 / 文件映射并写审计 | `path`、`key`、`rename`、`exclude`、`fileMap` |
 | `curation_pin_draft` | 从样本生成 pin 草稿（不签署） | `recordsPath`、`key`、`table`、`project`、`channels`、`fields` |
@@ -425,7 +428,7 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前候选版本 0.22.2（OS 级资源监督、Chez full-GC `liveBytes` 长稳判据、parent heap/RSS 分离；Scheme v2
+- 当前候选版本 0.23.0（v2 pin builder/hash、结构化错误、独立 v2 校验、rulesSource、覆盖明细与进阶模板；Scheme v2
   opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；尚未正式发布。
 - 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选，本次 0.22.2 不是正式发布。
 - `gcStats()` 需要显式 `debugGcStats: true`；默认关闭，只用于诊断，不改变生产路径。

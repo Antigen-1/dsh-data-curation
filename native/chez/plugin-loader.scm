@@ -49,10 +49,11 @@
 
 (define-condition-type &plugin-error &condition
   make-plugin-error plugin-error?
-  (code plugin-error-code))
+  (code plugin-error-code)
+  (details plugin-error-details))
 
 (define (plugin-error code . detail)
-  (raise (make-plugin-error code)))
+  (raise (make-plugin-error code detail)))
 
 (define (desc-form d) (vector-ref d 0))
 (define (desc-name d) (vector-ref d 1))

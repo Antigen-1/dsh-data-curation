@@ -3,11 +3,11 @@
   "engines": {
     "chez-wasm-c-10.4.1-v1": {
       "assetsDir": "10.4.1-c",
-      "engineArtifactHash": "sha256:3f104d3573c0a8533b910f56fd484349dbc645fec3eac1435e722ed7210e983b",
+      "engineArtifactHash": "sha256:781f7aa4215c1f649ec64b3282694d307f1557d7ddeb1a4f211ba27c4ee56ced",
       "closure": [
         {
           "path": "scheme-c.js",
-          "sha256": "96c986941f232ab6eb0df2794f7993d3f63de7c08232b10dde35f0c779c0afa4",
+          "sha256": "12bf28005b9bff3da6a684b129b6e4a1cb8c10b3c9a130aec4f87a14d065ae59",
           "size": 100027
         },
         {
@@ -17,8 +17,8 @@
         },
         {
           "path": "scheme-c.data",
-          "sha256": "c40f7893b26ff4bc83c2a2c5eb8b5f574a8191cd16ce996b50563d514692f2d8",
-          "size": 3234317
+          "sha256": "4aac3b1486a26601a61f61d35f8ccdbd173c821734c9c144a3707dcbf0c4cf29",
+          "size": 3238110
         },
         {
           "path": "online-vm-abi.json",
@@ -27,7 +27,7 @@
         }
       ],
       "dataArchive": {
-        "remotePackageSize": 3234317,
+        "remotePackageSize": 3238110,
         "files": [
           {
             "filename": "/petite.boot",
@@ -46,21 +46,21 @@
           {
             "filename": "/online-vm-c.scm",
             "start": 3142946,
-            "end": 3198200,
-            "sha256": "8343d0a342f6665ef29169b2a70c3085e08d556ab740e94eca8ae43a0fd07c78",
-            "size": 55254
+            "end": 3201953,
+            "sha256": "6c5668a24c452c9dba1e49ade9bd012e54187dfc704f0a836dd3cbf589b7d0dd",
+            "size": 59007
           },
           {
             "filename": "/plugin-loader.scm",
-            "start": 3198200,
-            "end": 3217746,
-            "sha256": "a8760f0eec976392714995f3c01a7edb2c8e4caebd90c47238eb1d50b56b2dd5",
-            "size": 19546
+            "start": 3201953,
+            "end": 3221539,
+            "sha256": "6512668b6012edd27b3171863991fc3e92968c067ac2a33fdf69235d4813a459",
+            "size": 19586
           },
           {
             "filename": "/source-tree-reader.scm",
-            "start": 3217746,
-            "end": 3234317,
+            "start": 3221539,
+            "end": 3238110,
             "sha256": "bcdfe2c609ce0031f6c947043d28e56a37dff0772bd3e1ac7a1bfd5dd5b83b7f",
             "size": 16571
           }

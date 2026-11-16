@@ -143,14 +143,18 @@ for (const file of shipped) {
   const lines = text.split('\n')
   for (const [label, re] of LEAKS) {
     lines.forEach((line, i) => {
+      // /mnt/... is a guest path in the MEMFS mount examples, not a host path.
+      if (label === 'absolute local path' && /\/mnt\/(?:\.\.\.|incoming|input|out|store)/.test(line)) return
       if (re.test(line)) note(`${label} @ ${file}:${i + 1}: ${line.trim().slice(0, 120)}`)
     })
   }
   if (/\.(?:cjs|m?js)$/.test(file)) {
     try {
-      execFileSync(process.execPath, ['--check', join(root, file)], { stdio: 'pipe' })
+      // stdio: 'ignore' avoids a sandboxed child pipe (EPERM); the exit code is
+      // the only signal needed here.
+      execFileSync(process.execPath, ['--check', join(root, file)], { stdio: 'ignore' })
     } catch (e) {
-      note(`语法错误 @ ${file}: ${String(e.stderr ?? e.message).split('\n')[0]}`)
+      note(`语法错误 @ ${file}: ${String(e.message).split('\n')[0]}`)
     }
   }
   if (file.endsWith('SKILL.md')) {

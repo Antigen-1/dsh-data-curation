@@ -135,6 +135,8 @@ const runtime = await SchemeV2Runtime.open(pin, {
   timeoutMs: 5000,
   // 只有 pin 声明了 FFI 时才需要；key 是 target 命名空间。
   ffiModules: { math: new URL('./ffi/math.mjs', import.meta.url) },
+  // 显式目录挂载；默认 r-x，sync 只在 0.25.0 起可用。
+  mounts: [{ hostPath: 'data/incoming', guestPath: '/mnt/incoming', mode: 'rwx', sync: 'on-close' }],
 })
 try {
   const value = await runtime.call('rule.example', { args: [1, 2] })
@@ -429,7 +431,8 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前发布版本 0.23.1（v2 pin builder/hash、结构化错误、独立 v2 校验、rulesSource、覆盖明细与进阶模板；Scheme v2
-  opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6）；发布标记为 annotated tag `v0.23.1`。
+- 当前候选版本 0.25.0（v2 pin builder/hash、结构化错误、独立 v2 校验、rulesSource、覆盖明细与进阶模板；
+  Scheme v2 opt-in 运行时、项目插件、fd+TLV FFI、P3/P4/P6、MEMFS 目录挂载与 sync-on-close）。
+  0.23.1 是最近一个 annotated tag `v0.23.1`；0.25.0 尚未 tag。
 - 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选。
 - `gcStats()` 需要显式 `debugGcStats: true`；默认关闭，只用于诊断，不改变生产路径。

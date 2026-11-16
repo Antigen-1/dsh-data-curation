@@ -170,6 +170,9 @@ await runtime.close()
 - `ffiModules` 的 key 是 target 命名空间（`math.add` → `math`），值是绝对 `file://` URL；`open()` 预加载所有模块，缺失/加载失败报 `E-FFI-MODULE`。不保留 `ffi.call` 闭包。
 - FFI 走 fd-backed `/dev/dsh-in-<suffix>`、`/dev/dsh-out-<suffix>` + 二进制 TLV，不使用 stdin/stdout；设备名每 incarnation 随机生成。
 - `supervised: true` 也支持 FFI；`ffiModules` 在 supervisor 子进程内预加载/执行，provider 超时会终止该子进程，父进程保持存活并可 restart。
-- MEMFS 的 `/project` 只读，`/out` 有配额；输出有上限。
+- MEMFS 的 `/project` 只读，`/out` 有配额；输出有上限。可选的
+  `mounts` 把显式 host 目录挂到 `/mnt/...`，默认 `r-x`；未启用 `sync` 时
+  `rwx` 的写只落在 MEMFS，`sync: "on-close"` 在关闭时逐文件写回（详见
+  `docs/MEMFS-MOUNTS.md`）。
 - 没有 OS 级 RSS 硬上限；Wasm 线性内存上限为 512MiB（构建期 `MAXIMUM_MEMORY`），超限分配会失败而不是无限增长；Wasm/Node Worker 不是 OS 安全边界；单租户可信项目。
 - `signature` 只是纳入 hash 的完整性元数据，不强制 arity 或返回类型。`buildSchemeV2Pin` 在调用方未提供 `signature` 时不写入默认 arity；只有显式给出 `{inputs, output, variadic?}` 时才写入 pin。不要用空 `inputs` 猜测真实参数表。

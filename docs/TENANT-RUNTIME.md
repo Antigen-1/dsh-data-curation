@@ -45,6 +45,9 @@ const manager = await TenantManager.open({
       isolation: 'process',// 可选，默认 process；worker 为显式兼容模式
       timeoutMs: 5000,     // 可选，规则/命令超时
       ffiTimeoutMs: 2000,  // 可选，FFI provider 超时
+      mounts: [            // 可选：显式 host 目录挂载到 MEMFS
+        { hostPath: 'data/incoming', guestPath: '/mnt/incoming', mode: 'r-x' }
+      ],
       supervised: true,    // 可选，process 模式下默认 true
       resource: {           // 可选，OS 资源监督（子进程）
         rssSampleMs: 5000,

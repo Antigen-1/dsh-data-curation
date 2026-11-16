@@ -4,6 +4,42 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.25.0] — 2026-11-16 (candidate, not tagged)
+
+### Added
+
+- `SchemeV2Runtime.open(pin, { mounts })` 的 `sync: "on-close"`：关闭时把
+  MEMFS 中的新增/修改/删除同步回 host 目录；同目录临时文件 + rename，
+  失败时备份/恢复。`runtime.syncResult` 形如
+  `{mounts:[{guestPath,written,deleted,unchanged,errors}]}`。
+- 单文件写失败时 `close()` 在关闭 VM 后拒绝 `E-MOUNT-SYNC`，
+  `error.details` 列出失败路径；`syncResult` 仍可读。
+- `supervised: true` 的进程运行时同样支持 sync-on-close。
+- `docs/MEMFS-MOUNTS.md`：挂载 API、rwx 语义、限制、R6RS 读法与安全边界。
+
+### Verification
+
+- `test/scheme-v2-mount.test.js`：14/14（只读、rwx MEMFS、无 x、逃逸/保留路径、
+  snapshot、sync none、sync 写回、supervised sync、sync 删除 host 文件、
+  sync 失败注入、sync 超限、跨 mount 聚合上限、supervised 真实错误码、
+  跨 mount 同步上限）。标准全量 429 tests / 428 pass / 1 skip / 0 fail；
+  selfcheck 140 个发布文件通过。
+- 独立文档/代码审阅与两轮有限 fix verifier 记录：
+  `docs/reviews/memfs-mounts-0.25.0.md`。
+
+## [0.24.0] — staged capability (not tagged)
+
+`0.24.0` 的 mount + rwx 能力已折叠进 0.25.0 候选；没有单独的 0.24.0 tag。
+
+### Added
+
+- 显式 host 目录挂载：`mounts: [{ hostPath, guestPath, mode }]`；默认 `r-x`，
+  支持 Unix-like `r`/`w`/`x` 单主体权限。Scheme 只能看到 guest 路径。
+- `0.24.0` 的写操作只落在 MEMFS，不写回 host；sync 是 `0.25.0` 的独立能力。
+- 限制：8 个挂载、2048 个文件、总计 32 MiB、单文件 8 MiB、深度 16；
+  `/project`、`/out`、`/dev`、`/online-vm-c.scm` 保留；host 根符号链接拒绝。
+- 直接与 supervised runtime 均支持挂载。
+
 ## [0.23.1] — 2026-11-15
 
 ### Fixed

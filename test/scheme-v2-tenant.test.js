@@ -1,16 +1,28 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, existsSync, cpSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, existsSync, cpSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { TenantManager } from '../lib/rules/index.js'
+import { TenantManager, buildSchemeV2Pin } from '../lib/rules/index.js'
 
 const pin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-a.json', import.meta.url)), 'utf8'))
 const ffiPin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-ffi-a.json', import.meta.url)), 'utf8'))
 const pluginPin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-plugin-a.json', import.meta.url)), 'utf8'))
 const programPin = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/scheme-v2/pin-v2-program-a.json', import.meta.url)), 'utf8'))
 const ffiMathUrl = new URL('./fixtures/scheme-v2/ffi/math.mjs', import.meta.url).href
+
+const tenantMountReadRule = [
+  '(library (dsh rule tenant.mount.read (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
+  '  (define (entry)',
+  '    (let ([p (open-file-input-port "/mnt/input/data.txt")])',
+  '      (let ([body (get-bytevector-all p)])',
+  '        (close-port p)',
+  '        (utf8->string body)))))',
+  '',
+].join('\n')
 
 function projectRoot () {
   return mkdtempSync(join(tmpdir(), 'dsh-tenant-'))
@@ -58,6 +70,27 @@ test('TenantManager runs isolated workers and serializes commands', async (t) =>
   await assert.rejects(manager.call('beta', 'rule.example'), (error) => error.code === 'E-TENANT-CRASH' || error.code === 'E-TENANT-CLOSED')
   await manager.restart('beta')
   assert.equal(await manager.call('beta', 'rule.example'), 42)
+})
+
+test('TenantManager forwards per-tenant mounts', async (t) => {
+  const root = projectRoot()
+  const tenantRoot = join(root, 'tenants', 'mounted')
+  mkdirSync(join(tenantRoot, 'input'), { recursive: true })
+  writeFileSync(join(tenantRoot, 'input', 'data.txt'), 'hello')
+  const mountPin = await buildSchemeV2Pin({
+    project: 'tenant-mount',
+    rules: [{ id: 'tenant.mount.read', version: [1, 0, 0], source: tenantMountReadRule }],
+  })
+  const manager = await TenantManager.open({
+    projectRoot: root,
+    tenants: [{
+      id: 'mounted',
+      pin: mountPin,
+      mounts: [{ hostPath: 'input', guestPath: '/mnt/input' }],
+    }],
+  })
+  t.after(() => manager.close())
+  assert.equal(await manager.call('mounted', 'tenant.mount.read'), 'hello')
 })
 
 test('TenantManager exposes debug-gated gcStats in worker isolation', async (t) => {

@@ -18,6 +18,10 @@ const samplingIntervalMs = Number(process.env.DSH_MIXED_SAMPLE_MS || 60000)
 if (!Number.isFinite(samplingIntervalMs) || samplingIntervalMs < 1000) {
   throw new Error('DSH_MIXED_SAMPLE_MS must be a finite number >= 1000')
 }
+const flushEvery = Number(process.env.DSH_MIXED_FLUSH_EVERY || 500)
+if (!Number.isInteger(flushEvery) || flushEvery < 1) {
+  throw new Error('DSH_MIXED_FLUSH_EVERY must be an integer >= 1')
+}
 const baseOptions = supervised
   ? { supervised: true, resource: { rssSampleMs: Number(process.env.DSH_MIXED_RSS_MS || 30000) } }
   : {}
@@ -80,6 +84,8 @@ let pluginCalls = 0
 let programCalls = 0
 let ffiCalls = 0
 let mountCalls = 0
+let mountFlushes = 0
+let mountFlushErrors = 0
 let errors = 0
 const errorsByCode = {}
 const samples = []
@@ -123,6 +129,17 @@ try {
       if (calls % 25 === 0) {
         mountCalls += 1
         await runtimes.mount.call('mount.soak')
+        if (mountCalls % flushEvery === 0) {
+          try {
+            await runtimes.mount.flushMounts()
+            mountFlushes += 1
+          } catch (error) {
+            mountFlushErrors += 1
+            errors += 1
+            const code = error.code || 'E-MOUNT-FLUSH'
+            errorsByCode[code] = (errorsByCode[code] || 0) + 1
+          }
+        }
       }
     } catch (error) {
       errors += 1
@@ -177,6 +194,8 @@ try {
         programCalls,
         ffiCalls,
         mountCalls,
+        mountFlushes,
+        mountFlushErrors,
         errors,
         errorsByCode: { ...errorsByCode },
         events: [...events],
@@ -247,6 +266,9 @@ const summary = {
   programCalls,
   ffiCalls,
   mountCalls,
+  mountFlushes,
+  mountFlushErrors,
+  flushEvery,
   errors,
   errorsByCode,
   events,

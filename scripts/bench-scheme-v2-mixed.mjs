@@ -36,18 +36,24 @@ const mountSource = [
   '  (export entry)',
   '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
   '  (define (entry)',
-  '    (let ([p (open-file-input-port "/mnt/input/data.txt")])',
-  '      (let ([body (get-bytevector-all p)])',
-  '        (close-port p)',
-  '        (let ([o (open-file-output-port "/mnt/input/out.txt" (file-options no-fail) (buffer-mode none))])',
-  '          (put-bytevector o body)',
-  '          (close-port o))',
-  '        (utf8->string body)))))',
+  '    (let ([pa (open-file-input-port "/mnt/a/data.txt")])',
+  '      (let ([a (get-bytevector-all pa)])',
+  '        (close-port pa)',
+  '        (let ([pb (open-file-input-port "/mnt/b/data.txt")])',
+  '          (let ([b (get-bytevector-all pb)])',
+  '            (close-port pb)',
+  '            (let ([o (open-file-output-port "/mnt/a/out.txt" (file-options no-fail) (buffer-mode none))])',
+  '              (put-bytevector o a)',
+  '              (put-bytevector o b)',
+  '              (close-port o))',
+  '            #t))))))',
   '',
 ].join('\n')
 const mountRoot = mkdtempSync(join(tmpdir(), 'dsh-mount-soak-'))
-mkdirSync(join(mountRoot, 'input'), { recursive: true })
-writeFileSync(join(mountRoot, 'input', 'data.txt'), 'x'.repeat(4096))
+mkdirSync(join(mountRoot, 'a'), { recursive: true })
+mkdirSync(join(mountRoot, 'b'), { recursive: true })
+writeFileSync(join(mountRoot, 'a', 'data.txt'), 'a'.repeat(4096))
+writeFileSync(join(mountRoot, 'b', 'data.txt'), 'b'.repeat(4096))
 const mountPin = await buildSchemeV2Pin({
   project: 'mount-soak',
   rules: [{ id: 'mount.soak', version: [1, 0, 0], source: mountSource }],
@@ -59,7 +65,10 @@ const runtimes = {
   program: await SchemeV2Runtime.open(fixture('pin-v2-program-a.json'), runtimeOptions('program', { projectRoot: programRoot })),
   ffi: await SchemeV2Runtime.open(fixture('pin-v2-ffi-a.json'), runtimeOptions('ffi', { ffiModules: { math: ffiMath } })),
   mount: await SchemeV2Runtime.open(mountPin, runtimeOptions('mount', {
-    mounts: [{ hostPath: join(mountRoot, 'input'), guestPath: '/mnt/input', mode: 'rwx', sync: 'on-close' }],
+    mounts: [
+      { hostPath: join(mountRoot, 'a'), guestPath: '/mnt/a', mode: 'rwx', sync: 'on-close' },
+      { hostPath: join(mountRoot, 'b'), guestPath: '/mnt/b', mode: 'r-x' },
+    ],
   })),
 }
 
@@ -215,12 +224,17 @@ try {
 }
 
 const mountSync = runtimes.mount.syncResult ?? null
-let mountHostOutBytes = null
-let mountHostOutText = null
+let mountHostAOutBytes = null
+let mountHostAOutText = null
+let mountHostBOutExists = false
 try {
-  const body = readFileSync(join(mountRoot, 'input', 'out.txt'))
-  mountHostOutBytes = body.length
-  mountHostOutText = body.toString('utf8').slice(0, 16)
+  const body = readFileSync(join(mountRoot, 'a', 'out.txt'))
+  mountHostAOutBytes = body.length
+  mountHostAOutText = body.toString('utf8').slice(0, 8)
+} catch {}
+try {
+  readFileSync(join(mountRoot, 'b', 'out.txt'))
+  mountHostBOutExists = true
 } catch {}
 rmSync(mountRoot, { recursive: true, force: true })
 const summary = {
@@ -240,8 +254,9 @@ const summary = {
   finalMetrics,
   finalGc,
   mountSync,
-  mountHostOutBytes,
-  mountHostOutText,
+  mountHostAOutBytes,
+  mountHostAOutText,
+  mountHostBOutExists,
 }
 writeFileSync(summaryPath, JSON.stringify(summary, null, 2))
 console.log(JSON.stringify(summary, null, 2))

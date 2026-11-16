@@ -33,6 +33,25 @@ const writeRule = [
   '',
 ].join('\n')
 
+const twoRule = [
+  '(library (dsh rule mount.two (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
+  '  (define (entry)',
+  '    (let ([pa (open-file-input-port "/mnt/a/data.txt")])',
+  '      (let ([a (get-bytevector-all pa)])',
+  '        (close-port pa)',
+  '        (let ([pb (open-file-input-port "/mnt/b/data.txt")])',
+  '          (let ([b (get-bytevector-all pb)])',
+  '            (close-port pb)',
+  '            (let ([o (open-file-output-port "/mnt/a/out.txt" (file-options no-fail) (buffer-mode none))])',
+  '              (put-bytevector o a)',
+  '              (put-bytevector o b)',
+  '              (close-port o))',
+  '            (string-append (utf8->string a) ":" (utf8->string b))))))))',
+  '',
+].join('\n')
+
 const oversizeRule = [
   '(library (dsh rule mount.oversize (1 0 0))',
   '  (export entry)',
@@ -79,6 +98,13 @@ async function makePin () {
       { id: 'mount.oversize', version: [1, 0, 0], source: oversizeRule },
       { id: 'mount.delete', version: [1, 0, 0], source: deleteRule },
     ],
+  })
+}
+
+async function makeTwoPin () {
+  return buildSchemeV2Pin({
+    project: 'mount-two-test',
+    rules: [{ id: 'mount.two', version: [1, 0, 0], source: twoRule }],
   })
 }
 
@@ -130,6 +156,42 @@ test('rwx mounts write inside MEMFS but not back to the host', async () => {
     assert.deepEqual(await readdir(input), ['data.txt'])
   } finally {
     await runtime.close()
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('two mounts keep independent modes and sync only the rwx mount', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-mount-'))
+  const a = join(root, 'a')
+  const b = join(root, 'b')
+  await mkdir(a)
+  await mkdir(b)
+  await writeFile(join(a, 'data.txt'), 'left')
+  await writeFile(join(b, 'data.txt'), 'right')
+  const pin = await makeTwoPin()
+  const runtime = await SchemeV2Runtime.open(pin, {
+    projectRoot: root,
+    mounts: [
+      { hostPath: 'a', guestPath: '/mnt/a', mode: 'rwx', sync: 'on-close' },
+      { hostPath: 'b', guestPath: '/mnt/b', mode: 'r-x' },
+    ],
+  })
+  let result
+  try {
+    result = await runtime.call('mount.two')
+  } finally {
+    await runtime.close()
+  }
+  try {
+    assert.equal(result, 'left:right')
+    assert.equal(await readFile(join(a, 'out.txt'), 'utf8'), 'leftright')
+    await assert.rejects(
+      readFile(join(b, 'out.txt')),
+      (error) => error.code === 'ENOENT',
+    )
+    assert.equal(runtime.syncResult.mounts.length, 1)
+    assert.equal(runtime.syncResult.mounts[0].guestPath, '/mnt/a')
+  } finally {
     await rm(root, { recursive: true, force: true })
   }
 })

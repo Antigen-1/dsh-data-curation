@@ -22,6 +22,14 @@ const flushEvery = Number(process.env.DSH_MIXED_FLUSH_EVERY || 500)
 if (!Number.isInteger(flushEvery) || flushEvery < 1) {
   throw new Error('DSH_MIXED_FLUSH_EVERY must be an integer >= 1')
 }
+const mountEvery = Number(process.env.DSH_MIXED_MOUNT_EVERY || 25)
+if (!Number.isInteger(mountEvery) || mountEvery < 1) {
+  throw new Error('DSH_MIXED_MOUNT_EVERY must be an integer >= 1')
+}
+const mountBytes = Number(process.env.DSH_MIXED_MOUNT_BYTES || 4096)
+if (!Number.isInteger(mountBytes) || mountBytes < 1 || mountBytes > 4 * 1024 * 1024) {
+  throw new Error('DSH_MIXED_MOUNT_BYTES must be an integer between 1 and 4 MiB')
+}
 const baseOptions = supervised
   ? { supervised: true, resource: { rssSampleMs: Number(process.env.DSH_MIXED_RSS_MS || 30000) } }
   : {}
@@ -56,8 +64,8 @@ const mountSource = [
 const mountRoot = mkdtempSync(join(tmpdir(), 'dsh-mount-soak-'))
 mkdirSync(join(mountRoot, 'a'), { recursive: true })
 mkdirSync(join(mountRoot, 'b'), { recursive: true })
-writeFileSync(join(mountRoot, 'a', 'data.txt'), 'a'.repeat(4096))
-writeFileSync(join(mountRoot, 'b', 'data.txt'), 'b'.repeat(4096))
+writeFileSync(join(mountRoot, 'a', 'data.txt'), 'a'.repeat(mountBytes))
+writeFileSync(join(mountRoot, 'b', 'data.txt'), 'b'.repeat(mountBytes))
 const mountPin = await buildSchemeV2Pin({
   project: 'mount-soak',
   rules: [{ id: 'mount.soak', version: [1, 0, 0], source: mountSource }],
@@ -126,7 +134,7 @@ try {
         ffiCalls += 1
         await runtimes.ffi.call('rule.example')
       }
-      if (calls % 25 === 0) {
+      if (calls % mountEvery === 0) {
         mountCalls += 1
         await runtimes.mount.call('mount.soak')
         if (mountCalls % flushEvery === 0) {
@@ -269,6 +277,9 @@ const summary = {
   mountFlushes,
   mountFlushErrors,
   flushEvery,
+  mountEvery,
+  mountBytes,
+  mountOutputBytesExpected: mountBytes * 2,
   errors,
   errorsByCode,
   events,

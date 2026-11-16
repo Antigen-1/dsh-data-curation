@@ -69,13 +69,14 @@ For textual ports pass a transcoder, e.g. `(make-transcoder (utf-8-codec))`.
 
 Without `sync`, writes are discarded when the runtime closes; the host
 directory is never modified. With `sync: "on-close"`, `runtime.close()` scans
-each sync mount, compares content with the open-time manifest, and:
+each sync mount, compares content with the last synced baseline (the open-time
+manifest before any `flushMounts()`), and:
 
 - writes new/changed files through a same-directory temporary file + rename
   (atomic when the rename succeeds; a backup+restore fallback is used on
   platforms that cannot replace an existing file);
 - preserves the existing file's mode; new files use the process umask;
-- deletes host files that were in the manifest but are gone from MEMFS;
+- deletes host files that were in the baseline but are gone from MEMFS;
 - syncs files only: it does not create new empty directories or delete
   directories;
 - records per mount in `runtime.syncResult`:
@@ -91,10 +92,31 @@ remain. A crash, `kill`, `restart()`, or supervised auto-restart does not sync:
 changes since open are lost, and restart reuses the open-time mounts snapshot.
 Reopen the runtime to reread the host.
 
+`runtime.flushMounts()` performs the same sync before `close()` and can be called
+repeatedly. It does not close the VM, and each successful sync advances the
+per-mount baseline, so a file created and flushed in one call can be deleted and
+flushed in the next. A per-file failure rejects with `E-MOUNT-SYNC` and
+`error.details` while the VM stays open. A timeout (`E-MOUNT-SYNC-TIMEOUT`)
+fails closed: the runtime is marked closed and its incarnation is terminated,
+because the in-flight sync could still write the host. `(flush-output-port p)`
+only flushes the Scheme port's buffer into MEMFS; it does not write the host.
+Call `flushMounts()` when the host must see the bytes before the runtime is
+closed.
+
 ```js
-await runtime.close()
+// after a rule returns and its output port has been flushed
+await runtime.flushMounts()
 console.log(runtime.syncResult)
+
+await runtime.close()
 ```
+
+Cross-mount operations follow the Unix permissions only: a rule can copy from a
+readable mount to a writable mount, and a rename/move across mount roots is
+allowed when both sides have `w+x`. The current R6RS whitelist has no
+`rename-file`, so rules cannot exercise cross-mount rename yet; the filesystem
+guard does not add a separate same-mount restriction. Sync remains per mount,
+not a cross-mount transaction.
 
 `sync` is supported in both direct and supervised runtimes.
 

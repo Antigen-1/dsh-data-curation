@@ -52,6 +52,38 @@ const twoRule = [
   '',
 ].join('\n')
 
+const flushRule = [
+  '(library (dsh rule mount.flush (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
+  '  (define (entry)',
+  '    (let ([p (open-file-output-port "/mnt/a/flush.txt" (file-options no-fail) (buffer-mode block))])',
+  '      (put-bytevector p (string->utf8 "flushed"))',
+  '      (flush-output-port p)',
+  '      (let ([q (open-file-input-port "/mnt/a/flush.txt")])',
+  '        (let ([body (get-bytevector-all q)])',
+  '          (close-port q)',
+  '          (close-port p)',
+  '          (utf8->string body))))))',
+  '',
+].join('\n')
+
+const copyRule = [
+  '(library (dsh rule mount.copy (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
+  '  (define (entry)',
+  '    (let ([p (open-file-input-port "/mnt/a/data.txt")])',
+  '      (let ([body (get-bytevector-all p)])',
+  '        (close-port p)',
+  '        (let ([o (open-file-output-port "/mnt/b/copy.txt" (file-options no-fail) (buffer-mode none))])',
+  '          (put-bytevector o body)',
+  '          (flush-output-port o)',
+  '          (close-port o))',
+  '        (utf8->string body)))))',
+  '',
+].join('\n')
+
 const oversizeRule = [
   '(library (dsh rule mount.oversize (1 0 0))',
   '  (export entry)',
@@ -69,6 +101,26 @@ const deleteRule = [
   '  (export entry)',
   '  (import (rnrs base (6)) (rnrs files (6)))',
   '  (define (entry) (delete-file "/mnt/input/data.txt") #t))',
+  '',
+].join('\n')
+
+const createRule = [
+  '(library (dsh rule mount.create (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
+  '  (define (entry)',
+  '    (let ([p (open-file-output-port "/mnt/a/new.txt" (file-options no-fail) (buffer-mode none))])',
+  '      (put-bytevector p (string->utf8 "new"))',
+  '      (close-port p))',
+  '    #t))',
+  '',
+].join('\n')
+
+const removeNewRule = [
+  '(library (dsh rule mount.remove-new (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs files (6)))',
+  '  (define (entry) (delete-file "/mnt/a/new.txt") #t))',
   '',
 ].join('\n')
 
@@ -97,6 +149,18 @@ async function makePin () {
       { id: 'mount.write', version: [1, 0, 0], source: writeRule },
       { id: 'mount.oversize', version: [1, 0, 0], source: oversizeRule },
       { id: 'mount.delete', version: [1, 0, 0], source: deleteRule },
+    ],
+  })
+}
+
+async function makeFlushPin () {
+  return buildSchemeV2Pin({
+    project: 'mount-flush-test',
+    rules: [
+      { id: 'mount.flush', version: [1, 0, 0], source: flushRule },
+      { id: 'mount.copy', version: [1, 0, 0], source: copyRule },
+      { id: 'mount.create', version: [1, 0, 0], source: createRule },
+      { id: 'mount.remove-new', version: [1, 0, 0], source: removeNewRule },
     ],
   })
 }
@@ -192,6 +256,95 @@ test('two mounts keep independent modes and sync only the rwx mount', async () =
     assert.equal(runtime.syncResult.mounts.length, 1)
     assert.equal(runtime.syncResult.mounts[0].guestPath, '/mnt/a')
   } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('flush-output-port reaches MEMFS and flushMounts persists before close', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-mount-'))
+  const a = join(root, 'a')
+  await mkdir(a)
+  const pin = await makeFlushPin()
+  const runtime = await SchemeV2Runtime.open(pin, {
+    projectRoot: root,
+    mounts: [{ hostPath: 'a', guestPath: '/mnt/a', mode: 'rwx', sync: 'on-close' }],
+  })
+  try {
+    assert.equal(await runtime.call('mount.flush'), 'flushed')
+    await assert.rejects(
+      readFile(join(a, 'flush.txt')),
+      (error) => error.code === 'ENOENT',
+    )
+    const synced = await runtime.flushMounts()
+    assert.equal(synced.mounts.length, 1)
+    assert.equal(synced.mounts[0].written, 1)
+    assert.equal(synced.mounts[0].errors.length, 0)
+    assert.equal(await readFile(join(a, 'flush.txt'), 'utf8'), 'flushed')
+    assert.equal(runtime.closed, false)
+    assert.deepEqual(runtime.syncResult, synced)
+  } finally {
+    await runtime.close()
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('flushMounts advances the baseline so a later delete reaches the host', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-mount-'))
+  const a = join(root, 'a')
+  await mkdir(a)
+  const pin = await makeFlushPin()
+  const runtime = await SchemeV2Runtime.open(pin, {
+    projectRoot: root,
+    mounts: [{ hostPath: 'a', guestPath: '/mnt/a', mode: 'rwx', sync: 'on-close' }],
+  })
+  try {
+    await runtime.call('mount.create')
+    const first = await runtime.flushMounts()
+    assert.equal(first.mounts[0].written, 1)
+    assert.equal(await readFile(join(a, 'new.txt'), 'utf8'), 'new')
+
+    await runtime.call('mount.remove-new')
+    const second = await runtime.flushMounts()
+    assert.equal(second.mounts[0].deleted, 1)
+    assert.equal(second.mounts[0].errors.length, 0)
+    await assert.rejects(
+      readFile(join(a, 'new.txt')),
+      (error) => error.code === 'ENOENT',
+    )
+  } finally {
+    await runtime.close()
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('cross-mount copy reads one mount and syncs the other', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-mount-'))
+  const a = join(root, 'a')
+  const b = join(root, 'b')
+  await mkdir(a)
+  await mkdir(b)
+  await writeFile(join(a, 'data.txt'), 'cross')
+  const pin = await makeFlushPin()
+  const runtime = await SchemeV2Runtime.open(pin, {
+    projectRoot: root,
+    mounts: [
+      { hostPath: 'a', guestPath: '/mnt/a', mode: 'r-x' },
+      { hostPath: 'b', guestPath: '/mnt/b', mode: 'rwx', sync: 'on-close' },
+    ],
+  })
+  try {
+    assert.equal(await runtime.call('mount.copy'), 'cross')
+    await assert.rejects(
+      readFile(join(b, 'copy.txt')),
+      (error) => error.code === 'ENOENT',
+    )
+    await runtime.flushMounts()
+    assert.equal(await readFile(join(b, 'copy.txt'), 'utf8'), 'cross')
+    assert.equal(await readFile(join(a, 'data.txt'), 'utf8'), 'cross')
+    assert.equal(runtime.syncResult.mounts.length, 1)
+    assert.equal(runtime.syncResult.mounts[0].guestPath, '/mnt/b')
+  } finally {
+    await runtime.close()
     await rm(root, { recursive: true, force: true })
   }
 })
@@ -336,6 +489,32 @@ test('close rejects when a sync target cannot be replaced', async () => {
   assert.equal(runtime.syncResult.mounts[0].errors.length, 1)
   assert.equal(runtime.closed, true)
   await rm(root, { recursive: true, force: true })
+})
+
+test('flushMounts reports per-file errors without closing the runtime', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-mount-'))
+  const input = join(root, 'input')
+  await mkdir(input)
+  const pin = await makePin()
+  const runtime = await SchemeV2Runtime.open(pin, {
+    projectRoot: root,
+    mounts: [{ hostPath: 'input', guestPath: '/mnt/input', mode: 'rwx', sync: 'on-close' }],
+  })
+  try {
+    assert.equal(await runtime.call('mount.write'), 'written')
+    await mkdir(join(input, 'out.txt'))
+    await assert.rejects(runtime.flushMounts(), (error) => error.code === 'E-MOUNT-SYNC')
+    assert.equal(runtime.closed, false)
+    assert.equal(runtime.syncError.code, 'E-MOUNT-SYNC')
+    assert.equal(runtime.syncResult.mounts[0].errors.length, 1)
+
+    await rm(join(input, 'out.txt'), { recursive: true, force: true })
+    await runtime.close()
+    assert.equal(await readFile(join(input, 'out.txt'), 'utf8'), 'written')
+  } finally {
+    await runtime.close()
+    await rm(root, { recursive: true, force: true })
+  }
 })
 
 test('sync rejects a MEMFS file larger than the per-file limit', async () => {

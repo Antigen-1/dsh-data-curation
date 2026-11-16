@@ -15,15 +15,23 @@ versions follow [SemVer](https://semver.org/).
 - 单文件写失败时 `close()` 在关闭 VM 后拒绝 `E-MOUNT-SYNC`，
   `error.details` 列出失败路径；`syncResult` 仍可读。
 - `supervised: true` 的进程运行时同样支持 sync-on-close。
+- `runtime.flushMounts()`：在 `close()` 之前按需把 `sync: "on-close"` mount
+  写回 host；成功 sync 推进每 mount 基线，因此可重复调用并支持
+  create → flush → delete → flush。逐文件失败抛 `E-MOUNT-SYNC` 且 VM 保持
+  打开；超时抛 `E-MOUNT-SYNC-TIMEOUT` 并 fail-closed。Scheme
+  `(flush-output-port p)` 只刷新端口缓冲到 MEMFS，不自动写 host。
+- 跨 mount 复制遵循 Unix 权限；guard 不再要求 rename 两侧来自同一 mount，
+  当前 R6RS 白名单仍无 `rename-file`。sync 是逐 mount，不是跨 mount 事务。
 - `docs/MEMFS-MOUNTS.md`：挂载 API、rwx 语义、限制、R6RS 读法与安全边界。
 
 ### Verification
 
-- `test/scheme-v2-mount.test.js`：14/14（只读、rwx MEMFS、无 x、逃逸/保留路径、
-  snapshot、sync none、sync 写回、supervised sync、sync 删除 host 文件、
-  sync 失败注入、sync 超限、跨 mount 聚合上限、supervised 真实错误码、
-  跨 mount 同步上限）。标准全量 429 tests / 428 pass / 1 skip / 0 fail；
-  selfcheck 140 个发布文件通过。
+- `test/scheme-v2-mount.test.js`：19/19（只读、rwx MEMFS、双 mount 隔离、
+  flush-output-port + flushMounts、重复 flush 基线推进、跨 mount 复制、
+  无 x、逃逸/保留路径、snapshot、sync none、sync 写回、supervised sync、
+  sync 删除 host 文件、sync 失败注入、flushMounts 失败保持打开、sync 超限、
+  跨 mount 聚合上限、supervised 真实错误码、跨 mount 同步上限）。标准全量
+  434 tests / 433 pass / 1 skip / 0 fail；selfcheck 140 个发布文件通过。
 - 独立文档/代码审阅与两轮有限 fix verifier 记录：
   `docs/reviews/memfs-mounts-0.25.0.md`。
 

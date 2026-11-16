@@ -1,13 +1,15 @@
-import { appendFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
-import { readFileSync } from 'node:fs'
-import { SchemeV2Runtime } from '../lib/rules/index.js'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { SchemeV2Runtime, buildSchemeV2Pin } from '../lib/rules/index.js'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const fixture = (name) => JSON.parse(readFileSync(`${root}/test/fixtures/scheme-v2/${name}`, 'utf8'))
 const durationMs = Number(process.env.DSH_MIXED_MS || 600000)
 const outPath = process.env.DSH_MIXED_OUT || `${root}/experiments/scheme-v2-mixed-smoke.jsonl`
+const summaryPath = process.env.DSH_MIXED_SUMMARY || `${outPath}.summary.json`
 const ffiMath = new URL('../test/fixtures/scheme-v2/ffi/math.mjs', import.meta.url)
 const pluginRoot = `${root}/test/fixtures/scheme-v2/project`
 const programRoot = `${root}/test/fixtures/scheme-v2/program-project`
@@ -29,11 +31,36 @@ const runtimeOptions = (name, extra = {}) => ({
   },
 })
 
+const mountSource = [
+  '(library (dsh rule mount.soak (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
+  '  (define (entry)',
+  '    (let ([p (open-file-input-port "/mnt/input/data.txt")])',
+  '      (let ([body (get-bytevector-all p)])',
+  '        (close-port p)',
+  '        (let ([o (open-file-output-port "/mnt/input/out.txt" (file-options no-fail) (buffer-mode none))])',
+  '          (put-bytevector o body)',
+  '          (close-port o))',
+  '        (utf8->string body)))))',
+  '',
+].join('\n')
+const mountRoot = mkdtempSync(join(tmpdir(), 'dsh-mount-soak-'))
+mkdirSync(join(mountRoot, 'input'), { recursive: true })
+writeFileSync(join(mountRoot, 'input', 'data.txt'), 'x'.repeat(4096))
+const mountPin = await buildSchemeV2Pin({
+  project: 'mount-soak',
+  rules: [{ id: 'mount.soak', version: [1, 0, 0], source: mountSource }],
+})
+
 const runtimes = {
   static: await SchemeV2Runtime.open(fixture('pin-v2-a.json'), runtimeOptions('static')),
   plugin: await SchemeV2Runtime.open(fixture('pin-v2-plugin-a.json'), runtimeOptions('plugin', { projectRoot: pluginRoot })),
   program: await SchemeV2Runtime.open(fixture('pin-v2-program-a.json'), runtimeOptions('program', { projectRoot: programRoot })),
   ffi: await SchemeV2Runtime.open(fixture('pin-v2-ffi-a.json'), runtimeOptions('ffi', { ffiModules: { math: ffiMath } })),
+  mount: await SchemeV2Runtime.open(mountPin, runtimeOptions('mount', {
+    mounts: [{ hostPath: join(mountRoot, 'input'), guestPath: '/mnt/input', mode: 'rwx', sync: 'on-close' }],
+  })),
 }
 
 writeFileSync(outPath, '')
@@ -43,6 +70,7 @@ let staticCalls = 0
 let pluginCalls = 0
 let programCalls = 0
 let ffiCalls = 0
+let mountCalls = 0
 let errors = 0
 const errorsByCode = {}
 const samples = []
@@ -82,6 +110,10 @@ try {
       if (bucket === 6) {
         ffiCalls += 1
         await runtimes.ffi.call('rule.example')
+      }
+      if (calls % 25 === 0) {
+        mountCalls += 1
+        await runtimes.mount.call('mount.soak')
       }
     } catch (error) {
       errors += 1
@@ -135,6 +167,7 @@ try {
         pluginCalls,
         programCalls,
         ffiCalls,
+        mountCalls,
         errors,
         errorsByCode: { ...errorsByCode },
         events: [...events],
@@ -181,6 +214,15 @@ try {
   for (const runtime of Object.values(runtimes)) await runtime.close()
 }
 
+const mountSync = runtimes.mount.syncResult ?? null
+let mountHostOutBytes = null
+let mountHostOutText = null
+try {
+  const body = readFileSync(join(mountRoot, 'input', 'out.txt'))
+  mountHostOutBytes = body.length
+  mountHostOutText = body.toString('utf8').slice(0, 16)
+} catch {}
+rmSync(mountRoot, { recursive: true, force: true })
 const summary = {
   durationMs: Math.round(performance.now() - started),
   supervised,
@@ -190,11 +232,16 @@ const summary = {
   pluginCalls,
   programCalls,
   ffiCalls,
+  mountCalls,
   errors,
   errorsByCode,
   events,
   samples: samples.filter((sample) => sample.latencySamples !== undefined).length,
   finalMetrics,
   finalGc,
+  mountSync,
+  mountHostOutBytes,
+  mountHostOutText,
 }
+writeFileSync(summaryPath, JSON.stringify(summary, null, 2))
 console.log(JSON.stringify(summary, null, 2))

@@ -3,7 +3,7 @@
 - 版本：0.25.0 candidate（未 tag，未 npm publish）
 - 基线：`v0.23.1` / `54a4e1c`
 - 范围：未提交工作树中的 mount + rwx（0.24.0 staged）与 `sync: "on-close"`
-  （0.25.0）改动。
+  （0.25.0）改动；审阅后提交为 `f2c1b55`（机械快照，未改变语义）。
 - 结论：**IMPLEMENTATION APPROVED — 0.25.0 CANDIDATE；RELEASE NOT APPROVED**。
   没有独立发布批准，也没有 mount 相关 1h soak。
 

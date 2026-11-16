@@ -2,10 +2,13 @@
 
 - 版本：0.25.0 candidate（未 tag，未 npm publish）
 - 基线：`v0.23.1` / `54a4e1c`
-- 范围：未提交工作树中的 mount + rwx（0.24.0 staged）与 `sync: "on-close"`
-  （0.25.0）改动；审阅后提交为 `f2c1b55`（机械快照，未改变语义）。
+- 范围：mount + rwx（0.24.0 staged）、`sync: "on-close"`（0.25.0）以及
+  `flushMounts()`/跨 mount（2026-11-17 delta）改动。上一轮候选快照为
+  `f2c1b55`；本轮 delta 的修复提交为 `fa4e4d9`，1h soak 工作负载提交为
+  `0f60066`。
 - 结论：**IMPLEMENTATION APPROVED — 0.25.0 CANDIDATE；RELEASE NOT APPROVED**。
-  0.25.0 mount 1h soak 已 PASS（2026-11-16），但仍没有独立发布批准。
+  单 mount 1h soak 已 PASS（2026-11-16）；包含反复 `flushMounts()` 的双 mount
+  1h soak 仍待跑。没有独立发布批准。
 
 ## 独立审阅
 
@@ -54,15 +57,38 @@
 第二轮是静态检查，不把其沙箱中的测试结果当作证据；测试证据来自本机
 `danger-full-access` 运行。
 
-## 验证
+### 第二轮 delta 审阅（flushMounts / 跨 mount，2026-11-17）
 
-- mount 测试：14 个用例；与 tenant 测试一起 25/25 通过。
-- 标准全量：`node --test test/*.test.js` → 429 tests / 428 pass / 1 skip / 0 fail（78.0s）。
+范围：`f2c1b55` 之后的 `flushMounts()`、重复 sync 基线、跨 mount rename
+权限和相应测试。两路审阅仍为只读；fix verifier 最多 1 轮。
+
+- 代码审阅：**CONDITIONAL — 1 HIGH, 1 MEDIUM, 1 LOW**。
+  - HIGH：重复 `flushMounts()` 不推进基线；create → flush → delete → flush
+    声称成功但 host 文件未删除。已改为每个 mount 的 `syncedManifest`，仅在
+    unchanged/成功写入/成功删除后推进；失败保留旧条目以便重试。
+  - MEDIUM：sync 超时只向 loader 抛错，不杀 worker、不记录 `syncError`，
+    未关闭的 incarnation 可能仍在写 host。已改为 fail-closed：标记 closed、
+    终止 VM、保留 `syncError`。
+  - LOW：原 flush 测试使用 `buffer-mode none`，没有真正验证 `flush-output-port`；
+    已改 `buffer-mode block` 并回读 MEMFS，新增重复 flush 和逐文件错误路径。
+- 文档审阅：**CONDITIONAL — 1 MEDIUM**。`flushMounts()` 的错误/超时契约仍按
+  close-only 描述；已补“逐文件失败保持 runtime 打开、超时 fail-closed、基线
+  推进”说明。
+- Fix verifier：**APPROVE，blocking=[]**；仅剩 LOW 文档措辞“close 对比
+  open-time manifest”，已改为 last synced baseline。
+- 用户明确要求：跨 mount 的额外限制只保留 Unix `rwx` 权限，不再要求
+  source/target 同一 mount root；R6RS 当前没有 `rename-file`，跨 mount 的
+  可用操作是读一个 mount、写另一个，不能原子 rename。
+
+## 验证（delta 后）
+
+- mount 测试：19 个用例 19/19 通过。
+- 标准全量：`node --test test/*.test.js` → 434 tests / 433 pass / 1 skip / 0 fail（87.6s）。
 - selfcheck：140 个发布文件通过。
 - 测试命令必须带 Node 的 `PATH`，否则外部导出器/子进程测试会 EPERM 或找不到
   `node`；直接 `node --test` 会扫描 `experiments/`，不是项目标准入口。
 
-## 1h soak（2026-11-16）
+## 单 mount 1h soak（2026-11-16）
 
 基准脚本扩展在 `64866af`（`test: add mount runtime to mixed soak`）：mixed
 benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` 并写
@@ -96,7 +122,8 @@ benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` �
 - sync 超时/进程被杀时没有 partial `syncResult` 审计；文档声明非事务。
 - mount 祖先 rename/rmdir 防护没有直接 Scheme 负测试，因为当前 R6RS 白名单
   没有 `rename-file`。
-- 1h soak 是 candidate 级证据；0.24.0 未单独 tag，也没有发布批准。
+- 单 mount 1h soak 是 candidate 级证据；双 mount + 反复 `flushMounts()` 的
+  1h soak 尚未完成。0.24.0 未单独 tag，也没有发布批准。
 - Wasm/Worker 不是 OS 安全边界；mount 是能力，不是沙箱。
 
 ## 发布状态

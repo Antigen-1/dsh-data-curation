@@ -1,14 +1,17 @@
 # dsh-data-curation 0.25.0 MEMFS 目录挂载审阅记录
 
-- 版本：0.25.0 candidate（未 tag，未 npm publish）
+- 版本：0.25.0（annotated tag `v0.25.0`；未 npm publish）
 - 基线：`v0.23.1` / `54a4e1c`
 - 范围：mount + rwx（0.24.0 staged）、`sync: "on-close"`（0.25.0）以及
   `flushMounts()`/跨 mount（2026-11-17 delta）改动。上一轮候选快照为
   `f2c1b55`；本轮 delta 的修复提交为 `fa4e4d9`，1h soak 工作负载提交为
   `0f60066`。
-- 结论：**IMPLEMENTATION APPROVED — 0.25.0 CANDIDATE；RELEASE NOT APPROVED**。
+- 结论：**RELEASE APPROVED — 0.25.0**。用户于 2026-11-17 批准生产发布。
   单 mount 1h soak（2026-11-16）与包含反复 `flushMounts()` 的双 mount 1h
-  soak（2026-11-17）均 PASS。没有独立发布批准。
+  soak（2026-11-17）均 PASS；5 分钟大文件短时 soak 也 PASS。
+- 发布 tarball：3,232,209 bytes，SHA-256
+  `C649C2F87795BE7B607D24651D0400CB5E31FE2467BC3833F6FBD2C707DD9A22`；
+  解包后 selfcheck 140 个文件通过。
 
 ## 独立审阅
 
@@ -114,7 +117,7 @@ benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` �
   host `out.txt` 为 4,096 bytes。
 - 覆盖限制：单一 mount、4KiB 读写、每 25 次调用一次、仅在 close sync；
   未覆盖多 mount 并发 sync、反复 close/reopen 的 sync churn。该结果支持
-  0.25.0 candidate，不等于生产发布批准。
+  0.25.0 发布证据之一，不等于对所有并发/崩溃场景的保证。
 
 ## 双 mount + 反复 flushMounts 1h soak（2026-11-17）
 
@@ -148,7 +151,7 @@ benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` �
   host A `out.txt` 为 8,192 bytes；host B 无 `out.txt`，`/mnt/b` 未被写入。
 - 覆盖限制：仍是临时 host 目录、4KiB 文件、周期性而非并发 flush；未覆盖
   close/reopen 的 sync churn、跨 mount 并发写同一 host、进程崩溃后的 partial
-  审计。该结果支持 0.25.0 candidate，不等于生产发布批准。
+  审计。该结果支持 0.25.0 发布证据之一，不等于对所有并发/崩溃场景的保证。
 
 ## 大文件短时 soak（2026-11-17）
 
@@ -176,17 +179,18 @@ benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` �
 - 5 个 runtime 的 liveBytes delta 为 -2,736 到 +33,136 bytes；该测试只说明
   大文件路径在 5 分钟内无错误、无失控增长，不替代 1h 结论。
 
-## 残余风险（不阻塞 0.25.0 candidate）
+## 残余风险（0.25.0 发布时保留）
 
 - sync 读路径仍有 lstat→open 的残余 TOCTOU；Windows 上无法完全消除，文档已声明。
 - sync 超时/进程被杀时没有 partial `syncResult` 审计；文档声明非事务。
 - mount 祖先 rename/rmdir 防护没有直接 Scheme 负测试，因为当前 R6RS 白名单
   没有 `rename-file`。
-- 单 mount 与双 mount + 反复 `flushMounts()` 的 1h soak 都是 candidate 级
-  证据，不覆盖并发/崩溃场景。0.24.0 未单独 tag，也没有发布批准。
+- 单 mount 与双 mount + 反复 `flushMounts()` 的 1h soak 都是发布级证据，
+  但不覆盖并发/崩溃场景。0.24.0 未单独 tag，其能力包含在 0.25.0 中。
 - Wasm/Worker 不是 OS 安全边界；mount 是能力，不是沙箱。
 
 ## 发布状态
 
-- 0.25.0 仅为 candidate；未打 annotated tag，未 npm publish。
-- 发布仍需独立批准；本记录不能当作 0.25.0 的生产放行。
+- 0.25.0 已发布：annotated tag `v0.25.0` 指向本发布提交。
+- 未 npm publish；npm 发布是独立动作，需要单独授权。
+- 发布后仍保留上面的残余风险；Wasm/Worker 不是 OS 安全边界。

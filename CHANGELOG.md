@@ -4,7 +4,7 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
-## [0.25.0] — 2026-11-16 (candidate, not tagged)
+## [0.25.0] — 2026-11-17
 
 ### Added
 
@@ -34,10 +34,14 @@ versions follow [SemVer](https://semver.org/).
   434 tests / 433 pass / 1 skip / 0 fail；selfcheck 140 个发布文件通过。
 - 独立文档/代码审阅与两轮有限 fix verifier 记录：
   `docs/reviews/memfs-mounts-0.25.0.md`。
+- 1h 双 mount + 反复 `flushMounts()` soak：2,297,207 calls、0 errors、
+  183 flushes，analyzer PASS。
+- 5 分钟 4MiB 输入 / 8MiB 输出短时压力测试：0 errors，host 输出
+  8,388,608 bytes，analyzer PASS（短时证据，不替代 1h soak）。
 
 ## [0.24.0] — staged capability (not tagged)
 
-`0.24.0` 的 mount + rwx 能力已折叠进 0.25.0 候选；没有单独的 0.24.0 tag。
+`0.24.0` 的 mount + rwx 能力已折叠进 0.25.0；没有单独的 0.24.0 tag。
 
 ### Added
 

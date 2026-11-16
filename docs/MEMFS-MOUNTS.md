@@ -3,8 +3,9 @@
 `SchemeV2Runtime.open(pin, { mounts })` mounts host directories under fixed
 guest paths. Scheme code reads and writes ordinary MEMFS paths; it never sees
 the host path. The 0.24.0 capability (reads, Unix-like `rwx` permissions, and
-MEMFS-only writes) is staged in the 0.25.0 candidate; `0.25.0` adds
-`sync: "on-close"` to write changes back to the host. Neither is tagged yet.
+MEMFS-only writes) shipped as part of `0.25.0`; `0.25.0` adds
+`sync: "on-close"` to write changes back to the host. `v0.25.0` is the
+annotated release tag; there is no separate `0.24.0` tag.
 
 ## Shape
 

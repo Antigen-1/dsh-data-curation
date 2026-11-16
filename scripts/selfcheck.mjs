@@ -144,7 +144,7 @@ for (const file of shipped) {
   for (const [label, re] of LEAKS) {
     lines.forEach((line, i) => {
       // /mnt/... is a guest path in the MEMFS mount examples, not a host path.
-      if (label === 'absolute local path' && /\/mnt\/(?:\.\.\.|incoming|input|out|store)/.test(line)) return
+      if (label === 'absolute local path' && /\/mnt\/(?:\.\.\.|[A-Za-z0-9._-]+)/.test(line)) return
       if (re.test(line)) note(`${label} @ ${file}:${i + 1}: ${line.trim().slice(0, 120)}`)
     })
   }

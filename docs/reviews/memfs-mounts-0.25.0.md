@@ -7,8 +7,8 @@
   `f2c1b55`；本轮 delta 的修复提交为 `fa4e4d9`，1h soak 工作负载提交为
   `0f60066`。
 - 结论：**IMPLEMENTATION APPROVED — 0.25.0 CANDIDATE；RELEASE NOT APPROVED**。
-  单 mount 1h soak 已 PASS（2026-11-16）；包含反复 `flushMounts()` 的双 mount
-  1h soak 仍待跑。没有独立发布批准。
+  单 mount 1h soak（2026-11-16）与包含反复 `flushMounts()` 的双 mount 1h
+  soak（2026-11-17）均 PASS。没有独立发布批准。
 
 ## 独立审阅
 
@@ -29,7 +29,7 @@
 | MED-6 | tenant mounts 未转发，但 TENANT 文档宣传支持 | `process-runtime.js`/`manager.js` 转发 `mounts` 与 `syncTimeoutMs`；新增租户挂载测试 |
 | MED-7 | sync 超时固定 10s，超时后无 `syncResult` | `syncTimeoutMs` 可配置；超时仍会杀 VM，未同步/部分写入的审计限制已写入文档，未声称事务性 |
 | LOW-8 | supervised 自动重启复用 open 快照 | 文档明确 restart 复用 open 快照、不 sync；重新 `open` 才读新 host |
-| LOW-9 | CHANGELOG 计数、测试标题、`syncResult` shape、删除计数不一致 | 已修正文档与测试；CHANGELOG 记录 14 个 mount 用例；删除 `ENOENT` 不再计 deleted |
+| LOW-9 | CHANGELOG 计数、测试标题、`syncResult` shape、删除计数不一致 | 已修正文档与测试；CHANGELOG 记录 19 个 mount 用例；删除 `ENOENT` 不再计 deleted |
 
 ### 文档审阅
 
@@ -116,14 +116,48 @@ benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` �
   未覆盖多 mount 并发 sync、反复 close/reopen 的 sync churn。该结果支持
   0.25.0 candidate，不等于生产发布批准。
 
+## 双 mount + 反复 flushMounts 1h soak（2026-11-17）
+
+工作负载提交 `0f60066`：mixed benchmark 的 mount runtime 使用两个 mount，
+`/mnt/a` 为 `rwx` + `sync: "on-close"`，`/mnt/b` 为 `r-x`；规则读取
+`/mnt/a/data.txt` 与 `/mnt/b/data.txt`，写入 `/mnt/a/out.txt`。每 25 次调用
+执行一次 mount 规则，并按 `DSH_MIXED_FLUSH_EVERY=500` 定期调用
+`flushMounts()`，因此持久化不只在 close 时发生。
+
+证据文件（`experiments/` 本机证据，不进 Git）：
+
+- `experiments/scheme-v2-mount-flush-1h-2026-11-17.jsonl`（59 个 60s 样本）
+- `experiments/scheme-v2-mount-flush-1h-2026-11-17-summary.json`
+- `experiments/scheme-v2-mount-flush-1h-2026-11-17.analysis.json`
+
+结果：**PASS**，`failures: []`、`conditional: []`。
+
+- 运行 3,600,168ms；2,297,207 calls；91,889 次 mount 调用、183 次
+  `flushMounts()`；0 errors、0 mountFlushErrors、0 restarts。
+- analyzer（59 samples，duration 3,541,657ms）：gcStatsErrors 0、
+  heartbeatAgeMax 1,008ms、gcPause p95 2.699ms、parent RSS max
+  167,919,616 bytes、parent heap max 12,903,464 bytes、p95/p99 ratio
+  1.007/1.003。
+- 5 个 runtime 全部 `pass: true`。mount runtime baseline median
+  18,362,136 bytes、final median 18,374,880 bytes、delta 12,744 bytes、
+  slope 0.083 KiB/min、upper95 1.413 KiB/min、gcCount 24→488 严格递增、
+  fullCollect=true。其余 runtime 的 liveBytes delta 为 -5,024 到 -1,448
+  bytes，slope upper95 为 0.365–1.005 KiB/min。
+- rssGuardrail 全部 `conditional: false`；parent heap 已做 full-GC 归一化。
+- 最终 sync：`/mnt/a` `written:0, deleted:0, unchanged:2, errors:[]`；
+  host A `out.txt` 为 8,192 bytes；host B 无 `out.txt`，`/mnt/b` 未被写入。
+- 覆盖限制：仍是临时 host 目录、4KiB 文件、周期性而非并发 flush；未覆盖
+  close/reopen 的 sync churn、跨 mount 并发写同一 host、进程崩溃后的 partial
+  审计。该结果支持 0.25.0 candidate，不等于生产发布批准。
+
 ## 残余风险（不阻塞 0.25.0 candidate）
 
 - sync 读路径仍有 lstat→open 的残余 TOCTOU；Windows 上无法完全消除，文档已声明。
 - sync 超时/进程被杀时没有 partial `syncResult` 审计；文档声明非事务。
 - mount 祖先 rename/rmdir 防护没有直接 Scheme 负测试，因为当前 R6RS 白名单
   没有 `rename-file`。
-- 单 mount 1h soak 是 candidate 级证据；双 mount + 反复 `flushMounts()` 的
-  1h soak 尚未完成。0.24.0 未单独 tag，也没有发布批准。
+- 单 mount 与双 mount + 反复 `flushMounts()` 的 1h soak 都是 candidate 级
+  证据，不覆盖并发/崩溃场景。0.24.0 未单独 tag，也没有发布批准。
 - Wasm/Worker 不是 OS 安全边界；mount 是能力，不是沙箱。
 
 ## 发布状态

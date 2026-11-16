@@ -150,6 +150,32 @@ benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` �
   close/reopen 的 sync churn、跨 mount 并发写同一 host、进程崩溃后的 partial
   审计。该结果支持 0.25.0 candidate，不等于生产发布批准。
 
+## 大文件短时 soak（2026-11-17）
+
+1h soak 用小文件覆盖反复 flush；另做一次 5 分钟大文件压力测试，覆盖 4MiB
+输入和 8MiB 输出边界。工作负载参数化提交 `8a484ea`，新增
+`DSH_MIXED_MOUNT_BYTES` 与 `DSH_MIXED_MOUNT_EVERY`；每个 mount 输入
+4MiB，规则拼成 8MiB 输出，`mountEvery=1000`、`flushEvery=20`。
+
+证据文件（`experiments/` 本机证据，不进 Git）：
+
+- `experiments/scheme-v2-mount-large-5m-2026-11-17.jsonl`
+- `experiments/scheme-v2-mount-large-5m-2026-11-17-summary.json`
+- `experiments/scheme-v2-mount-large-5m-2026-11-17-analysis.json`
+
+结果：**PASS**（短时压力测试，不是 1h candidate 证据）。
+
+- 运行 300,151ms；29 个 10s 样本；184,067 calls；190 次 mount 调用；
+  9 次 `flushMounts()`；0 errors、0 mountFlushErrors、0 restarts。
+- 最终 host `/mnt/a/out.txt` 为 8,388,608 bytes，等于 2 × 4MiB；`/mnt/b`
+  无 `out.txt`；最终 sync `unchanged:2, errors:[]`。
+- analyzer 判定 PASS：mount liveBytes 17,056,328 → 17,061,800 bytes
+  （+5,472），mount RSS max 330,534,912 bytes（约 315MiB，低于 512MiB
+  门槛），Wasm max 104,529,920 bytes（低于 448MiB 门槛）；p95 ratio
+  1.033。其余 runtime 也均通过 4MiB liveBytes 漂移门槛。
+- 5 个 runtime 的 liveBytes delta 为 -2,736 到 +33,136 bytes；该测试只说明
+  大文件路径在 5 分钟内无错误、无失控增长，不替代 1h 结论。
+
 ## 残余风险（不阻塞 0.25.0 candidate）
 
 - sync 读路径仍有 lstat→open 的残余 TOCTOU；Windows 上无法完全消除，文档已声明。

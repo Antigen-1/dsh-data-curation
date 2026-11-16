@@ -5,7 +5,7 @@
 - 范围：未提交工作树中的 mount + rwx（0.24.0 staged）与 `sync: "on-close"`
   （0.25.0）改动；审阅后提交为 `f2c1b55`（机械快照，未改变语义）。
 - 结论：**IMPLEMENTATION APPROVED — 0.25.0 CANDIDATE；RELEASE NOT APPROVED**。
-  没有独立发布批准，也没有 mount 相关 1h soak。
+  0.25.0 mount 1h soak 已 PASS（2026-11-16），但仍没有独立发布批准。
 
 ## 独立审阅
 
@@ -62,13 +62,41 @@
 - 测试命令必须带 Node 的 `PATH`，否则外部导出器/子进程测试会 EPERM 或找不到
   `node`；直接 `node --test` 会扫描 `experiments/`，不是项目标准入口。
 
+## 1h soak（2026-11-16）
+
+基准脚本扩展在 `64866af`（`test: add mount runtime to mixed soak`）：mixed
+benchmark 增加第五个 `mount` runtime，规则读取 `/mnt/input/data.txt` 并写
+`/mnt/input/out.txt`，挂载为 `rwx` + `sync: "on-close"`；每 25 次调用执行
+一次 mount 规则，结束时 close 触发 sync。生产候选代码仍是 `f2c1b55`。
+
+证据文件（`experiments/` 本机证据，不进 Git）：
+
+- `experiments/scheme-v2-mount-1h-2026-11-16.jsonl`（59 个 60s 样本）
+- `experiments/scheme-v2-mount-1h-2026-11-16-summary.json`
+- `experiments/scheme-v2-mount-1h-2026-11-16-analysis.json`
+- `experiments/scheme-v2-mount-1h-2026-11-16-log.txt`
+
+结果：**PASS**，无 failures、无 conditional。
+
+- 运行 3,600,181ms；1,554,709 calls；62,189 次 mount 调用；0 errors；
+  0 restarts；parent RSS max 190,320,640 bytes；Wasm 60,424,192 bytes。
+- analyzer（59 samples）的 5 个 runtime 全部 `pass: true`；mount runtime
+  baseline median 17,231,912 bytes、final median 17,176,592 bytes、
+  delta -55,320、slope 1.357 KiB/min、upper95 4.704 KiB/min、
+  gcPause p95 13.26ms、gcCount 46→1325 严格递增、fullCollect=true。
+- sync 在 close 时写回：`written:1, deleted:0, unchanged:1, errors:[]`；
+  host `out.txt` 为 4,096 bytes。
+- 覆盖限制：单一 mount、4KiB 读写、每 25 次调用一次、仅在 close sync；
+  未覆盖多 mount 并发 sync、反复 close/reopen 的 sync churn。该结果支持
+  0.25.0 candidate，不等于生产发布批准。
+
 ## 残余风险（不阻塞 0.25.0 candidate）
 
 - sync 读路径仍有 lstat→open 的残余 TOCTOU；Windows 上无法完全消除，文档已声明。
 - sync 超时/进程被杀时没有 partial `syncResult` 审计；文档声明非事务。
 - mount 祖先 rename/rmdir 防护没有直接 Scheme 负测试，因为当前 R6RS 白名单
   没有 `rename-file`。
-- 没有 mount 相关 1h soak；本次改动不进入生产发布门禁。
+- 1h soak 是 candidate 级证据；0.24.0 未单独 tag，也没有发布批准。
 - Wasm/Worker 不是 OS 安全边界；mount 是能力，不是沙箱。
 
 ## 发布状态

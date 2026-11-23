@@ -24,7 +24,12 @@ versions follow [SemVer](https://semver.org/).
   断言；`test/scheme-v2-host-path.test.js` 3/3；`test/scheme-v2-sync-progress.test.js`
   2/2。标准全量 440 tests / 439 pass / 1 skip / 0 fail；selfcheck 142 个发布
   文件通过。
-- 1h 与 5m soak 结果在发布前补充；当前为未发布候选。
+- 1h 双 mount + flush soak：59 samples、2,200,519 calls、88,021 mount calls、
+  176 flushes、0 errors、0 restarts；mount liveBytes 17,910,776 → 17,862,480，
+  slope upper95 2.335 KiB/min，analyzer PASS。
+- 5 分钟 4MiB 输入 / 8MiB 输出：29 samples、164,584 calls、8 flushes、0 errors；
+  mount liveBytes 稳定，RSS 331,821,056、Wasm 104,529,920，短 soak analyzer PASS。
+- 当前为未发布候选，未 tag、未 npm publish。
 
 ## [0.25.0] — 2026-11-17
 

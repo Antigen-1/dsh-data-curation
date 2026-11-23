@@ -86,12 +86,29 @@ manifest before any `flushMounts()`), and:
 The sync is per file, not a filesystem transaction, and there is no `fsync`.
 If an individual file fails, `close()` closes the VM, then rejects with
 `E-MOUNT-SYNC` and `error.details` lists the failed paths; `runtime.syncResult`
-remains available. A mount-level failure such as a limit breach rejects without
-partial results. The sync timeout is configurable with `syncTimeoutMs`
-(default 10000 ms); on timeout the VM is killed and unsynced/partial writes may
-remain. A crash, `kill`, `restart()`, or supervised auto-restart does not sync:
-changes since open are lost, and restart reuses the open-time mounts snapshot.
-Reopen the runtime to reread the host.
+remains available. A mount-level failure such as a limit breach rejects and
+`runtime.syncResult` stays `null`, but `runtime.syncPartial` may still contain
+the progress observed before the failure. The sync timeout is configurable with
+`syncTimeoutMs` (default 10000 ms); on timeout the VM is killed and
+unsynced/partial writes may remain. A crash, `kill`, `restart()`, or supervised
+auto-restart does not sync: changes since open are lost, and restart reuses the
+open-time mounts snapshot. Reopen the runtime to reread the host.
+
+Host path checks are best effort. Before reading, the code rejects a target
+whose nearest existing ancestor resolves outside the mount root and rechecks the
+opened real path. Before writing or deleting, it rechecks containment before
+`mkdir`, after resolving the parent real path, and before/after `rename`; a
+failed check raises `E-MOUNT-SYNC-PATH`. Node has no `openat`/`renameat2` and
+Windows has no `O_NOFOLLOW`, so a concurrent local writer can still race the
+final check. The host directory is trusted; this closes the ordinary static and
+symlink/junction cases, not every concurrent TOCTOU.
+
+When sync is interrupted, `runtime.syncPartial` is a snapshot with
+`{startedAt, at, complete:false, reason, truncated, mounts:[...]}`. Each mount
+entry has `written`, `deleted`, `unchanged`, `errors`, `writtenPaths`,
+`deletedPaths`, `files`, and `truncated`. At most 2048 path strings are retained
+across mounts; excess paths set `truncated: true`. This is an audit aid, not a
+transaction log and not a guarantee that unlisted files were untouched.
 
 `runtime.flushMounts()` performs the same sync before `close()` and can be called
 repeatedly. It does not close the VM, and each successful sync advances the
@@ -99,7 +116,8 @@ per-mount baseline, so a file created and flushed in one call can be deleted and
 flushed in the next. A per-file failure rejects with `E-MOUNT-SYNC` and
 `error.details` while the VM stays open. A timeout (`E-MOUNT-SYNC-TIMEOUT`)
 fails closed: the runtime is marked closed and its incarnation is terminated,
-because the in-flight sync could still write the host. `(flush-output-port p)`
+because the in-flight sync could still write the host. The error's `partial`
+field and `runtime.syncPartial` retain the last progress observed. `(flush-output-port p)`
 only flushes the Scheme port's buffer into MEMFS; it does not write the host.
 Call `flushMounts()` when the host must see the bytes before the runtime is
 closed.

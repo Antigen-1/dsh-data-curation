@@ -141,12 +141,25 @@ const manyRule = [
   '',
 ].join('\n')
 
+const largeRule = [
+  '(library (dsh rule mount.large (1 0 0))',
+  '  (export entry)',
+  '  (import (rnrs base (6)) (rnrs io ports (6)) (rnrs bytevectors (6)))',
+  '  (define (entry)',
+  '    (let ([p (open-file-output-port "/mnt/input/large.bin" (file-options no-fail) (buffer-mode none))])',
+  '      (put-bytevector p (make-bytevector 4194304 97))',
+  '      (close-port p)',
+  '      #t)))',
+  '',
+].join('\n')
+
 async function makePin () {
   return buildSchemeV2Pin({
     project: 'mount-test',
     rules: [
       { id: 'mount.read', version: [1, 0, 0], source: readRule },
       { id: 'mount.write', version: [1, 0, 0], source: writeRule },
+      { id: 'mount.large', version: [1, 0, 0], source: largeRule },
       { id: 'mount.oversize', version: [1, 0, 0], source: oversizeRule },
       { id: 'mount.delete', version: [1, 0, 0], source: deleteRule },
     ],
@@ -507,12 +520,38 @@ test('flushMounts reports per-file errors without closing the runtime', async ()
     assert.equal(runtime.closed, false)
     assert.equal(runtime.syncError.code, 'E-MOUNT-SYNC')
     assert.equal(runtime.syncResult.mounts[0].errors.length, 1)
+    assert.equal(runtime.syncPartial.reason, 'file-errors')
+    assert.equal(runtime.syncPartial.mounts[0].errors.length, 1)
 
     await rm(join(input, 'out.txt'), { recursive: true, force: true })
     await runtime.close()
     assert.equal(await readFile(join(input, 'out.txt'), 'utf8'), 'written')
   } finally {
     await runtime.close()
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('flushMounts timeout preserves a partial audit snapshot and fails closed', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-mount-'))
+  const input = join(root, 'input')
+  await mkdir(input)
+  const pin = await makePin()
+  const runtime = await SchemeV2Runtime.open(pin, {
+    projectRoot: root,
+    syncTimeoutMs: 0,
+    mounts: [{ hostPath: 'input', guestPath: '/mnt/input', mode: 'rwx', sync: 'on-close' }],
+  })
+  try {
+    assert.equal(await runtime.call('mount.large'), true)
+    await assert.rejects(runtime.flushMounts(0), (error) => error.code === 'E-MOUNT-SYNC-TIMEOUT')
+    assert.equal(runtime.closed, true)
+    assert.equal(runtime.syncResult, null)
+    assert.equal(runtime.syncPartial.complete, false)
+    assert.equal(runtime.syncPartial.reason, 'timeout')
+    assert.ok(Array.isArray(runtime.syncPartial.mounts))
+  } finally {
+    await runtime.close().catch(() => {})
     await rm(root, { recursive: true, force: true })
   }
 })

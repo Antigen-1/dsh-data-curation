@@ -4,6 +4,28 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.26.0] — unreleased candidate
+
+### Added
+
+- Mount 读取与 sync 写回的 host 路径 containment 加固：`host-path.cjs` 复用
+  同一套 `E-MOUNT-SYNC-PATH` 检查；读取在 open 前/后复核 realpath，写入与删除
+  在 mkdir 前、父目录解析后、rename 前/后复核最近存在祖先与 realpath。
+  这是纯 Node 的 best-effort 防护，不是 dirfd 原子操作。
+- `sync-progress` 协议：worker 在 sync 过程中发送 `start`/逐文件进度，
+  client/supervisor 聚合为 `runtime.syncPartial`；部分路径上限 2048 条，
+  超出标 `truncated: true`。超时、worker 退出、supervisor 重启或失败时，
+  错误对象带 `partial` 快照；成功 sync 清空 partial。
+- 挂载文档补充路径竞态边界、partial 审计形状与非事务语义。
+
+### Verification
+
+- `test/scheme-v2-mount.test.js` 20/20，新增 timeout partial 快照与 fail-closed
+  断言；`test/scheme-v2-host-path.test.js` 3/3；`test/scheme-v2-sync-progress.test.js`
+  2/2。标准全量 440 tests / 439 pass / 1 skip / 0 fail；selfcheck 142 个发布
+  文件通过。
+- 1h 与 5m soak 结果在发布前补充；当前为未发布候选。
+
 ## [0.25.0] — 2026-11-17
 
 ### Added

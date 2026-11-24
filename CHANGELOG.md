@@ -24,13 +24,14 @@ versions follow [SemVer](https://semver.org/).
   断言；`test/scheme-v2-host-path.test.js` 3/3；`test/scheme-v2-sync-progress.test.js`
   2/2。标准全量 440 tests / 439 pass / 1 skip / 0 fail；selfcheck 143 个发布
   文件通过。
-- 1h 双 mount + flush soak：59 samples、2,200,519 calls、88,021 mount calls、
-  176 flushes、0 errors、0 restarts；mount liveBytes 17,910,776 → 17,862,480，
-  slope upper95 2.335 KiB/min，analyzer PASS。
-- 5 分钟 4MiB 输入 / 8MiB 输出：29 samples、164,584 calls、8 flushes、0 errors；
-  mount liveBytes 稳定，RSS 331,821,056、Wasm 104,529,920，短 soak analyzer PASS。
-- 上述 soak 跑在 `62f2606`；native realpath 审阅修复后的最终树需重跑 1h/5m
-  soak 后才算发布证据。
+- 最终 `39dbd4d` 树上 1h 双 mount + flush soak：59 samples、2,262,077 calls、
+  90,484 mount calls、180 flushes、0 errors、0 restarts；mount liveBytes
+  17,762,280 → 18,462,688、slope upper95 0.364 KiB/min，analyzer PASS。
+- 最终 `39dbd4d` 树上 5 分钟 4MiB 输入 / 8MiB 输出：29 samples、190,117 calls、
+  9 flushes、0 errors；host 输出 8,388,608 bytes，RSS 332,234,752、
+  Wasm 104,529,920，短 soak analyzer PASS。
+- `62f2606` 上的旧 soak 结果保留在 `experiments/` 作为修复前历史，不作为
+  0.26.0 发布证据。
 - 当前为未发布候选，未 tag、未 npm publish。
 
 ## [0.25.0] — 2026-11-17

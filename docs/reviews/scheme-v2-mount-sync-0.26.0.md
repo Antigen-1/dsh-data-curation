@@ -1,9 +1,10 @@
 # Scheme v2 mount sync audit — 0.26.0
 
-Status: independent review completed; review fixes applied; fix verifier pending.
-0.26.0 is an untagged candidate.
+Status: independent review completed; review fixes applied; fix verifier APPROVE;
+final 1h and 5m soaks PASS. 0.26.0 is an untagged candidate.
 Base release: annotated tag `v0.25.0`, tag object `6a4b2b6`, commit `0d5255f`.
-Candidate code: `62f2606 feat: harden mount sync paths and expose partial audit`.
+Candidate code: `62f2606 feat: harden mount sync paths and expose partial audit`;
+post-review fixes: `39dbd4d fix: close 0.26 mount sync review findings`.
 Review record: commit `7540037`; the current revision includes post-review fixes.
 
 ## Scope
@@ -52,14 +53,16 @@ and symlink/junction escapes, not every concurrent race.
 - `test/scheme-v2-sync-progress.test.js`: 2/2.
 - Standard full suite: 440 tests, 439 pass, 1 skip, 0 fail.
 - `node scripts/selfcheck.mjs`: OK, 143 files.
-- 1h soak (`62f2606`): `experiments/scheme-v2-mount-path-1h-2026-11-24.jsonl`;
-  analyzer PASS: 59 samples, 2,169,547 calls, 0 errors, 0 restarts, mount
-  liveBytes 17,910,776 → 17,862,480, slope upper 2.335 KiB/min.
-- 5m large-file soak (`62f2606`):
-  `experiments/scheme-v2-mount-path-large-5m-2026-11-24.jsonl`; short analyzer
-  PASS, output exactly 8,388,608 bytes.
-- The post-review native-realpath/path-check diff is newer than those soak
-  runs; a final re-run is required before release.
+- 1h soak on the final tree (`39dbd4d`):
+  `experiments/scheme-v2-mount-path-final-1h-2026-11-24.jsonl`; analyzer PASS:
+  59 samples, 2,262,077 calls, 90,484 mount calls, 180 flushes, 0 errors,
+  0 restarts; mount liveBytes 17,762,280 → 18,462,688, delta 700,408 bytes,
+  slope upper 0.364 KiB/min.
+- 5m large-file soak on the final tree (`39dbd4d`):
+  `experiments/scheme-v2-mount-path-final-large-5m-2026-11-24.jsonl`; short
+  analyzer PASS, 190,117 calls, 0 errors, output exactly 8,388,608 bytes.
+- The earlier `62f2606` soak results remain in `experiments/` as pre-fix
+  history; they are not the release evidence.
 
 ## Residual limits
 
@@ -99,6 +102,18 @@ and symlink/junction escapes, not every concurrent race.
   the 2048/256 limits precisely, document `file-errors`, TENANT sync/partial,
   and align the plan. Base/tag and candidate bindings are corrected above.
 
-### Fix verifier — pending
+### Fix verifier — APPROVE
 
-Pending on the final post-review diff and re-soak. No tag, no npm publish.
+- No HIGH introduced by the post-review diff. The six prior findings were
+  substantively fixed: native realpath, `E-MOUNT-SYNC-PATH`, writeAtomic fallback
+  recheck, independent per-waiter errors, synthetic-snapshot docs, and binding
+  corrections.
+- M1/M2 fixed: mount tests are recorded as 20/20 (host-path 3/3 separately), and
+  the TENANT doc no longer claims a `.runtime` accessor or unconditional
+  `.partial`.
+- L1 fixed: the synthetic file-errors snapshot caps errors at 256 per mount and
+  sets `truncated`; L4 wording corrected. Remaining L2/L3 are plan drift and a
+  missing committed mount-level junction regression; they do not block this
+  candidate.
+- Residual risk remains the documented concurrent TOCTOU and non-transactional
+  partial audit. No tag, no npm publish.

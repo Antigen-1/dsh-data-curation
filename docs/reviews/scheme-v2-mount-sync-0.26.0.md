@@ -1,7 +1,7 @@
 # Scheme v2 mount sync audit — 0.26.0
 
-Status: independent review completed; review fixes applied; fix verifier APPROVE;
-final 1h and 5m soaks PASS. 0.26.0 is an untagged candidate.
+Status: released as annotated tag `v0.26.0` on 2026-11-24; independent review
+completed, review fixes applied, fix verifier APPROVE, final 1h and 5m soaks PASS.
 Base release: annotated tag `v0.25.0`, tag object `6a4b2b6`, commit `0d5255f`.
 Candidate code: `62f2606 feat: harden mount sync paths and expose partial audit`;
 post-review fixes: `39dbd4d fix: close 0.26 mount sync review findings`.
@@ -116,4 +116,4 @@ and symlink/junction escapes, not every concurrent race.
   missing committed mount-level junction regression; they do not block this
   candidate.
 - Residual risk remains the documented concurrent TOCTOU and non-transactional
-  partial audit. No tag, no npm publish.
+  partial audit. Released as `v0.26.0`; no npm publish.

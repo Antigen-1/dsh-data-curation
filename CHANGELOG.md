@@ -4,7 +4,7 @@ All notable changes to `dsh-data-curation` are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
-## [0.26.0] — unreleased candidate
+## [0.26.0] — 2026-11-24
 
 ### Added
 
@@ -32,7 +32,7 @@ versions follow [SemVer](https://semver.org/).
   Wasm 104,529,920，短 soak analyzer PASS。
 - `62f2606` 上的旧 soak 结果保留在 `experiments/` 作为修复前历史，不作为
   0.26.0 发布证据。
-- 当前为未发布候选，未 tag、未 npm publish。
+- 已发布 annotated `v0.26.0`；未 npm publish。
 
 ## [0.25.0] — 2026-11-17
 

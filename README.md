@@ -431,7 +431,7 @@ npm pack --dry-run   # 打包检查（本机需 npm_config_cache=$PWD/.npm-cache
 ## 仓库与发布
 
 - 源码：<https://github.com/Antigen-1/dsh-data-curation>
-- 当前版本 0.26.0（未发布候选；新增 host path containment 加固与 sync partial 审计）。
-  最近一个 annotated tag 是 `v0.25.0`；0.26.0 尚未 tag。
+- 当前版本 0.26.0（新增 host path containment 加固与 sync partial 审计）。
+  最近一个 annotated tag 是 `v0.26.0`。
 - 正式发布 = annotated `vX.Y.Z` tag；未打 tag 的 commit/package 都是候选。
 - `gcStats()` 需要显式 `debugGcStats: true`；默认关闭，只用于诊断，不改变生产路径。

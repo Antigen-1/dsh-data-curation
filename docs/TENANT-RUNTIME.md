@@ -48,6 +48,7 @@ const manager = await TenantManager.open({
       mounts: [            // 可选：显式 host 目录挂载到 MEMFS
         { hostPath: 'data/incoming', guestPath: '/mnt/incoming', mode: 'r-x' }
       ],
+      syncTimeoutMs: 10000, // 可选：flushMounts/close sync 超时
       supervised: true,    // 可选，process 模式下默认 true
       resource: {           // 可选，OS 资源监督（子进程）
         rssSampleMs: 5000,
@@ -60,7 +61,16 @@ const manager = await TenantManager.open({
 })
 ```
 
-每个租户的根是 `<projectRoot>/tenants/<id>`；`id` 必须匹配 `^[A-Za-z][A-Za-z0-9._-]{0,63}$`，且按大小写不敏感去重，尾点会被拒绝。不会把租户根之外的项目文件挂载给该租户。使用 plugin/program pin 时，调用方必须先在该根下准备 `rules/scheme`（通常从项目模板复制一份只读快照）；空目录只能打开无插件 pin。
+每个租户的根是 `<projectRoot>/tenants/<id>`；`id` 必须匹配 `^[A-Za-z][A-Za-z0-9._-]{0,63}$`，且按大小写不敏感去重，尾点会被拒绝。不会把租户根之外的项目文件挂载给该租户。
+
+挂载了 `sync: "on-close"` 的租户与直接 runtime 使用同一套 sync 语义：
+`syncTimeoutMs` 传给租户的 flush/close，用于限制等待时间。租户包装器不暴露
+`.runtime`；直接持有 `SchemeV2Runtime` 时可用 `syncResult`/`syncPartial`，
+租户场景从 `manager.metrics(id)` 读取 `syncPartial` 摘要。成功时完整结果只
+在直接 runtime 上可见；超时或 worker/子进程退出时 `syncResult` 为 `null`，
+错误对象在 parent 能取得进度时带 `partial`。`E-MOUNT-SYNC` 的逐文件错误
+带 `details`，不保证带 `partial`。超时会关闭该租户的 runtime（fail-closed），
+不会复用仍可能写 host 的实例。使用 plugin/program pin 时，调用方必须先在该根下准备 `rules/scheme`（通常从项目模板复制一份只读快照）；空目录只能打开无插件 pin。
 
 ### 2.2 调用
 

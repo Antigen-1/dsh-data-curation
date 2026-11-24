@@ -67,4 +67,5 @@ test('sync progress caps stored paths and errors', () => {
   assert.equal(snapshot.mounts[0].writtenPaths.length, SYNC_PROGRESS_MAX_PATHS)
   assert.equal(snapshot.mounts[0].errors.length, SYNC_PROGRESS_MAX_ERRORS)
   assert.equal(snapshot.mounts[0].truncated, true)
+  assert.equal(snapshotSyncProgress(state, 'E-MOUNT-SYNC').reason, 'error')
 })

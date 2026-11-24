@@ -71,7 +71,7 @@ For textual ports pass a transcoder, e.g. `(make-transcoder (utf-8-codec))`.
 Without `sync`, writes are discarded when the runtime closes; the host
 directory is never modified. With `sync: "on-close"`, `runtime.close()` scans
 each sync mount, compares content with the last synced baseline (the open-time
-manifest before any `flushMounts()`), and:
+manifest until the first `flushMounts()` advances it), and:
 
 - writes new/changed files through a same-directory temporary file + rename
   (atomic when the rename succeeds; a backup+restore fallback is used on
@@ -95,20 +95,25 @@ auto-restart does not sync: changes since open are lost, and restart reuses the
 open-time mounts snapshot. Reopen the runtime to reread the host.
 
 Host path checks are best effort. Before reading, the code rejects a target
-whose nearest existing ancestor resolves outside the mount root and rechecks the
-opened real path. Before writing or deleting, it rechecks containment before
-`mkdir`, after resolving the parent real path, and before/after `rename`; a
-failed check raises `E-MOUNT-SYNC-PATH`. Node has no `openat`/`renameat2` and
-Windows has no `O_NOFOLLOW`, so a concurrent local writer can still race the
-final check. The host directory is trusted; this closes the ordinary static and
-symlink/junction cases, not every concurrent TOCTOU.
+whose nearest existing ancestor resolves outside the mount root, then resolves
+the path name again after opening (not an `openat` file descriptor). Before
+writing or deleting, it rechecks containment before `mkdir`, after resolving the
+parent path name's real path, and before/after `rename`; a failed check raises
+`E-MOUNT-SYNC-PATH`. Node has no `openat`/`renameat2` and Windows has no
+`O_NOFOLLOW`, so a concurrent local writer can still race the final check. The
+host directory is trusted; this closes the ordinary static and symlink/junction
+cases, not every concurrent TOCTOU.
 
 When sync is interrupted, `runtime.syncPartial` is a snapshot with
 `{startedAt, at, complete:false, reason, truncated, mounts:[...]}`. Each mount
-entry has `written`, `deleted`, `unchanged`, `errors`, `writtenPaths`,
-`deletedPaths`, `files`, and `truncated`. At most 2048 path strings are retained
-across mounts; excess paths set `truncated: true`. This is an audit aid, not a
-transaction log and not a guarantee that unlisted files were untouched.
+entry has `written`, `deleted`, `unchanged`, `errors`, and `truncated`; it may
+also have `writtenPaths`, `deletedPaths`, and `files`. At most 2048 written or
+deleted path strings are retained across mounts, and at most 256 errors per
+mount; excess entries set `truncated: true`. Error paths are not counted against
+the 2048 path budget. The `file-errors` snapshot synthesized from a successful
+sync result may have empty path arrays and no `files`; its counts and `errors`
+are authoritative. This is an audit aid, not a transaction log and not a
+guarantee that unlisted files were untouched.
 
 `runtime.flushMounts()` performs the same sync before `close()` and can be called
 repeatedly. It does not close the VM, and each successful sync advances the
